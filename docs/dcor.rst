@@ -1,0 +1,29 @@
+dcor package
+============
+
+Subpackages
+-----------
+
+.. toctree::
+
+    dcor.tests
+
+Submodules
+----------
+
+dcor\.dcor module
+-----------------
+
+.. automodule:: dcor.dcor
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: dcor
+    :members:
+    :undoc-members:
+    :show-inheritance:
