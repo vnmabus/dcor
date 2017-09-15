@@ -1,12 +1,26 @@
+'''
+    This module contains functions to compute statistics related to the distance
+    covariance and distance correlation :cite:`distance_correlation`.
+
+    References
+    ----------
+    .. bibliography:: refs.bib
+'''
+
 from __future__ import absolute_import, division, print_function
 from __future__ import unicode_literals
 
+import collections
 import math
 
-# import numba
+import numba
 import scipy.spatial
 
 import numpy as np
+
+
+Stats = collections.namedtuple('Stats', ['covariance_xy', 'correlation_xy',
+                               'variance_x', 'variance_y'])
 
 
 def double_centered(a):
@@ -185,99 +199,264 @@ def _transform_to_2d(t):
     return t
 
 
-def _distance_matrices_generic(X, Y, centering):
+def _distance_matrices_generic(x, y, centering):
     '''
     Computes the double centered distance matrices given two matrices.
     '''
 
-    X = _transform_to_2d(np.asfarray(X))
-    Y = _transform_to_2d(np.asfarray(Y))
+    x = _transform_to_2d(np.asfarray(x))
+    y = _transform_to_2d(np.asfarray(y))
 
-    n = X.shape[0]
-    assert n == Y.shape[0]
+    n = x.shape[0]
+    assert n == y.shape[0]
 
     # Calculate distance matrices
-    A = scipy.spatial.distance.cdist(X, X)
-    B = scipy.spatial.distance.cdist(Y, Y)
+    a = scipy.spatial.distance.cdist(x, x)
+    b = scipy.spatial.distance.cdist(y, y)
 
     # Double centering
-    A = centering(A)
-    B = centering(B)
+    a = centering(a)
+    b = centering(b)
 
-    return A, B
+    return a, b
 
 
-def _distance_matrices(X, Y):
+def _distance_matrices(x, y):
     '''
     Computes the double centered distance matrices given two matrices.
     '''
 
-    return _distance_matrices_generic(X, Y, centering=double_centered)
+    return _distance_matrices_generic(x, y, centering=double_centered)
 
 
-def _u_distance_matrices(X, Y):
+def _u_distance_matrices(x, y):
     '''
     Computes the u-centered distance matrices given two matrices.
     '''
 
-    return _distance_matrices_generic(X, Y, centering=u_centered)
+    return _distance_matrices_generic(x, y, centering=u_centered)
 
 
-def u_distance_covariance_sqr_naive(X, Y):
+def _u_distance_covariance_sqr_naive(x, y):
     '''
-    Computes distance covariance between two matrices.
-    '''
-
-    A, B = _u_distance_matrices(X, Y)
-
-    return u_product(A, B)
-
-
-def distance_covariance_sqr(X, Y):
-    '''
-    Computes distance covariance between two matrices.
+    Computes the unbiased estimator for distance covariance between two
+    matrices, using an :math:`O(N^2)` algorithm.
     '''
 
-    A, B = _distance_matrices(X, Y)
+    a, b = _u_distance_matrices(x, y)
 
-    return average_product(A, B)
+    return u_product(a, b)
 
 
-def _distance_correlation_naive_generic(X, Y, matrices, covariance):
-    A, B = matrices(X, Y)
+def distance_covariance_sqr(x, y):
+    '''
+    Computes the usual (biased) estimator for the squared distance covariance
+    between two random vectors.
 
-    prod_avg = covariance(A, B)
-    if prod_avg == 0:
-        return prod_avg
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    (1, 1) ndarray
+        Biased estimator of the squared distance covariance.
+
+    See Also
+    --------
+    distance_covariance
+    u_distance_covariance_sqr
+    '''
+
+    a, b = _distance_matrices(x, y)
+
+    return average_product(a, b)
+
+
+def distance_covariance(x, y):
+    '''
+    Computes the usual (biased) estimator for the distance covariance
+    between two random vectors.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    (1, 1) ndarray
+        Biased estimator of the distance covariance.
+
+    See Also
+    --------
+    distance_covariance_sqr
+    u_distance_covariance_sqr
+    '''
+    return np.sqrt(distance_covariance_sqr(x, y))
+
+
+def _distance_sqr_stats_naive_generic(x, y, matrices, product):
+    '''
+    Compute generic squared stats.
+    '''
+    a, b = matrices(x, y)
+
+    covariance_xy_sqr = product(a, b)
+    variance_x_sqr = product(a, a)
+    variance_y_sqr = product(b, b)
+
+    denominator_sqr = variance_x_sqr * variance_y_sqr
+
+    if denominator_sqr < 1e-10:
+        correlation_xy_sqr = 0
     else:
-        return prod_avg / math.sqrt(covariance(A, A) *
-                                    covariance(B, B))
+        correlation_xy_sqr = covariance_xy_sqr / math.sqrt(denominator_sqr)
+
+    return Stats(covariance_xy=covariance_xy_sqr,
+                 correlation_xy=correlation_xy_sqr,
+                 variance_x=variance_x_sqr,
+                 variance_y=variance_y_sqr)
 
 
-def distance_correlation_sqr_naive(X, Y):
+def distance_stats_sqr(x, y):
     '''
-    Computes distance correlation between two matrices.
+    Computes the usual (biased) estimators for the squared distance covariance
+    and squared distance correlation between two random vectors, and the
+    individual squared distance variances.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    Stats
+        Squared distance covariance, squared distance correlation,
+        squared distance variance of the first random vector and
+        squared distance variance of the second random vector.
+
+    See Also
+    --------
+    distance_covariance_sqr
+    distance_correlation_sqr
+
+    Notes
+    -----
+    It is less efficient to compute the statistics separately, rather than
+    using this function, because some computations can be shared.
     '''
 
-    return _distance_correlation_naive_generic(
-        X, Y,
+    return _distance_sqr_stats_naive_generic(
+        x, y,
         matrices=_distance_matrices,
-        covariance=average_product)
+        product=average_product)
 
 
-def u_distance_correlation_sqr_naive(X, Y):
+def distance_stats(x, y):
     '''
-    Computes distance correlation between two matrices using the U-statistic.
+    Computes the usual (biased) estimators for the distance covariance
+    and distance correlation between two random vectors, and the
+    individual distance variances.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    Stats
+        Distance covariance, distance correlation,
+        distance variance of the first random vector and
+        distance variance of the second random vector.
+
+    See Also
+    --------
+    distance_covariance
+    distance_correlation
+
+    Notes
+    -----
+    It is less efficient to compute the statistics separately, rather than
+    using this function, because some computations can be shared.
     '''
 
-    return _distance_correlation_naive_generic(
-        X, Y,
+    return Stats(*[np.sqrt(s) for s in distance_stats_sqr(x, y)])
+
+
+def distance_correlation_sqr(x, y):
+    '''
+    Computes the usual (biased) estimator for the squared distance correlation
+    between two random vectors.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    (1, 1) ndarray
+        Biased estimator of the squared distance correlation.
+
+    See Also
+    --------
+    distance_correlation
+    u_distance_correlation_sqr
+    '''
+
+    return distance_stats_sqr(x, y).correlation_xy
+
+
+def _u_distance_correlation_sqr_naive(x, y):
+    '''
+    Computes distance correlation estimator between two matrices
+    using the U-statistic.
+    '''
+
+    return _distance_sqr_stats_naive_generic(
+        x, y,
         matrices=_u_distance_matrices,
-        covariance=u_product)
+        product=u_product).correlation_xy
 
 
-# @numba.jit
-def dyad_update(Y, C):
+def _can_use_u_fast_algorithm(x, y):
+    '''
+    Returns a boolean indicating if the fast :math:`O(NlogN)` algorithm for
+    the unbiased distance stats can be used.
+
+    The algorithm can only be used for random variables (not vectors) where
+    the number of instances is greater than 3.
+    '''
+    return (x.shape[1] == 1 and y.shape[1] == 1 and
+            x.shape[0] > 3 and y.shape[0] > 3)
+
+
+@numba.jit
+def _dyad_update(Y, C):
 
     Y = np.asarray(Y)
     C = np.asarray(C)
@@ -322,74 +501,77 @@ def dyad_update(Y, C):
     return gamma
 
 
-def partial_sum_2d(X, Y, C):
-    X = np.asarray(X)
-    Y = np.asarray(Y)
-    C = np.asarray(C)
+def _partial_sum_2d(x, y, c):
+    x = np.asarray(x)
+    y = np.asarray(y)
+    c = np.asarray(c)
 
-    n = X.shape[0]
+    n = x.shape[0]
 
-    # Step 1: rearrange X, Y and C so X is in ascending order
+    # Step 1: rearrange x, y and c so x is in ascending order
     temp = range(n)
 
-    ix0 = np.argsort(X)
+    ix0 = np.argsort(x)
     ix = np.zeros(n, dtype=int)
     ix[ix0] = temp
 
-    X = X[ix0]
-    Y = Y[ix0]
-    C = C[ix0]
+    x = x[ix0]
+    y = y[ix0]
+    c = c[ix0]
 
     # Step 2
-    iy0 = np.argsort(Y)
+    iy0 = np.argsort(y)
     iy = np.zeros(n, dtype=int)
     iy[iy0] = temp
 
-    Y = iy + 1
+    y = iy + 1
 
     # Step 3
-    sy = np.cumsum(C[iy0]) - C[iy0]
+    sy = np.cumsum(c[iy0]) - c[iy0]
 
     # Step 4
-    sx = np.cumsum(C) - C
+    sx = np.cumsum(c) - c
 
     # Step 5
-    c_dot = np.sum(C)
+    c_dot = np.sum(c)
 
     # Step 6
-    gamma1 = dyad_update(Y, C)
+    gamma1 = _dyad_update(y, c)
 
     # Step 7
-    gamma = c_dot - C - 2 * sy[iy] - 2 * sx + 4 * gamma1
+    gamma = c_dot - c - 2 * sy[iy] - 2 * sx + 4 * gamma1
     gamma = gamma[ix]
 
     return gamma
 
 
-def u_distance_covariance_sqr_fast(X, Y):
-    X = np.asfarray(X)
-    Y = np.asfarray(Y)
+def _u_distance_covariance_sqr_fast(x, y):
+    '''
+    Fast algorithm for the distance covariance.
+    '''
+    x = np.asfarray(x)
+    y = np.asfarray(y)
 
-    X = np.ravel(X)
-    Y = np.ravel(Y)
+    x = np.ravel(x)
+    y = np.ravel(y)
 
-    n = X.shape[0]
+    n = x.shape[0]
     if n <= 3:
         raise ValueError(
             "Expected dimension of the matrix > 3 and found {dim}".format(
                 dim=n))
-    assert(n == Y.shape[0])
+    assert(n == y.shape[0])
     temp = range(n)
 
     # Step 1
-    ix0 = np.argsort(X)
-    vx = X[ix0]
+    ix0 = np.argsort(x)
+    vx = x[ix0]
 
     ix = np.zeros(n, dtype=int)
     ix[ix0] = temp
 
-    iy0 = np.argsort(Y)
-    vy = Y[iy0]
+    iy0 = np.argsort(y)
+    vy = y[iy0]
 
     iy = np.zeros(n, dtype=int)
     iy[iy0] = temp
@@ -406,27 +588,27 @@ def u_distance_covariance_sqr_fast(X, Y):
     beta_y = sy[iy] - vy[iy]
 
     # Step 4
-    x_dot = np.sum(X)
-    y_dot = np.sum(Y)
+    x_dot = np.sum(x)
+    y_dot = np.sum(y)
 
     # Step 5
-    a_i_dot = x_dot + (2 * alpha_x - n) * X - 2 * beta_x
-    b_i_dot = y_dot + (2 * alpha_y - n) * Y - 2 * beta_y
+    a_i_dot = x_dot + (2 * alpha_x - n) * x - 2 * beta_x
+    b_i_dot = y_dot + (2 * alpha_y - n) * y - 2 * beta_y
 
     sum_ab = np.sum(a_i_dot * b_i_dot)
 
     # Step 6
-    a_dot_dot = 2 * np.sum(alpha_x * X) - 2 * np.sum(beta_x)
-    b_dot_dot = 2 * np.sum(alpha_y * Y) - 2 * np.sum(beta_y)
+    a_dot_dot = 2 * np.sum(alpha_x * x) - 2 * np.sum(beta_x)
+    b_dot_dot = 2 * np.sum(alpha_y * y) - 2 * np.sum(beta_y)
 
     # Step 7
-    gamma_1 = partial_sum_2d(X, Y, np.ones(n))
-    gamma_x = partial_sum_2d(X, Y, X)
-    gamma_y = partial_sum_2d(X, Y, Y)
-    gamma_xy = partial_sum_2d(X, Y, X * Y)
+    gamma_1 = _partial_sum_2d(x, y, np.ones(n))
+    gamma_x = _partial_sum_2d(x, y, x)
+    gamma_y = _partial_sum_2d(x, y, y)
+    gamma_xy = _partial_sum_2d(x, y, x * y)
 
     # Step 8
-    aijbij = np.sum(X * Y * gamma_1 + gamma_xy - X * gamma_y - Y * gamma_x)
+    aijbij = np.sum(x * y * gamma_1 + gamma_xy - x * gamma_y - y * gamma_x)
 
     # Step 9
     d_cov = (aijbij / n / (n - 3) - 2 * sum_ab / n / (n - 2) / (n - 3) +
@@ -435,16 +617,148 @@ def u_distance_covariance_sqr_fast(X, Y):
     return d_cov
 
 
-def u_distance_correlation_sqr_fast(X, Y):
-    dcov_XY = u_distance_covariance_sqr_fast(X, Y)
-    dcov_X = u_distance_covariance_sqr_fast(X, X)
-    dcov_Y = u_distance_covariance_sqr_fast(Y, Y)
+def _u_distance_stats_sqr_fast(x, y):
+    '''
+    Compute the bias-corrected distance stats using the fast
+    :math:`O(NlogN)` algorithm.
+    '''
+    covariance_xy_sqr = _u_distance_covariance_sqr_fast(x, y)
+    variance_x_sqr = _u_distance_covariance_sqr_fast(x, x)
+    variance_y_sqr = _u_distance_covariance_sqr_fast(y, y)
+    denom_sqr_signed = variance_x_sqr * variance_y_sqr
+    denom_sqr = np.fabs(denom_sqr_signed)
 
-    if math.fabs(dcov_X * dcov_Y) < 1e-10:
-        return 0
+    if denom_sqr < 1e-10:
+        correlation_xy_sqr = 0
     else:
-        return dcov_XY / math.sqrt(math.fabs(dcov_X * dcov_Y))
+        correlation_xy_sqr = covariance_xy_sqr / math.sqrt(denom_sqr)
+
+    return Stats(covariance_xy=covariance_xy_sqr,
+                 correlation_xy=correlation_xy_sqr,
+                 variance_x=variance_x_sqr,
+                 variance_y=variance_y_sqr)
 
 
-distance_correlation_sqr = distance_correlation_sqr_naive
-distance_correlation_sqr_multivariate = distance_correlation_sqr_naive
+def _u_distance_correlation_sqr_fast(x, y):
+    '''
+    Fast algorithm for distance correlation.
+    '''
+    return _u_distance_stats_sqr_fast(x, y).correlation_xy
+
+
+def u_distance_stats_sqr(x, y):
+    '''
+    Computes the unbiased estimators for the squared distance covariance
+    and squared distance correlation between two random vectors, and the
+    individual squared distance variances.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    Stats
+        Squared distance covariance, squared distance correlation,
+        squared distance variance of the first random vector and
+        squared distance variance of the second random vector.
+
+    See Also
+    --------
+    u_distance_covariance_sqr
+    u_distance_correlation_sqr
+
+    Notes
+    -----
+    It is less efficient to compute the statistics separately, rather than
+    using this function, because some computations can be shared.
+
+    The algorithm uses the fast distance covariance algorithm proposed in
+    :cite:`fast_distance_correlation` when possible.
+
+    '''
+    if _can_use_u_fast_algorithm(x, y):
+        return _u_distance_stats_sqr_fast(x, y)
+    else:
+        return _distance_sqr_stats_naive_generic(
+            x, y,
+            matrices=_u_distance_matrices,
+            product=u_product)
+
+
+def u_distance_covariance_sqr(x, y):
+    '''
+    Computes the unbiased estimator for the squared distance covariance
+    between two random vectors.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    (1, 1) ndarray
+        Unbiased estimator of the squared distance covariance.
+
+    See Also
+    --------
+    distance_covariance
+    distance_covariance_sqr
+
+    Notes
+    -----
+    The algorithm uses the fast distance covariance algorithm proposed in
+    :cite:`fast_distance_correlation` when possible.
+
+    '''
+
+    if _can_use_u_fast_algorithm(x, y):
+        return _u_distance_covariance_sqr_fast(x, y)
+    else:
+        return _u_distance_covariance_sqr_naive(x, y)
+
+
+def u_distance_correlation_sqr(x, y):
+    '''
+    Computes the bias-corrected estimator for the squared distance correlation
+    between two random vectors.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    (1, 1) ndarray
+        Bias-corrected estimator of the squared distance correlation.
+
+    See Also
+    --------
+    distance_correlation
+    distance_correlation_sqr
+
+    Notes
+    -----
+    The algorithm uses the fast distance covariance algorithm proposed in
+    :cite:`fast_distance_correlation` when possible.
+    '''
+
+    if _can_use_u_fast_algorithm(x, y):
+        return _u_distance_correlation_sqr_fast(x, y)
+    else:
+        return _u_distance_correlation_sqr_naive(x, y)

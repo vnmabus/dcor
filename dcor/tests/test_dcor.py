@@ -5,7 +5,7 @@ Created on 10 de ene. de 2017
 '''
 import unittest
 
-import dcor as dc
+import dcor.dcor as dc
 import numpy as np
 
 
@@ -43,7 +43,7 @@ class TestDistanceCorrelation(unittest.TestCase):
         Y = [1, 2, 3]
         C = [4, 5, 6]
 
-        gamma = dc.dyad_update(Y, C)
+        gamma = dc._dyad_update(Y, C)
         expected_gamma = [0., 4., 9.]
 
         np.testing.assert_allclose(gamma, expected_gamma)
@@ -53,7 +53,7 @@ class TestDistanceCorrelation(unittest.TestCase):
         Y = [4, 5, 6]
         C = [7, 8, 9]
 
-        gamma = dc.partial_sum_2d(X, Y, C)
+        gamma = dc._partial_sum_2d(X, Y, C)
         expected_gamma = [17., 16., 15.]
 
         np.testing.assert_allclose(gamma, expected_gamma)
@@ -64,19 +64,19 @@ class TestDistanceCorrelation(unittest.TestCase):
         matrix3 = np.array(((1, 1, 1), (2, 1, 1), (1, 1, 1)))
         constant_matrix = np.ones((3, 3))
 
-        correlation = dc.distance_correlation_sqr_naive(
+        correlation = dc.distance_correlation_sqr(
             matrix1, matrix1)
         self.assertAlmostEqual(correlation, 1)
 
-        correlation = dc.distance_correlation_sqr_naive(
+        correlation = dc.distance_correlation_sqr(
             matrix1, constant_matrix)
         self.assertAlmostEqual(correlation, 0)
 
-        correlation = dc.distance_correlation_sqr_naive(
+        correlation = dc.distance_correlation_sqr(
             matrix1, matrix2)
         self.assertAlmostEqual(correlation, 0.93387, places=5)
 
-        correlation = dc.distance_correlation_sqr_naive(
+        correlation = dc.distance_correlation_sqr(
             matrix1, matrix3)
         self.assertAlmostEqual(correlation, 0.31623, places=5)
 
@@ -85,19 +85,19 @@ class TestDistanceCorrelation(unittest.TestCase):
         arr1 = np.array(((1,), (2,), (3,), (4,), (5,), (6,)))
         arr2 = np.array(((1,), (7,), (5,), (5,), (6,), (2,)))
 
-        covariance = dc.u_distance_covariance_sqr_fast(
+        covariance = dc._u_distance_covariance_sqr_fast(
             arr1, arr2)
         self.assertAlmostEqual(covariance, -0.88889, places=5)
 
-        correlation = dc.u_distance_correlation_sqr_fast(
+        correlation = dc._u_distance_correlation_sqr_fast(
             arr1, arr2)
         self.assertAlmostEqual(correlation, -0.41613, places=5)
 
-        covariance = dc.u_distance_covariance_sqr_fast(
+        covariance = dc._u_distance_covariance_sqr_fast(
             arr1, arr1)
         self.assertAlmostEqual(covariance, 1.5556, places=4)
 
-        correlation = dc.u_distance_correlation_sqr_fast(
+        correlation = dc._u_distance_correlation_sqr_fast(
             arr1, arr1)
         self.assertAlmostEqual(correlation, 1, places=5)
 
@@ -106,8 +106,8 @@ class TestDistanceCorrelation(unittest.TestCase):
             arr1 = np.random.rand(i, 1)
             arr2 = np.random.rand(i, 1)
 
-            u_stat = dc.u_distance_correlation_sqr_naive(arr1, arr2)
-            u_stat_fast = dc.u_distance_correlation_sqr_fast(arr1, arr2)
+            u_stat = dc._u_distance_correlation_sqr_naive(arr1, arr2)
+            u_stat_fast = dc._u_distance_correlation_sqr_fast(arr1, arr2)
 
             self.assertAlmostEqual(u_stat, u_stat_fast)
 
