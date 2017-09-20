@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 '''
 Created on 13 sept. 2017
 
