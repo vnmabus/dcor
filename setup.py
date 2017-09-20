@@ -14,4 +14,7 @@ setup(name='dcor',
       author_email='vnmabus@gmail.com',
       license='MIT',
       packages=['dcor'],
+      setup_requires=['pytest-runner'],
+      tests_require=['pytest'],
+      test_suite='dcor.tests',
       zip_safe=False)

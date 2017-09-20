@@ -40,8 +40,8 @@ class TestDistanceCorrelation(unittest.TestCase):
         self.assertAlmostEqual(result, 0)
 
     def test_dyad_update(self):
-        Y = [1, 2, 3]
-        C = [4, 5, 6]
+        Y = np.array([1, 2, 3])
+        C = np.array([4, 5, 6])
 
         gamma = dc._dyad_update(Y, C)
         expected_gamma = [0., 4., 9.]

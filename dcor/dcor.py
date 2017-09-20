@@ -456,16 +456,13 @@ def _can_use_u_fast_algorithm(x, y):
 
 
 @numba.jit
-def _dyad_update(Y, C):
+def _dyad_update(y, c):
 
-    Y = np.asarray(Y)
-    C = np.asarray(C)
-
-    n = Y.shape[0]
+    n = y.shape[0]
     gamma = np.zeros(n)
 
     # Step 1: get the smallest L such that n <= 2^L
-    L = int(math.ceil(math.log(n, 2)))
+    L = int(math.ceil(np.log2(n)))
 
     # Step 2: assign s(l, k) = 0
     S_len = 2 ** (L + 1)
@@ -480,17 +477,17 @@ def _dyad_update(Y, C):
 
         # Step 3.a: update s(l, k)
         for l in range(L):
-            k = int(math.ceil(Y[i - 1] / 2 ** l))
+            k = int(math.ceil(y[i - 1] / 2 ** l))
             pos = k - 1
 
             if l > 0:
                 pos += pos_sums[l - 1]
 
-            S[pos] += C[i - 1]
+            S[pos] += c[i - 1]
 
         # Steps 3.b and 3.c
         for l in range(L):
-            k = int(math.floor((Y[i] - 1) / 2 ** l))
+            k = int(math.floor((y[i] - 1) / 2 ** l))
             if k / 2 > math.floor(k / 2):
                 pos = k - 1
                 if l > 0:
@@ -536,6 +533,8 @@ def _partial_sum_2d(x, y, c):
     c_dot = np.sum(c)
 
     # Step 6
+    y = np.asarray(y)
+    c = np.asarray(c)
     gamma1 = _dyad_update(y, c)
 
     # Step 7
