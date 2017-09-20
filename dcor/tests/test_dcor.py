@@ -1,8 +1,3 @@
-'''
-Created on 10 de ene. de 2017
-
-@author: Carlos Ramos Carreño
-'''
 import unittest
 
 import dcor.dcor as dc
