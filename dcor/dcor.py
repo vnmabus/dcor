@@ -1,6 +1,6 @@
 '''
-    This module contains functions to compute statistics related to the distance
-    covariance and distance correlation :cite:`distance_correlation`.
+    This module contains functions to compute statistics related to the
+    distance covariance and distance correlation :cite:`distance_correlation`.
 
     References
     ----------
