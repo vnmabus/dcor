@@ -53,6 +53,20 @@ def double_centered(a):
     --------
     u_centered
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2], [3, 4]])
+    >>> dcor.double_centered(a)
+    array([[ 0.,  0.],
+           [ 0.,  0.]])
+    >>> b = np.array([[1, 2, 3], [2, 4, 5], [3, 5, 6]])
+    >>> dcor.double_centered(b)
+    array([[ 0.44444444, -0.22222222, -0.22222222],
+           [-0.22222222,  0.11111111,  0.11111111],
+           [-0.22222222,  0.11111111,  0.11111111]])
+
     '''
 
     dim = np.size(a, 0)
@@ -99,14 +113,30 @@ def u_centered(a):
     --------
     double_centered
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3], [2, 4, 5], [3, 5, 6]])
+    >>> dcor.u_centered(a)
+    array([[ 0. ,  0.5, -1.5],
+           [ 0.5,  0. , -4.5],
+           [-1.5, -4.5,  0. ]])
+
+    Note that when the matrix is 1x1 or 2x2, the formula performs
+    a division by 0
+
+    >>> import warnings
+    >>> b = np.array([[1, 2], [3, 4]])
+    >>> with warnings.catch_warnings():
+    ...     warnings.simplefilter("ignore")
+    ...     dcor.u_centered(b)
+    array([[  0.,  nan],
+           [ nan,   0.]])
+
     '''
 
     dim = np.size(a, 0)
-
-    if dim <= 2:
-        raise ValueError(
-            "Expected dimension of the matrix > 2 and found {dim}".format(
-                dim=dim))
 
     u_mu = np.sum(a) / ((dim - 1) * (dim - 2))
     sum_cols = np.sum(a, 0, keepdims=True)
@@ -125,7 +155,7 @@ def u_centered(a):
 def average_product(a, b):
     '''
     Computes the average of the elements for an element-wise product of two
-    matrices
+    matrices. If the matrices are square it is
 
     .. math::
         \\frac{1}{n^2} \\sum_{i,j=1}^n a_{i, j} b_{i, j}.
@@ -145,6 +175,24 @@ def average_product(a, b):
     See Also
     --------
     u_product
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 4], [1, 2, 4], [1, 2, 4]])
+    >>> b = np.array([[1, .5, .25], [1, .5, .25], [1, .5, .25]])
+    >>> dcor.average_product(a, b)
+    1.0
+    >>> dcor.average_product(a, a)
+    7.0
+
+    If the matrices involved are not square, but have the same dimensions,
+    the average of the product is still well defined
+
+    >>> c = np.array([[1, 2], [1, 2], [1, 2]])
+    >>> dcor.average_product(c, c)
+    2.5
     '''
 
     return np.mean(a * b)
@@ -173,13 +221,43 @@ def u_product(a, b):
     See Also
     --------
     average_product
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [2, 5, 6, 7],
+    ...               [3, 6, 8, 9],
+    ...               [4, 7, 9, 10]])
+    >>> u_a = dcor.u_centered(a)
+    >>> u_a
+    array([[ 0.        ,  1.33333333, -0.66666667, -1.66666667],
+           [ 1.33333333,  0.        , -2.66666667, -3.66666667],
+           [-0.66666667, -2.66666667,  0.        , -4.66666667],
+           [-1.66666667, -3.66666667, -4.66666667,  0.        ]])
+    >>> dcor.u_product(u_a, u_a)
+    23.666666666666657
+
+    Note that the formula is well defined as long as the matrices involved
+    are square and have the same dimensions, even if they are not in the
+    Hilbert space of U-centered distance matrices
+
+    >>> dcor.u_product(a, a)
+    145.0
+
+    Also the formula produces a division by 0 for 3x3 matrices
+
+    >>> import warnings
+    >>> b = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    >>> with warnings.catch_warnings():
+    ...     warnings.simplefilter("ignore")
+    ...     dcor.u_product(b, b)
+    inf
+
     '''
 
     n = np.size(a, 0)
-    if n <= 3:
-        raise ValueError(
-            "Expected dimension of the matrix > 3 and found {dim}".format(
-                dim=n))
 
     return np.sum(a * b) / (n * (n - 3))
 
@@ -271,6 +349,23 @@ def distance_covariance_sqr(x, y):
     --------
     distance_covariance
     u_distance_covariance_sqr
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1], [0], [0], [1]])
+    >>> dcor.distance_covariance_sqr(a, a)
+    52.0
+    >>> dcor.distance_covariance_sqr(a, b)
+    1.0
+    >>> dcor.distance_covariance_sqr(b, b)
+    0.25
+
     '''
 
     a, b = _distance_matrices(x, y)
@@ -301,6 +396,22 @@ def distance_covariance(x, y):
     --------
     distance_covariance_sqr
     u_distance_covariance_sqr
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1], [0], [0], [1]])
+    >>> dcor.distance_covariance(a, a)
+    7.2111025509279782
+    >>> dcor.distance_covariance(a, b)
+    1.0
+    >>> dcor.distance_covariance(b, b)
+    0.5
     '''
     return np.sqrt(distance_covariance_sqr(x, y))
 
@@ -359,6 +470,26 @@ def distance_stats_sqr(x, y):
     -----
     It is less efficient to compute the statistics separately, rather than
     using this function, because some computations can be shared.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1], [0], [0], [1]])
+    >>> dcor.distance_stats_sqr(a, a)
+    Stats(covariance_xy=52.0, correlation_xy=1.0, variance_x=52.0, \
+variance_y=52.0)
+    >>> dcor.distance_stats_sqr(a, b)
+    Stats(covariance_xy=1.0, correlation_xy=0.27735009811261457, \
+variance_x=52.0, variance_y=0.25)
+    >>> dcor.distance_stats_sqr(b, b)
+    Stats(covariance_xy=0.25, correlation_xy=1.0, variance_x=0.25, \
+variance_y=0.25)
+
     '''
 
     return _distance_sqr_stats_naive_generic(
@@ -398,6 +529,25 @@ def distance_stats(x, y):
     -----
     It is less efficient to compute the statistics separately, rather than
     using this function, because some computations can be shared.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1], [0], [0], [1]])
+    >>> dcor.distance_stats(a, a)
+    Stats(covariance_xy=7.2111025509279782, correlation_xy=1.0, \
+variance_x=7.2111025509279782, variance_y=7.2111025509279782)
+    >>> dcor.distance_stats(a, b)
+    Stats(covariance_xy=1.0, correlation_xy=0.52664038784792666, \
+variance_x=7.2111025509279782, variance_y=0.5)
+    >>> dcor.distance_stats(b, b)
+    Stats(covariance_xy=0.5, correlation_xy=1.0, variance_x=0.5, \
+variance_y=0.5)
     '''
 
     return Stats(*[np.sqrt(s) for s in distance_stats_sqr(x, y)])
@@ -426,9 +576,69 @@ def distance_correlation_sqr(x, y):
     --------
     distance_correlation
     u_distance_correlation_sqr
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1], [0], [0], [1]])
+    >>> dcor.distance_correlation_sqr(a, a)
+    1.0
+    >>> dcor.distance_correlation_sqr(a, b)
+    0.27735009811261457
+    >>> dcor.distance_correlation_sqr(b, b)
+    1.0
     '''
 
     return distance_stats_sqr(x, y).correlation_xy
+
+
+def distance_correlation(x, y):
+    '''
+    Computes the usual (biased) estimator for the distance correlation
+    between two random vectors.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    (1, 1) ndarray
+        Biased estimator of the distance correlation.
+
+    See Also
+    --------
+    distance_correlation_sqr
+    u_distance_correlation_sqr
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1], [0], [0], [1]])
+    >>> dcor.distance_correlation(a, a)
+    1.0
+    >>> dcor.distance_correlation(a, b)
+    0.52664038784792666
+    >>> dcor.distance_correlation(b, b)
+    1.0
+    '''
+
+    return distance_stats(x, y).correlation_xy
 
 
 def _u_distance_correlation_sqr_naive(x, y):
@@ -680,6 +890,25 @@ def u_distance_stats_sqr(x, y):
     The algorithm uses the fast distance covariance algorithm proposed in
     :cite:`fast_distance_correlation` when possible.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1], [0], [0], [1]])
+    >>> dcor.u_distance_stats_sqr(a, a)
+    Stats(covariance_xy=42.666666666666671, correlation_xy=1.0, \
+variance_x=42.666666666666671, variance_y=42.666666666666671)
+    >>> dcor.u_distance_stats_sqr(a, b)
+    Stats(covariance_xy=-2.666666666666667, correlation_xy=-0.5, \
+variance_x=42.666666666666671, variance_y=0.66666666666666663)
+    >>> dcor.u_distance_stats_sqr(b, b)
+    Stats(covariance_xy=0.66666666666666652, correlation_xy=1.0, \
+variance_x=0.66666666666666652, variance_y=0.66666666666666652)
+
     '''
     if _can_use_u_fast_algorithm(x, y):
         return _u_distance_stats_sqr_fast(x, y)
@@ -719,6 +948,21 @@ def u_distance_covariance_sqr(x, y):
     The algorithm uses the fast distance covariance algorithm proposed in
     :cite:`fast_distance_correlation` when possible.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1], [0], [0], [1]])
+    >>> dcor.u_distance_covariance_sqr(a, a)
+    42.666666666666671
+    >>> dcor.u_distance_covariance_sqr(a, b)
+    -2.666666666666667
+    >>> dcor.u_distance_covariance_sqr(b, b)
+    0.66666666666666652
     '''
 
     if _can_use_u_fast_algorithm(x, y):
@@ -755,6 +999,22 @@ def u_distance_correlation_sqr(x, y):
     -----
     The algorithm uses the fast distance covariance algorithm proposed in
     :cite:`fast_distance_correlation` when possible.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1], [0], [0], [1]])
+    >>> dcor.u_distance_correlation_sqr(a, a)
+    1.0
+    >>> dcor.u_distance_correlation_sqr(a, b)
+    -0.5
+    >>> dcor.u_distance_correlation_sqr(b, b)
+    1.0
     '''
 
     if _can_use_u_fast_algorithm(x, y):
