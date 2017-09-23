@@ -1,3 +1,4 @@
+import re
 import unittest
 
 import dcor
@@ -8,7 +9,8 @@ import numpy as np
 class TestVersion(unittest.TestCase):
 
     def test_version(self):
-        self.assertRegex(dcor.__version__, "\d+\.\d+(\.\d+)?")
+        regex = re.compile("\d+\.\d+(\.\d+)?")
+        self.assertTrue(regex.match(dcor.__version__))
 
 
 class TestDistanceCorrelation(unittest.TestCase):
