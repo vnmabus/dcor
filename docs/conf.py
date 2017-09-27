@@ -45,6 +45,7 @@ version = '.'.join(release.split('.')[:2])
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.autosummary',
               'sphinx.ext.todo',
               'sphinx.ext.viewcode',
               'sphinx.ext.napoleon',
@@ -94,6 +95,10 @@ pygments_style = 'sphinx'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+add_module_names = False
+
+autosummary_generate = True
 
 
 # -- Options for HTML output ----------------------------------------------

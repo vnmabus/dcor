@@ -1,10 +1,13 @@
 '''
     This module contains functions to compute statistics related to the
-    distance covariance and distance correlation :cite:`distance_correlation`.
+    distance covariance and distance correlation
+    :cite:`b-distance_correlation`.
 
     References
     ----------
     .. bibliography:: refs.bib
+       :labelprefix: B
+       :keyprefix: b-
 '''
 
 from __future__ import absolute_import, division, print_function
@@ -888,7 +891,7 @@ def u_distance_stats_sqr(x, y):
     using this function, because some computations can be shared.
 
     The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`fast_distance_correlation` when possible.
+    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -946,7 +949,7 @@ def u_distance_covariance_sqr(x, y):
     Notes
     -----
     The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`fast_distance_correlation` when possible.
+    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -998,7 +1001,7 @@ def u_distance_correlation_sqr(x, y):
     Notes
     -----
     The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`fast_distance_correlation` when possible.
+    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
