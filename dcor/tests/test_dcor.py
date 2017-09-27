@@ -11,6 +11,7 @@ class TestVersion(unittest.TestCase):
     def test_version(self):
         regex = re.compile("\d+\.\d+(\.\d+)?")
         self.assertTrue(regex.match(dcor.__version__))
+        self.assertNotEqual(dcor.__version__, "0.0")
 
 
 class TestDistanceCorrelation(unittest.TestCase):
