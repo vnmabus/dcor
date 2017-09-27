@@ -1,0 +1,4 @@
+include MANIFEST.in
+include VERSION
+include LICENSE
+include *.txt
