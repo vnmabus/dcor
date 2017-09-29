@@ -18,7 +18,13 @@ biased and unbiased estimators of both dependency measures.
 """
 
 import os
+import sys
+
 from setuptools import setup, find_packages
+
+
+needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
+pytest_runner = ['pytest-runner'] if needs_pytest else []
 
 DOCLINES = (__doc__ or '').split("\n")
 
@@ -30,7 +36,7 @@ setup(name='dcor',
       version=version,
       description=DOCLINES[0],
       long_description="\n".join(DOCLINES[2:]),
-      url='https://github.com/vnmabus/dcor',
+      url='https://dcor.readthedocs.io',
       author='Carlos Ramos Carreño',
       author_email='vnmabus@gmail.com',
       include_package_data=True,
@@ -57,7 +63,7 @@ setup(name='dcor',
                         'numba',
                         'scipy',
                         'setuptools'],
-      setup_requires=['pytest-runner'],
+      setup_requires=pytest_runner,
       tests_require=['pytest'],
       test_suite='dcor.tests',
       zip_safe=False)
