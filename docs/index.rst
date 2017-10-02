@@ -25,6 +25,7 @@ References
    :maxdepth: 4
    :caption: Contents:
 
+   installation
    theory
    apilist
    dcor
