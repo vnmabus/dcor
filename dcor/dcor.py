@@ -430,11 +430,14 @@ def _distance_sqr_stats_naive_generic(x, y, matrices, product):
     variance_y_sqr = product(b, b)
 
     denominator_sqr = variance_x_sqr * variance_y_sqr
+    denominator = math.sqrt(denominator_sqr)
 
-    if denominator_sqr < 1e-10:
-        correlation_xy_sqr = 0
+    # Comparisons using a tolerance can change results if the
+    # covariance has a similar order of magnitude
+    if denominator == 0.0:
+        correlation_xy_sqr = 0.0
     else:
-        correlation_xy_sqr = covariance_xy_sqr / math.sqrt(denominator_sqr)
+        correlation_xy_sqr = covariance_xy_sqr / denominator
 
     return Stats(covariance_xy=covariance_xy_sqr,
                  correlation_xy=correlation_xy_sqr,
@@ -837,13 +840,16 @@ def _u_distance_stats_sqr_fast(x, y):
     covariance_xy_sqr = _u_distance_covariance_sqr_fast(x, y)
     variance_x_sqr = _u_distance_covariance_sqr_fast(x, x)
     variance_y_sqr = _u_distance_covariance_sqr_fast(y, y)
-    denom_sqr_signed = variance_x_sqr * variance_y_sqr
-    denom_sqr = np.fabs(denom_sqr_signed)
+    denominator_sqr_signed = variance_x_sqr * variance_y_sqr
+    denominator_sqr = np.fabs(denominator_sqr_signed)
+    denominator = math.sqrt(denominator_sqr)
 
-    if denom_sqr < 1e-10:
-        correlation_xy_sqr = 0
+    # Comparisons using a tolerance can change results if the
+    # covariance has a similar order of magnitude
+    if denominator == 0.0:
+        correlation_xy_sqr = 0.0
     else:
-        correlation_xy_sqr = covariance_xy_sqr / math.sqrt(denom_sqr)
+        correlation_xy_sqr = covariance_xy_sqr / denominator
 
     return Stats(covariance_xy=covariance_xy_sqr,
                  correlation_xy=correlation_xy_sqr,
