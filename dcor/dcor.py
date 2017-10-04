@@ -659,6 +659,14 @@ def _u_distance_correlation_sqr_naive(x, y):
         product=u_product).correlation_xy
 
 
+def _is_random_variable(x):
+    '''
+    Check if the matrix x correspond to a random variable (it is a vector,
+    or a matrix corresponding to a column vector).
+    '''
+    return len(x.shape) == 1 or x.shape[1] == 1
+
+
 def _can_use_u_fast_algorithm(x, y):
     '''
     Returns a boolean indicating if the fast :math:`O(NlogN)` algorithm for
@@ -667,7 +675,8 @@ def _can_use_u_fast_algorithm(x, y):
     The algorithm can only be used for random variables (not vectors) where
     the number of instances is greater than 3.
     '''
-    return (x.shape[1] == 1 and y.shape[1] == 1 and
+
+    return (_is_random_variable(x) and _is_random_variable(y) and
             x.shape[0] > 3 and y.shape[0] > 3)
 
 
