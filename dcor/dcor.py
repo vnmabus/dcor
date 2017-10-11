@@ -203,8 +203,8 @@ def average_product(a, b):
 
 def u_product(a, b):
     '''
-    Computes the inner product in the Hilbert space of U-centered distance
-    matrices
+    Computes the inner product in the Hilbert space of :math:`U`-centered
+    distance matrices
 
     .. math::
         \\frac{1}{n(n-3)} \\sum_{i,j=1}^n a_{i, j} b_{i, j}
@@ -229,25 +229,37 @@ def u_product(a, b):
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [2, 5, 6, 7],
-    ...               [3, 6, 8, 9],
-    ...               [4, 7, 9, 10]])
+    >>> a = np.array([[  0.,   3.,  11.,   6.],
+    ...               [  3.,   0.,   8.,   3.],
+    ...               [ 11.,   8.,   0.,   5.],
+    ...               [  6.,   3.,   5.,   0.]])
+    >>> b = np.array([[  0.,  13.,  11.,   3.],
+    ...               [ 13.,   0.,   2.,  10.],
+    ...               [ 11.,   2.,   0.,   8.],
+    ...               [  3.,  10.,   8.,   0.]])
     >>> u_a = dcor.u_centered(a)
     >>> u_a
-    array([[ 0.        ,  1.33333333, -0.66666667, -1.66666667],
-           [ 1.33333333,  0.        , -2.66666667, -3.66666667],
-           [-0.66666667, -2.66666667,  0.        , -4.66666667],
-           [-1.66666667, -3.66666667, -4.66666667,  0.        ]])
+    array([[ 0., -2.,  1.,  1.],
+           [-2.,  0.,  1.,  1.],
+           [ 1.,  1.,  0., -2.],
+           [ 1.,  1., -2.,  0.]])
+    >>> u_b = dcor.u_centered(b)
+    >>> u_b
+    array([[ 0.        ,  2.66666667,  2.66666667, -5.33333333],
+           [ 2.66666667,  0.        , -5.33333333,  2.66666667],
+           [ 2.66666667, -5.33333333,  0.        ,  2.66666667],
+           [-5.33333333,  2.66666667,  2.66666667,  0.        ]])
     >>> dcor.u_product(u_a, u_a)
-    23.666666666666657
+    6.0
+    >>> dcor.u_product(u_a, u_b)
+    -8.0
 
     Note that the formula is well defined as long as the matrices involved
     are square and have the same dimensions, even if they are not in the
-    Hilbert space of U-centered distance matrices
+    Hilbert space of :math:`U`-centered distance matrices
 
     >>> dcor.u_product(a, a)
-    145.0
+    132.0
 
     Also the formula produces a division by 0 for 3x3 matrices
 
@@ -263,6 +275,185 @@ def u_product(a, b):
     n = np.size(a, 0)
 
     return np.sum(a * b) / (n * (n - 3))
+
+
+def u_projection(a):
+    '''
+    Returns a function computing the orthogonal projection over
+    :math:`a` in the Hilbert space of :math:`U`-centered distance
+    matrices.
+
+    The projection of a matrix :math:`B` over a matrix :math:`A`
+    is defined as
+
+    .. math::
+        \\text{proj}_A(B) = \\begin{cases}
+        \\frac{\\langle A, B \\rangle}{\\langle A, A \\rangle} A,
+        & \\text{if} \\langle A, A \\rangle \\neq 0, \\\\
+        0, & \\text{if} \\langle A, A \\rangle = 0.
+        \\end{cases}
+
+    where :math:`\\langle {}\cdot{}, {}\cdot{} \\rangle` is the scalar
+    product in the Hilbert space of :math:`U`-centered distance
+    matrices, given by the function :py:func:`u_product`.
+
+    Parameters
+    ----------
+    a: array_like
+        :math:`U`-centered distance matrix.
+
+    Returns
+    -------
+    callable
+        Function that receives a :math:`U`-centered distance matrix and
+        computes its orthogonal projection over :math:`a`.
+
+    See Also
+    --------
+    u_complementary_projection
+    u_centered
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[  0.,   3.,  11.,   6.],
+    ...               [  3.,   0.,   8.,   3.],
+    ...               [ 11.,   8.,   0.,   5.],
+    ...               [  6.,   3.,   5.,   0.]])
+    >>> b = np.array([[  0.,  13.,  11.,   3.],
+    ...               [ 13.,   0.,   2.,  10.],
+    ...               [ 11.,   2.,   0.,   8.],
+    ...               [  3.,  10.,   8.,   0.]])
+    >>> u_a = dcor.u_centered(a)
+    >>> u_a
+    array([[ 0., -2.,  1.,  1.],
+           [-2.,  0.,  1.,  1.],
+           [ 1.,  1.,  0., -2.],
+           [ 1.,  1., -2.,  0.]])
+    >>> u_b = dcor.u_centered(b)
+    >>> u_b
+    array([[ 0.        ,  2.66666667,  2.66666667, -5.33333333],
+           [ 2.66666667,  0.        , -5.33333333,  2.66666667],
+           [ 2.66666667, -5.33333333,  0.        ,  2.66666667],
+           [-5.33333333,  2.66666667,  2.66666667,  0.        ]])
+    >>> proj_a = dcor.u_projection(u_a)
+    >>> proj_a(u_a)
+    array([[ 0., -2.,  1.,  1.],
+           [-2.,  0.,  1.,  1.],
+           [ 1.,  1.,  0., -2.],
+           [ 1.,  1., -2.,  0.]])
+    >>> proj_a(u_b)
+    array([[-0.        ,  2.66666667, -1.33333333, -1.33333333],
+           [ 2.66666667, -0.        , -1.33333333, -1.33333333],
+           [-1.33333333, -1.33333333, -0.        ,  2.66666667],
+           [-1.33333333, -1.33333333,  2.66666667, -0.        ]])
+
+    The function gives the correct result if
+    :math:`\\langle A, A \\rangle = 0`.
+
+    >>> proj_null = dcor.u_projection(np.zeros((4, 4)))
+    >>> proj_null(u_a)
+    array([[ 0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.]])
+    '''
+
+    c = a
+    denominator = u_product(c, c)
+
+    if denominator == 0:
+        def projection(a):
+            return np.zeros_like(c)
+    else:
+        def projection(a):
+            return u_product(a, c) / denominator * c
+
+    return projection
+
+
+def u_complementary_projection(a):
+    '''
+    Returns a function computing the orthogonal projection over
+    :math:`a^{\perp}` (the complementary projection over a)
+    in the Hilbert space of :math:`U`-centered distance matrices.
+
+    The projection of a matrix :math:`B` over a matrix :math:`A^{\perp}`
+    is defined as
+
+    .. math::
+        \\text{proj}_{A^{\perp}}(B) = B - \\text{proj}_A(B)
+
+    Parameters
+    ----------
+    a: array_like
+        :math:`U`-centered distance matrix.
+
+    Returns
+    -------
+    callable
+        Function that receives a :math:`U`-centered distance matrices
+        and computes its orthogonal projection over :math:`a^{\perp}`.
+
+    See Also
+    --------
+    u_projection
+    u_centered
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[  0.,   3.,  11.,   6.],
+    ...               [  3.,   0.,   8.,   3.],
+    ...               [ 11.,   8.,   0.,   5.],
+    ...               [  6.,   3.,   5.,   0.]])
+    >>> b = np.array([[  0.,  13.,  11.,   3.],
+    ...               [ 13.,   0.,   2.,  10.],
+    ...               [ 11.,   2.,   0.,   8.],
+    ...               [  3.,  10.,   8.,   0.]])
+    >>> u_a = dcor.u_centered(a)
+    >>> u_a
+    array([[ 0., -2.,  1.,  1.],
+           [-2.,  0.,  1.,  1.],
+           [ 1.,  1.,  0., -2.],
+           [ 1.,  1., -2.,  0.]])
+    >>> u_b = dcor.u_centered(b)
+    >>> u_b
+    array([[ 0.        ,  2.66666667,  2.66666667, -5.33333333],
+           [ 2.66666667,  0.        , -5.33333333,  2.66666667],
+           [ 2.66666667, -5.33333333,  0.        ,  2.66666667],
+           [-5.33333333,  2.66666667,  2.66666667,  0.        ]])
+    >>> proj_a = dcor.u_complementary_projection(u_a)
+    >>> proj_a(u_a)
+    array([[ 0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.]])
+    >>> proj_a(u_b)
+    array([[  0.00000000e+00,  -4.44089210e-16,   4.00000000e+00,
+             -4.00000000e+00],
+           [ -4.44089210e-16,   0.00000000e+00,  -4.00000000e+00,
+              4.00000000e+00],
+           [  4.00000000e+00,  -4.00000000e+00,   0.00000000e+00,
+             -4.44089210e-16],
+           [ -4.00000000e+00,   4.00000000e+00,  -4.44089210e-16,
+              0.00000000e+00]])
+    >>> proj_null = dcor.u_complementary_projection(np.zeros((4, 4)))
+    >>> proj_null(u_a)
+    array([[ 0., -2.,  1.,  1.],
+           [-2.,  0.,  1.,  1.],
+           [ 1.,  1.,  0., -2.],
+           [ 1.,  1., -2.,  0.]])
+    '''
+
+    proj = u_projection(a)
+
+    def projection(a):
+        return a - proj(a)
+
+    return projection
 
 
 def _transform_to_2d(t):
@@ -312,7 +503,7 @@ def _distance_matrices(x, y):
 
 def _u_distance_matrices(x, y):
     '''
-    Computes the u-centered distance matrices given two matrices.
+    Computes the :math:`U`-centered distance matrices given two matrices.
     '''
 
     return _distance_matrices_generic(x, y, centering=u_centered)
@@ -1039,3 +1230,5 @@ def u_distance_correlation_sqr(x, y):
         return _u_distance_correlation_sqr_fast(x, y)
     else:
         return _u_distance_correlation_sqr_naive(x, y)
+
+

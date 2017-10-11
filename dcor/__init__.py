@@ -3,6 +3,8 @@ import os as _os
 
 from .dcor import (double_centered, u_centered,
                    average_product, u_product,
+                   u_projection,
+                   u_complementary_projection,
                    distance_covariance_sqr, distance_covariance,
                    distance_correlation_sqr, distance_correlation,
                    distance_stats_sqr, distance_stats,
