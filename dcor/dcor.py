@@ -1232,7 +1232,7 @@ def u_distance_correlation_sqr(x, y):
 
 def partial_distance_covariance(x, y, z):
     '''
-    Computes the partial distance covariance of the random variables
+    Computes the partial distance covariance of the random vectors
     corresponding to :math:`x` and :math:`y` with respect to the random
     variable corresponding to :math:`z`.
 
@@ -1271,12 +1271,12 @@ def partial_distance_covariance(x, y, z):
     ...               [5, 7, 8],
     ...               [9, 11, 15],
     ...               [13, 15, 16]])
-    >>> dcor.partial_distance_covariance(a, a, c)
-    0.0024298630969951419
+    >>> dcor.partial_distance_covariance(a, a, c) # doctest: +ELLIPSIS
+    0.0024298...
     >>> dcor.partial_distance_covariance(a, b, c)
-    0.034703009230402419
+    0.0347030...
     >>> dcor.partial_distance_covariance(b, b, c)
-    0.49562415723530917
+    0.4956241...
     '''
 
     a = _u_distance_matrix(x)
@@ -1290,7 +1290,7 @@ def partial_distance_covariance(x, y, z):
 
 def partial_distance_correlation(x, y, z):
     '''
-    Computes the partial distance correlation of the random variables
+    Computes the partial distance correlation of the random vectors
     corresponding to :math:`x` and :math:`y` with respect to the random
     variable corresponding to :math:`z`.
 

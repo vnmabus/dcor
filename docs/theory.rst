@@ -5,8 +5,8 @@ This section provides an explanation of the distance measures provided by this p
 (distance covariance and distance correlation). The package can be used without a deep
 understanding of the mathematics involved, so feel free to skip this chapter.
 
-Definition of distance covariance and distance correlation
-----------------------------------------------------------
+Distance covariance and distance correlation
+--------------------------------------------
 
 Distance covariance and distance correlation are recently introduced dependency
 measures between random vectors :cite:`c-distance_correlation`. Let :math:`X` and :math:`Y` be
@@ -39,7 +39,7 @@ correlation :math:`\mathcal{R}(X, Y)`, or :math:`\text{dCor}(X, Y)`, is defined 
    \end{cases}
 
 Properties
-----------
+^^^^^^^^^^
 
 The distance covariance has the following properties:
 
@@ -65,12 +65,13 @@ The distance correlation has the following properties:
     \mathbf{a} + b\mathbf{C}X`.
   
 Estimators
-----------
+^^^^^^^^^^
 
 Distance covariance has an estimator with a simple form. Suppose that we have
-:math:`n` observations of :math:`X` and :math:`Y`. We denote as :math:`X_i` the 
-:math:`i`-th observation of :math:`X`, and :math:`Y_i` the :math:`i`-th observation of
-:math:`Y`. If we define :math:`a_{ij} = | X_i - X_j |_p` and :math:`b_{ij} = | Y_i - Y_j |_q`,
+:math:`n` observations of :math:`X` and :math:`Y`, denoted by :math:`x` and :math:`y`. 
+We denote as :math:`x_i` the 
+:math:`i`-th observation of :math:`x`, and :math:`y_i` the :math:`i`-th observation of
+:math:`y`. If we define :math:`a_{ij} = | x_i - x_j |_p` and :math:`b_{ij} = | y_i - y_j |_q`,
 the corresponding double centered matrices are defined by :math:`(A_{i, j})_{i,j=1}^n`
 and :math:`(B_{i, j})_{i,j=1}^n`
 
@@ -83,30 +84,32 @@ and :math:`(B_{i, j})_{i,j=1}^n`
 Then
 
 .. math::
-   \mathcal{V}_n^2(X, Y) = \frac{1}{n^2} \sum_{i,j=1}^n A_{i, j} B_{i, j}
+   \mathcal{V}_n^2(x, y) = \frac{1}{n^2} \sum_{i,j=1}^n A_{i, j} B_{i, j}
 
 is called the squared sample distance covariance, and it is an estimator of
-:math:`\mathcal{V}^2(X, Y)`. The sample distance correlation :math:`\mathcal{R}_n(X, Y)`
+:math:`\mathcal{V}^2(X, Y)`. The sample distance correlation :math:`\mathcal{R}_n(x, y)`
 can be obtained as the standardized sample covariance 
 
 .. math::
-   \mathcal{R}_n^2(X, Y) = \begin{cases}
-   \frac{\mathcal{V}_n^2(X, Y)}{\mathcal{V}_n^2(X, X)\mathcal{V}_n^2(Y, Y)},
-   &\text{ if $\mathcal{V}_n^2(X, X)\mathcal{V}_n^2(Y, Y) > 0$}, \\
-   0, &\text{ if $\mathcal{V}_n^2(X, X)\mathcal{V}_n^2(Y, Y) = 0$.}
+   \mathcal{R}_n^2(x, y) = \begin{cases}
+   \frac{\mathcal{V}_n^2(x, y)}{\mathcal{V}_n^2(x, x)\mathcal{V}_n^2(y, y)},
+   &\text{ if $\mathcal{V}_n^2(x, x)\mathcal{V}_n^2(y, y) > 0$}, \\
+   0, &\text{ if $\mathcal{V}_n^2(x, x)\mathcal{V}_n^2(y, y) = 0$.}
    \end{cases}
 
 These estimators have the following properties:
 
-* :math:`\mathcal{V}_n^2(X, Y) \geq 0`
-* :math:`0 \leq \mathcal{R}_n^2(X, Y) \leq 1`
+* :math:`\mathcal{V}_n^2(x, y) \geq 0`
+* :math:`0 \leq \mathcal{R}_n^2(x, y) \leq 1`
 
-In a similar way one can define an unbiased estimator :math:`\Omega_n(X, Y)` of the
+In a similar way one can define an unbiased estimator :math:`\Omega_n(x, y)` of the
 squared distance covariance :math:`\mathcal{V}^2(X, Y)`. Given the
 previous definitions of :math:`a_{ij}` and :math:`b_{ij}`, we define the :math:`U`-centered
 matrices :math:`(\widetilde{A}_{i, j})_{i,j=1}^n` and :math:`(\widetilde{B}_{i, j})_{i,j=1}^n`
 
 .. math::
+   :label: ucentering
+   
    \widetilde{A}_{i, j} &= \begin{cases} a_{i,j} - \frac{1}{n-2} \sum_{l=1}^n a_{il} -
    \frac{1}{n-2} \sum_{k=1}^n a_{kj} + \frac{1}{(n-1)(n-2)}\sum_{k=1}^n a_{kj}, &\text{if } i \neq j, \\
    0, &\text{if } i = j,
@@ -116,19 +119,97 @@ matrices :math:`(\widetilde{A}_{i, j})_{i,j=1}^n` and :math:`(\widetilde{B}_{i, 
    0, &\text{if } i = j.
    \end{cases}
 
-Then, :math:`\Omega_n(X, Y)` is defined as
+Then, :math:`\Omega_n(x, y)` is defined as
 
 .. math::
-   \Omega_n(X, Y) = \frac{1}{n(n-3)} \sum_{i,j=1}^n \widetilde{A}_{i, j}
+   \Omega_n(x, y) = \frac{1}{n(n-3)} \sum_{i,j=1}^n \widetilde{A}_{i, j}
    \widetilde{B}_{i, j}.
 
-We can also obtain an estimator of :math:`\mathcal{R}^2(X, Y)` using :math:`\Omega_n(X, Y)`,
-as we did with :math:`\mathcal{V}_n^2(X, Y)`. :math:`\Omega_n(X, Y)` does not verify that
-:math:`\Omega_n(X, Y) \geq 0`, because sometimes could take negative values near :math:`0`.
-There is an algorithm that can compute :math:`\Omega_n(X, Y)` for random variables
+We can also obtain an estimator of :math:`\mathcal{R}^2(X, Y)` using :math:`\Omega_n(x, y)`,
+as we did with :math:`\mathcal{V}_n^2(x, y)`. :math:`\Omega_n(x, y)` does not verify that
+:math:`\Omega_n(x, y) \geq 0`, because sometimes could take negative values near :math:`0`.
+There is an algorithm that can compute :math:`\Omega_n(x, y)` for random variables
 with :math:`O(n\log n)` complexity :cite:`c-fast_distance_correlation`. Since
 the estimator formulas explained above have complexity :math:`O(n^2)`, this
 improvement is significant, specially for larger samples.
+
+Partial distance covariance and partial distance correlation
+------------------------------------------------------------
+
+Partial distance covariance and partial distance correlation are dependency measures
+between random vectors, based on distance covariance and distance correlation, in with
+the effect of a random vector is removed :cite:`c-partial_distance_correlation`. 
+The population partial distance covariance :math:`\mathcal{V}^{*}(X, Y; Z)`, or
+:math:`\text{pdCov}^{*}(X, Y; Z)`, between two random vectors :math:`X` and 
+:math:`Y` with respect to a random vector :math:`Z` is
+
+.. math::
+   \mathcal{V}^{*}(X, Y; Z) = \begin{cases}
+   \mathcal{V}^2(X, Y) - 
+   \frac{\mathcal{V}^2(X, Z)\mathcal{V}^2(Y, Z)}{\mathcal{V}^2(Z, Z)} & \text{if } 
+   \mathcal{V}^2(Z, Z) \neq 0 \\
+   \mathcal{V}^2(X, Y) & \text{if } 
+   \mathcal{V}^2(Z, Z) = 0
+   \end{cases}
+   
+where :math:`\mathcal{V}^2({}\cdot{}, {}\cdot{})` is the squared distance covariance.
+   
+The corresponding partial distance correlation :math:`\mathcal{R}^{*}(X, Y; Z)`, or
+:math:`\text{pdCor}^{*}(X, Y; Z)`, is
+
+.. math::
+   \mathcal{R}^{*}(X, Y; Z) = \begin{cases}
+   \frac{\mathcal{R}^2(X, Y) - 
+   \mathcal{R}^2(X, Z)\mathcal{R}^2(Y, Z)}{\sqrt{1 - \mathcal{R}^4(X, Z)}\sqrt{1 - \mathcal{R}^4(Y, Z)}} 
+   & \text{if } \mathcal{R}^4(X, Z) \neq 1 \text{ and } \mathcal{R}^4(Y, Z) \neq 1 \\
+   0
+   & \text{if } \mathcal{R}^4(X, Z) = 1 \text{ or } \mathcal{R}^4(Y, Z) = 1
+   \end{cases}
+   
+where :math:`\mathcal{R}({}\cdot{}, {}\cdot{})` is the distance correlation.
+
+Estimators
+^^^^^^^^^^
+
+As in distance covariance and distance correlation, the :math:`U`-centered
+distance matrices :math:`\widetilde{A}_{i, j}`, :math:`\widetilde{B}_{i, j}` and 
+:math:`\widetilde{C}_{i, j}` corresponding with the samples :math:`x`, :math:`y` and
+:math:`z` taken from the random vectors :math:`X`, :math:`Y` and
+:math:`Z` can be computed using using :eq:`ucentering`.
+
+The set of all :math:`U`-centered distance matrices is a Hilbert space with the inner product
+
+.. math::
+   \langle \widetilde{A}, \widetilde{B} \rangle = \frac{1}{n(n-3)} \sum_{i,j=1}^n 
+   \widetilde{A}_{i, j} \widetilde{B}_{i, j}.
+   
+Then, the projection of a sample :math:`x` over :math:`z` can be taken in this
+Hilbert space using the associated matrices, as
+
+.. math::
+   P_z(x) = \frac{\langle \widetilde{A}, \widetilde{C} \rangle}{\langle \widetilde{C}, 
+   \widetilde{C} \rangle}\widetilde{C}.
+   
+The complementary projection is then
+
+.. math::
+   P_{z^{\perp}}(x) = \widetilde{A} - P_z(x) = \widetilde{A} - \frac{\langle \widetilde{A},
+   \widetilde{C} \rangle}{\langle \widetilde{C}, \widetilde{C} \rangle}\widetilde{C}.
+   
+We can now define the sample partial distance covariance as
+
+.. math::
+   \mathcal{V}_n^{*}(x, y; z) = \langle P_{z^{\perp}}(x), P_{z^{\perp}}(y) \rangle
+   
+The sample distance correlation is defined as the cosine of the angle between the vectors
+:math:`P_{z^{\perp}}(x)` and :math:`P_{z^{\perp}}(y)`
+
+.. math::
+   \mathcal{R}_n^{*}(x, y; z) = \begin{cases} 
+   \frac{\langle P_{z^{\perp}}(x), P_{z^{\perp}}(y) \rangle}{||P_{z^{\perp}}(x)||
+   ||P_{z^{\perp}}(y)||} & \text{if } ||P_{z^{\perp}}(x)|| ||P_{z^{\perp}}(y)|| \neq 0 \\
+   0 & \text{if } ||P_{z^{\perp}}(x)|| ||P_{z^{\perp}}(y)|| = 0 
+   \end{cases} 
 
 References
 ----------
