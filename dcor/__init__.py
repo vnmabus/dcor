@@ -10,7 +10,9 @@ from .dcor import (double_centered, u_centered,
                    distance_stats_sqr, distance_stats,
                    u_distance_covariance_sqr,
                    u_distance_correlation_sqr,
-                   u_distance_stats_sqr)
+                   u_distance_stats_sqr,
+                   partial_distance_covariance,
+                   partial_distance_correlation)
 
 
 try:

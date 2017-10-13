@@ -471,42 +471,36 @@ def _transform_to_2d(t):
     return t
 
 
-def _distance_matrices_generic(x, y, centering):
+def _distance_matrix_generic(x, centering):
     '''
-    Computes the double centered distance matrices given two matrices.
+    Computes a centered distance matrix given a matrix.
     '''
 
     x = _transform_to_2d(np.asfarray(x))
-    y = _transform_to_2d(np.asfarray(y))
-
-    n = x.shape[0]
-    assert n == y.shape[0]
 
     # Calculate distance matrices
     a = scipy.spatial.distance.cdist(x, x)
-    b = scipy.spatial.distance.cdist(y, y)
 
     # Double centering
     a = centering(a)
-    b = centering(b)
 
-    return a, b
+    return a
 
 
-def _distance_matrices(x, y):
+def _distance_matrix(x):
     '''
-    Computes the double centered distance matrices given two matrices.
+    Computes the double centered distance matrix given a matrix.
     '''
 
-    return _distance_matrices_generic(x, y, centering=double_centered)
+    return _distance_matrix_generic(x, centering=double_centered)
 
 
-def _u_distance_matrices(x, y):
+def _u_distance_matrix(x):
     '''
     Computes the :math:`U`-centered distance matrices given two matrices.
     '''
 
-    return _distance_matrices_generic(x, y, centering=u_centered)
+    return _distance_matrix_generic(x, centering=u_centered)
 
 
 def _u_distance_covariance_sqr_naive(x, y):
@@ -515,7 +509,8 @@ def _u_distance_covariance_sqr_naive(x, y):
     matrices, using an :math:`O(N^2)` algorithm.
     '''
 
-    a, b = _u_distance_matrices(x, y)
+    a = _u_distance_matrix(x)
+    b = _u_distance_matrix(y)
 
     return u_product(a, b)
 
@@ -562,7 +557,8 @@ def distance_covariance_sqr(x, y):
 
     '''
 
-    a, b = _distance_matrices(x, y)
+    a = _distance_matrix(x)
+    b = _distance_matrix(y)
 
     return average_product(a, b)
 
@@ -610,11 +606,12 @@ def distance_covariance(x, y):
     return np.sqrt(distance_covariance_sqr(x, y))
 
 
-def _distance_sqr_stats_naive_generic(x, y, matrices, product):
+def _distance_sqr_stats_naive_generic(x, y, matrix_centered, product):
     '''
     Compute generic squared stats.
     '''
-    a, b = matrices(x, y)
+    a = matrix_centered(x)
+    b = matrix_centered(y)
 
     covariance_xy_sqr = product(a, b)
     variance_x_sqr = product(a, a)
@@ -691,7 +688,7 @@ variance_y=0.25)
 
     return _distance_sqr_stats_naive_generic(
         x, y,
-        matrices=_distance_matrices,
+        matrix_centered=_distance_matrix,
         product=average_product)
 
 
@@ -767,7 +764,7 @@ def distance_correlation_sqr(x, y):
     Returns
     -------
     (1, 1) ndarray
-        Biased estimator of the squared distance correlation.
+        Value of the biased estimator of the squared distance correlation.
 
     See Also
     --------
@@ -811,7 +808,7 @@ def distance_correlation(x, y):
     Returns
     -------
     (1, 1) ndarray
-        Biased estimator of the distance correlation.
+        Value of the biased estimator of the distance correlation.
 
     See Also
     --------
@@ -846,7 +843,7 @@ def _u_distance_correlation_sqr_naive(x, y):
 
     return _distance_sqr_stats_naive_generic(
         x, y,
-        matrices=_u_distance_matrices,
+        matrix_centered=_u_distance_matrix,
         product=u_product).correlation_xy
 
 
@@ -1124,7 +1121,7 @@ variance_x=0.66666666666666652, variance_y=0.66666666666666652)
     else:
         return _distance_sqr_stats_naive_generic(
             x, y,
-            matrices=_u_distance_matrices,
+            matrix_centered=_u_distance_matrix,
             product=u_product)
 
 
@@ -1145,7 +1142,7 @@ def u_distance_covariance_sqr(x, y):
     Returns
     -------
     (1, 1) ndarray
-        Unbiased estimator of the squared distance covariance.
+        Value of the unbiased estimator of the squared distance covariance.
 
     See Also
     --------
@@ -1197,7 +1194,8 @@ def u_distance_correlation_sqr(x, y):
     Returns
     -------
     (1, 1) ndarray
-        Bias-corrected estimator of the squared distance correlation.
+        Value of the bias-corrected estimator of the squared distance
+        correlation.
 
     See Also
     --------
@@ -1232,3 +1230,123 @@ def u_distance_correlation_sqr(x, y):
         return _u_distance_correlation_sqr_naive(x, y)
 
 
+def partial_distance_covariance(x, y, z):
+    '''
+    Computes the partial distance covariance of the random variables
+    corresponding to :math:`x` and :math:`y` with respect to the random
+    variable corresponding to :math:`z`.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    z: array_like
+        Random vector with respect to which the partial distance covariance
+        is computed. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    (1, 1) ndarray
+        Value of the estimator of the partial distance covariance.
+
+    See Also
+    --------
+    partial_distance_correlation
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1], [0], [0], [1]])
+    >>> c = np.array([[1, 3, 4],
+    ...               [5, 7, 8],
+    ...               [9, 11, 15],
+    ...               [13, 15, 16]])
+    >>> dcor.partial_distance_covariance(a, a, c)
+    0.0024298630969951419
+    >>> dcor.partial_distance_covariance(a, b, c)
+    0.034703009230402419
+    >>> dcor.partial_distance_covariance(b, b, c)
+    0.49562415723530917
+    '''
+
+    a = _u_distance_matrix(x)
+    b = _u_distance_matrix(y)
+    c = _u_distance_matrix(z)
+
+    proj = u_complementary_projection(c)
+
+    return u_product(proj(a), proj(b))
+
+
+def partial_distance_correlation(x, y, z):
+    '''
+    Computes the partial distance correlation of the random variables
+    corresponding to :math:`x` and :math:`y` with respect to the random
+    variable corresponding to :math:`z`.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    z: array_like
+        Random vector with respect to which the partial distance correlation
+        is computed. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    (1, 1) ndarray
+        Value of the estimator of the partial distance correlation.
+
+    See Also
+    --------
+    partial_distance_covariance
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1], [1], [2], [2], [3]])
+    >>> b = np.array([[1], [2], [1], [2], [1]])
+    >>> c = np.array([[1], [2], [2], [1], [2]])
+    >>> dcor.partial_distance_correlation(a, a, c)
+    1.0
+    >>> dcor.partial_distance_correlation(a, b, c)
+    -0.5
+    >>> dcor.partial_distance_correlation(b, b, c)
+    1.0
+    >>> dcor.partial_distance_correlation(a, c, c)
+    0
+    '''
+
+    a = _u_distance_matrix(x)
+    b = _u_distance_matrix(y)
+    c = _u_distance_matrix(z)
+
+    proj = u_complementary_projection(c)
+
+    a_proj = proj(a)
+    b_proj = proj(b)
+
+    denom_sqr = u_product(a_proj, a_proj) * u_product(b_proj, b_proj)
+
+    if denom_sqr == 0:
+        correlation = 0
+    else:
+        correlation = u_product(a_proj, b_proj) / np.sqrt(denom_sqr)
+
+    return correlation

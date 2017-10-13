@@ -5,8 +5,8 @@ List of functions
 -----------------
 A complete list of all functions provided by dcor.
 
-Biased estimators
-^^^^^^^^^^^^^^^^^
+Biased estimators for distance covariance and distance correlation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 These functions compute the usual (biased) estimators for the distance
 covariance and distance correlation and their squares.
 
@@ -20,8 +20,8 @@ covariance and distance correlation and their squares.
    dcor.distance_stats
    dcor.distance_stats_sqr
    
-Unbiased and bias-corrected estimators
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Unbiased and bias-corrected estimators for distance covariance and distance correlation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 These functions compute the unbiased estimators for the square of the distance
 covariance and the bias corrected estimator for the square of the distance correlation. 
 As these estimators are signed, no functions are provided for taking the square root.
@@ -32,6 +32,17 @@ As these estimators are signed, no functions are provided for taking the square 
    dcor.u_distance_covariance_sqr
    dcor.u_distance_correlation_sqr
    dcor.u_distance_stats_sqr
+
+Partial distance covariance and partial distance correlation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+These functions compute the estimators for the partial distance
+covariance and partial distance correlation.
+
+.. autosummary::
+   :toctree: functions
+   
+   dcor.partial_distance_covariance
+   dcor.partial_distance_correlation
 
 Internal computations
 ^^^^^^^^^^^^^^^^^^^^^
