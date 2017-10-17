@@ -26,6 +26,10 @@ Stats = collections.namedtuple('Stats', ['covariance_xy', 'correlation_xy',
                                'variance_x', 'variance_y'])
 
 
+HypothesisTest = collections.namedtuple('HypothesisTest', ['p_value',
+                                        'statistic'])
+
+
 def double_centered(a):
     '''
     Returns a copy of the matrix :math:`a` in which both the sum of its
@@ -172,7 +176,7 @@ def average_product(a, b):
 
     Returns
     -------
-    (1, 1) ndarray
+    numpy scalar
         Average of the product.
 
     See Also
@@ -218,7 +222,7 @@ def u_product(a, b):
 
     Returns
     -------
-    (1, 1) ndarray
+    numpy scalar
         Inner product.
 
     See Also
@@ -531,7 +535,7 @@ def distance_covariance_sqr(x, y):
 
     Returns
     -------
-    (1, 1) ndarray
+    numpy scalar
         Biased estimator of the squared distance covariance.
 
     See Also
@@ -579,7 +583,7 @@ def distance_covariance(x, y):
 
     Returns
     -------
-    (1, 1) ndarray
+    numpy scalar
         Biased estimator of the distance covariance.
 
     See Also
@@ -763,7 +767,7 @@ def distance_correlation_sqr(x, y):
 
     Returns
     -------
-    (1, 1) ndarray
+    numpy scalar
         Value of the biased estimator of the squared distance correlation.
 
     See Also
@@ -807,7 +811,7 @@ def distance_correlation(x, y):
 
     Returns
     -------
-    (1, 1) ndarray
+    numpy scalar
         Value of the biased estimator of the distance correlation.
 
     See Also
@@ -1044,7 +1048,7 @@ def _u_distance_stats_sqr_fast(x, y):
     # Comparisons using a tolerance can change results if the
     # covariance has a similar order of magnitude
     if denominator == 0.0:
-        correlation_xy_sqr = 0.0
+        correlation_xy_sqr = denominator.dtype.type(0)
     else:
         correlation_xy_sqr = covariance_xy_sqr / denominator
 
@@ -1141,7 +1145,7 @@ def u_distance_covariance_sqr(x, y):
 
     Returns
     -------
-    (1, 1) ndarray
+    numpy scalar
         Value of the unbiased estimator of the squared distance covariance.
 
     See Also
@@ -1193,7 +1197,7 @@ def u_distance_correlation_sqr(x, y):
 
     Returns
     -------
-    (1, 1) ndarray
+    numpy scalar
         Value of the bias-corrected estimator of the squared distance
         correlation.
 
@@ -1232,9 +1236,9 @@ def u_distance_correlation_sqr(x, y):
 
 def partial_distance_covariance(x, y, z):
     '''
-    Computes the partial distance covariance of the random vectors
-    corresponding to :math:`x` and :math:`y` with respect to the random
-    variable corresponding to :math:`z`.
+    Computes the estimator for the partial distance covariance of the
+    random vectors corresponding to :math:`x` and :math:`y` with respect
+    to the random variable corresponding to :math:`z`.
 
     Parameters
     ----------
@@ -1251,7 +1255,7 @@ def partial_distance_covariance(x, y, z):
 
     Returns
     -------
-    (1, 1) ndarray
+    numpy scalar
         Value of the estimator of the partial distance covariance.
 
     See Also
@@ -1290,9 +1294,9 @@ def partial_distance_covariance(x, y, z):
 
 def partial_distance_correlation(x, y, z):
     '''
-    Computes the partial distance correlation of the random vectors
-    corresponding to :math:`x` and :math:`y` with respect to the random
-    variable corresponding to :math:`z`.
+    Computes the estimator for the partial distance correlation of the
+    random vectors corresponding to :math:`x` and :math:`y` with respect
+    to the random variable corresponding to :math:`z`.
 
     Parameters
     ----------
@@ -1309,7 +1313,7 @@ def partial_distance_correlation(x, y, z):
 
     Returns
     -------
-    (1, 1) ndarray
+    numpy scalar
         Value of the estimator of the partial distance correlation.
 
     See Also
@@ -1330,7 +1334,7 @@ def partial_distance_correlation(x, y, z):
     >>> dcor.partial_distance_correlation(b, b, c)
     1.0
     >>> dcor.partial_distance_correlation(a, c, c)
-    0
+    0.0
     '''
 
     a = _u_distance_matrix(x)
@@ -1345,8 +1349,66 @@ def partial_distance_correlation(x, y, z):
     denom_sqr = u_product(a_proj, a_proj) * u_product(b_proj, b_proj)
 
     if denom_sqr == 0:
-        correlation = 0
+        correlation = denom_sqr.dtype.type(0)
     else:
         correlation = u_product(a_proj, b_proj) / np.sqrt(denom_sqr)
 
     return correlation
+
+
+def _energy_distance_from_distance_matrices(
+        distance_xx, distance_yy, distance_xy):
+    '''
+    Computed energy distance with precalculated distance matrices.
+    '''
+
+    return (2 * np.mean(distance_xy) - np.mean(distance_xx) -
+            np.mean(distance_yy))
+
+
+def energy_distance(x, y):
+    '''
+    Computes the estimator for the energy distance of the
+    random vectors corresponding to :math:`x` and :math:`y`.
+    Both random vectors must have the same number of components.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    numpy scalar
+        Value of the estimator of the energy distance.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1, 0, 0, 1],
+    ...               [0, 1, 1, 1],
+    ...               [1, 1, 1, 1]])
+    >>> dcor.energy_distance(a, a)
+    0.0
+    >>> dcor.energy_distance(a, b) # doctest: +ELLIPSIS
+    20.5780594...
+    >>> dcor.energy_distance(b, b)
+    0.0
+    '''
+
+    distance_xx = scipy.spatial.distance.cdist(x, x)
+    distance_yy = scipy.spatial.distance.cdist(y, y)
+    distance_xy = scipy.spatial.distance.cdist(x, y)
+
+    return _energy_distance_from_distance_matrices(distance_xx=distance_xx,
+                                                   distance_yy=distance_yy,
+                                                   distance_xy=distance_xy)

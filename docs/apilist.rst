@@ -43,6 +43,27 @@ covariance and partial distance correlation.
    
    dcor.partial_distance_covariance
    dcor.partial_distance_correlation
+   
+Energy distance
+^^^^^^^^^^^^^^^
+The following function is an estimator for the energy distance between
+two random vectors.
+
+.. autosummary::
+   :toctree: functions
+   
+   dcor.energy_distance
+   
+Homogeneity test
+^^^^^^^^^^^^^^^^
+The following functions are used to test if random vectors have the same
+distribution.
+
+.. autosummary::
+   :toctree: functions
+   
+   dcor.homogeneity.energy_test_statistic
+   dcor.homogeneity.energy_test
 
 Internal computations
 ^^^^^^^^^^^^^^^^^^^^^

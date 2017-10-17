@@ -12,7 +12,8 @@ from .dcor import (double_centered, u_centered,
                    u_distance_correlation_sqr,
                    u_distance_stats_sqr,
                    partial_distance_covariance,
-                   partial_distance_correlation)
+                   partial_distance_correlation,
+                   energy_distance)
 
 
 try:
