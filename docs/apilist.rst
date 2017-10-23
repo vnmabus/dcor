@@ -75,6 +75,8 @@ provided by Scipy will be used when possible.
    :toctree: functions
    
    dcor.distances.euclidean
+   dcor.distances.minkowski
+   dcor.distances.euclidean_power
 
 Internal computations
 ^^^^^^^^^^^^^^^^^^^^^

@@ -11,13 +11,15 @@ a simple E-statistic estimator.
 
 This package offers functions for calculating several E-statistics
 such as:
+
 - Estimator of the energy distance [SR13]_.
 - Biased and unbiased estimators of distance covariance and
-distance correlation [SRB07]_.
+  distance correlation [SRB07]_.
 - Estimators of the partial distance covariance and partial
-distance covariance [SR14]_.
+  distance covariance [SR14]_.
 
 It also provides tests based on these E-statistics:
+
 - Test of homogeneity based on the energy distance.
 
 References

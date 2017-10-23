@@ -1420,18 +1420,28 @@ def energy_distance(x, y, **kwargs):
     >>> dcor.energy_distance(b, b)
     0.0
 
-    A different metric can also be used instead of the Euclidean distance.
+    A different metric can also be used instead of the Euclidean distance:
+
+    >>> euclidean_1_5 = dcor.distances.euclidean_power(1.5)
+    >>> dcor.energy_distance(a, a, metric=euclidean_1_5)
+    0.0
+    >>> dcor.energy_distance(a, b, metric=euclidean_1_5)
+    ... # doctest: +ELLIPSIS
+    99.7863955...
+    >>> dcor.energy_distance(b, b, metric=euclidean_1_5)
+    0.0
+
     However, if the metric is not of strong negative type, the energy
     distance is not guaranteed to be a metric:
 
     >>> manhattan_distance = dcor.distances.minkowski(1)
     >>> dcor.energy_distance(a, a, metric=manhattan_distance)
-    -20.0
+    0.0
     >>> dcor.energy_distance(a, b, metric=manhattan_distance)
     ... # doctest: +ELLIPSIS
-    10.1661181...
+    40.6666666...
     >>> dcor.energy_distance(b, b, metric=manhattan_distance)
-    -0.8238825...
+    0.0
     '''
 
     metric = kwargs.pop('metric', None)
@@ -1439,7 +1449,7 @@ def energy_distance(x, y, **kwargs):
 
     distance_xx = distances._pdist(x, metric=metric)
     distance_yy = distances._pdist(y, metric=metric)
-    distance_xy = distances._cdist(x, y)
+    distance_xy = distances._cdist(x, y, metric=metric)
 
     return _energy_distance_from_distance_matrices(distance_xx=distance_xx,
                                                    distance_yy=distance_yy,

@@ -94,6 +94,48 @@ def minkowski(p):
     return minkowski
 
 
+def euclidean_power(power):
+    '''
+    Returns a function that computes a power of the Euclidean distance between
+    the vectors :math:`u` and :math:`v`.
+
+    The :math:`\\alpha`-power of the Euclidean distance between vectors
+    :math:`u = (u_1, \ldots, u_n)` and :math:`v = (v_1, \ldots, v_n)` is
+
+    .. math::
+        d(u, v) = || u - v ||_2^{\\alpha} = \\left(\\sqrt{(u_1 - v_1)^2 +
+        \ldots + (u_n - v_n)^2}\\right)^{\\alpha}
+
+    Parameters
+    ----------
+    power: float
+        Exponent of the norm.
+
+    Returns
+    -------
+    callable
+        Function implementing a power of the Euclidean distance between the
+        two vectors.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([1, 1, 1])
+    >>> b = np.array([0, 0, 0])
+    >>> dcor.distances.euclidean_power(2)(a, b)
+    3.0
+    >>> dcor.distances.euclidean_power(1)(a, b) # doctest: +ELLIPSIS
+    1.7320508...
+    '''
+
+    @_optimiced_distance(metric='sqeuclidean', power=power / 2)
+    def euclidean_power(u, v):
+        return scipy.spatial.distance.sqeuclidean(u, v) ** (power / 2)
+
+    return euclidean_power
+
+
 def _get_args(metric):
     '''
     Return the dictionary of additional arguments passed to pdist or cdist.
@@ -103,7 +145,7 @@ def _get_args(metric):
         args = metric._dcor_optimiced_distance_args
     except AttributeError:
         args = {'metric': metric}
-    return args
+    return {**args}
 
 
 def _pdist(x, metric=None):
@@ -116,9 +158,14 @@ def _pdist(x, metric=None):
 
     args = _get_args(metric)
 
-    distances = scipy.spatial.distance.pdist(x, **args)
+    power = args.pop('power', 1)
 
-    return scipy.spatial.distance.squareform(distances)
+    distances = scipy.spatial.distance.pdist(x, **args)
+    distances = scipy.spatial.distance.squareform(distances)
+
+    distances **= power
+
+    return distances
 
 
 def _cdist(x, y, metric=None):
@@ -131,6 +178,10 @@ def _cdist(x, y, metric=None):
 
     args = _get_args(metric)
 
+    power = args.pop('power', 1)
+
     distances = scipy.spatial.distance.cdist(x, y, **args)
+
+    distances **= power
 
     return distances
