@@ -1,6 +1,8 @@
 import errno as _errno
 import os as _os
 
+from . import distances
+from . import homogeneity
 from .dcor import (double_centered, u_centered,
                    average_product, u_product,
                    u_projection,

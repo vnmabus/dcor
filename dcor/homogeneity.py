@@ -1,11 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-import numbers
-
 import numpy as _np
-import scipy.spatial as _spatial
 
 from . import dcor as _dcor
+from . import distances as _distances
 
 
 def _energy_test_statistic_coefficient(n, m):
@@ -29,8 +27,10 @@ def _energy_test_statistic_from_distance_matrices(
     return _energy_test_statistic_coefficient(n, m) * energy_distance
 
 
-def energy_test_statistic(x, y):
+def energy_test_statistic(x, y, **kwargs):
     '''
+    energy_test_statistic(x, y, *, metric=None)
+
     Computes the statistic for homogeneity based on the energy distance, for
     random vectors corresponding to :math:`x` and :math:`y`.
 
@@ -42,11 +42,18 @@ def energy_test_statistic(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    metric: callable
+        Distance metric to use. If :code:`None`, then it uses the Euclidean
+        distance.
 
     Returns
     -------
     numpy scalar
         Value of the statistic for homogeneity based on the energy distance.
+
+    See Also
+    --------
+    energy_distance
 
     Examples
     --------
@@ -72,7 +79,7 @@ def energy_test_statistic(x, y):
 
     coefficient = _energy_test_statistic_coefficient(n, m)
 
-    return coefficient * _dcor.energy_distance(x, y)
+    return coefficient * _dcor.energy_distance(x, y, **kwargs)
 
 
 def _energy_test_statistic_multivariate_from_distance_matrix(
@@ -121,10 +128,13 @@ def _random_state_init(random_state):
 
 def energy_test(*args, **kwargs):
     '''
-    energy_test(*args, num_resamples=0, random_state=None)
+    energy_test(*args, num_resamples=0, metric=None, random_state=None)
 
     Computes the test of homogeneity based on the energy distance, for
     an arbitrary number of random vectors.
+
+    The test is a permutation test where the null hypothesis is that all
+    random vectors have the same distribution.
 
     Parameters
     ----------
@@ -132,15 +142,21 @@ def energy_test(*args, **kwargs):
         Random vectors. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
     num_resamples: int
-        Number of bootstrap resamples (without replacement) to take in the
-        permutation test.
+        Number of permutations resamples to take in the permutation test.
+    metric: callable
+        Distance metric to use. If :code:`None`, then it uses the Euclidean
+        distance.
     random_state: {None, int, array_like, numpy.random.RandomState}
         Random state to generate the permutations.
 
     Returns
     -------
-    numpy scalar
-        Value of the statistic for homogeneity based on the energy distance.
+    HypothesisTest
+        Results of the hypothesis test.
+
+    See Also
+    --------
+    energy_distance
 
     Examples
     --------
@@ -167,16 +183,20 @@ def energy_test(*args, **kwargs):
     >>> dcor.homogeneity.energy_test(a, b, num_resamples=5, random_state=6)
     HypothesisTest(p_value=0.3333333..., statistic=35.2766732...)
     >>> dcor.homogeneity.energy_test(a, c, num_resamples=7, random_state=0)
-    HypothesisTest(p_value=0.125, statistic=4233.8935035015775)
+    HypothesisTest(p_value=0.125, statistic=4233.8935035...)
     '''
 
-    random_state = _random_state_init(kwargs.get("random_state", None))
+    random_state = _random_state_init(kwargs.pop("random_state", None))
+
+    metric = kwargs.pop("metric", None)
 
     # k
     num_samples = len(args)
 
     # B
-    num_resamples = kwargs.get("num_resamples", 0)
+    num_resamples = kwargs.pop("num_resamples", 0)
+
+    _dcor._check_kwargs_empty(kwargs)
 
     # alpha
     # significance_level = 1.0 / (num_resamples + 1)
@@ -195,8 +215,7 @@ def energy_test(*args, **kwargs):
     sample_indexes[1:] = _np.cumsum(sample_sizes)[:-1]
 
     # Compute the distance matrix once
-    sample_distances = _spatial.distance.cdist(
-        pooled_samples, pooled_samples)
+    sample_distances = _distances._pdist(pooled_samples, metric=metric)
 
     # epsilon_n
     observed_energy = _energy_test_statistic_multivariate_from_distance_matrix(

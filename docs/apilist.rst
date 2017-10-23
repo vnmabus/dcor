@@ -64,6 +64,17 @@ distribution.
    
    dcor.homogeneity.energy_test_statistic
    dcor.homogeneity.energy_test
+   
+Distances
+^^^^^^^^^
+The following distances can be used instead of the Euclidean distance or
+a custom one. If the metric used is one of these, an optimized implementation
+provided by Scipy will be used when possible.
+
+.. autosummary::
+   :toctree: functions
+   
+   dcor.distances.euclidean
 
 Internal computations
 ^^^^^^^^^^^^^^^^^^^^^

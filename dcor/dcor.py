@@ -17,9 +17,10 @@ import collections
 import math
 
 import numba
-import scipy.spatial
 
 import numpy as np
+
+from . import distances
 
 
 Stats = collections.namedtuple('Stats', ['covariance_xy', 'correlation_xy',
@@ -28,6 +29,16 @@ Stats = collections.namedtuple('Stats', ['covariance_xy', 'correlation_xy',
 
 HypothesisTest = collections.namedtuple('HypothesisTest', ['p_value',
                                         'statistic'])
+
+
+def _check_kwargs_empty(kwargs):
+    '''
+    Raise an apropiate exception if the kwargs dictionary is not empty.
+    '''
+
+    if kwargs:
+        raise TypeError("Unexpected keyword argument '{arg}'".format(
+            arg=list(kwargs.keys())[0]))
 
 
 def double_centered(a):
@@ -483,7 +494,7 @@ def _distance_matrix_generic(x, centering):
     x = _transform_to_2d(np.asfarray(x))
 
     # Calculate distance matrices
-    a = scipy.spatial.distance.cdist(x, x)
+    a = distances._pdist(x)
 
     # Double centering
     a = centering(a)
@@ -1366,8 +1377,10 @@ def _energy_distance_from_distance_matrices(
             np.mean(distance_yy))
 
 
-def energy_distance(x, y):
+def energy_distance(x, y, **kwargs):
     '''
+    energy_distance(x, y, *, metric=None)
+
     Computes the estimator for the energy distance of the
     random vectors corresponding to :math:`x` and :math:`y`.
     Both random vectors must have the same number of components.
@@ -1380,6 +1393,9 @@ def energy_distance(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    metric: callable
+        Distance metric to use. If :code:`None`, then it uses the Euclidean
+        distance.
 
     Returns
     -------
@@ -1403,11 +1419,27 @@ def energy_distance(x, y):
     20.5780594...
     >>> dcor.energy_distance(b, b)
     0.0
+
+    A different metric can also be used instead of the Euclidean distance.
+    However, if the metric is not of strong negative type, the energy
+    distance is not guaranteed to be a metric:
+
+    >>> manhattan_distance = dcor.distances.minkowski(1)
+    >>> dcor.energy_distance(a, a, metric=manhattan_distance)
+    -20.0
+    >>> dcor.energy_distance(a, b, metric=manhattan_distance)
+    ... # doctest: +ELLIPSIS
+    10.1661181...
+    >>> dcor.energy_distance(b, b, metric=manhattan_distance)
+    -0.8238825...
     '''
 
-    distance_xx = scipy.spatial.distance.cdist(x, x)
-    distance_yy = scipy.spatial.distance.cdist(y, y)
-    distance_xy = scipy.spatial.distance.cdist(x, y)
+    metric = kwargs.pop('metric', None)
+    _check_kwargs_empty(kwargs)
+
+    distance_xx = distances._pdist(x, metric=metric)
+    distance_yy = distances._pdist(y, metric=metric)
+    distance_xy = distances._cdist(x, y)
 
     return _energy_distance_from_distance_matrices(distance_xx=distance_xx,
                                                    distance_yy=distance_yy,

@@ -211,6 +211,43 @@ The sample distance correlation is defined as the cosine of the angle between th
    0 & \text{if } ||P_{z^{\perp}}(x)|| ||P_{z^{\perp}}(y)|| = 0 
    \end{cases} 
 
+Energy distance
+---------------
+
+Energy distance is an statistical distance between random vectors :math:`X, Y \in \mathbb{R}^d` 
+:cite:`c-energy_distance`, defined as
+
+.. math::
+   \mathcal{E}(X, Y) = 2\mathbb{E}(|| X - Y ||) - \mathbb{E}(|| X - X' ||) - 
+   \mathbb{E}(|| Y - Y' ||)
+
+where :math:`X'` and :math:`Y'` are independent and identically distributed copies of
+:math:`X` and :math:`Y`, respectively.
+
+It can be proved that, if the characteristic functions of :math:`X` and :math:`Y` are
+:math:`\phi_X(t)` and :math:`\phi_Y(t)` the energy distance can be alternatively written
+as
+
+.. math::
+   \mathcal{E}(X, Y) = \frac{1}{c_d} \int_{\mathbb{R}^d}
+   \frac{|\phi_X(t) - \phi_Y(t)|^2}{||t||^{d+1}}dt
+
+where again :math:`c_d = \frac{\pi^{(1 + d)/2}}{\Gamma((1 +
+d)/2)}` is half the surface area of the unit sphere in :math:`\mathbb{R}^d`.
+
+Estimator
+^^^^^^^^^
+
+Suppose that we have :math:`n_1` observations of :math:`X` and :math:`n_2` observations of 
+:math:`Y`, denoted by :math:`x` and :math:`y`. We denote as :math:`x_i` the 
+:math:`i`-th observation of :math:`x`, and :math:`y_i` the :math:`i`-th observation of
+:math:`y`. Then, an estimator of the energy distance is
+
+.. math::
+   \mathcal{E_{n_1, n_2}}(x, y) = \frac{2}{n_1 n_2}\sum_{i=1}^{n_1}\sum_{j=1}^{n_2}|| x_i - y_j ||
+   - \frac{1}{n_1^2}\sum_{i=1}^{n_1}\sum_{j=1}^{n_1}|| x_i - x_j ||
+   - \frac{1}{n_2^2}\sum_{i=1}^{n_2}\sum_{j=1}^{n_2}|| y_i - y_j ||
+
 References
 ----------
 .. bibliography:: refs.bib

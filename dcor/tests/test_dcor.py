@@ -24,7 +24,7 @@ class TestDistanceCorrelation(unittest.TestCase):
 
     def test_double_centered(self):
         for i in range(1, self.test_max_size + 1):
-            matrix = np.random.rand(i, i)
+            matrix = np.random.RandomState(i).rand(i, i)
 
             centered_matrix = dcor.double_centered(matrix)
 
@@ -37,7 +37,7 @@ class TestDistanceCorrelation(unittest.TestCase):
     def test_average_product(self):
         size = 5
 
-        matrix1 = np.random.rand(size, size)
+        matrix1 = np.random.RandomState(0).rand(size, size)
         matrix2 = np.zeros((size, size))
 
         result = dcor.average_product(matrix1, matrix2)
@@ -143,6 +143,92 @@ class TestDistanceCorrelation(unittest.TestCase):
                     arr1, arr2)
 
                 self.assertAlmostEqual(u_stat, u_stat_fast)
+
+
+class TestEnergyTest(unittest.TestCase):
+
+    def test_same_distribution_same_parameters(self):
+
+        vector_size = 10
+        num_samples = 100
+        mean = np.zeros(vector_size)
+        cov = np.eye(vector_size)
+
+        a = np.random.RandomState(0).multivariate_normal(mean=mean,
+                                                         cov=cov,
+                                                         size=num_samples)
+        b = np.random.RandomState(0).multivariate_normal(mean=mean,
+                                                         cov=cov,
+                                                         size=num_samples)
+
+        significance = 0.01
+        num_resamples = int(3 / significance + 1)
+
+        result = dcor.homogeneity.energy_test(a, b,
+                                              num_resamples=num_resamples,
+                                              random_state=0)
+
+        self.assertGreater(result.p_value, significance)
+
+    def test_same_distribution_different_means(self):
+
+        vector_size = 10
+        num_samples = 100
+        mean_0 = np.zeros(vector_size)
+        mean_1 = np.ones(vector_size)
+        cov = np.eye(vector_size)
+
+        a = np.random.RandomState(0).multivariate_normal(mean=mean_0, cov=cov,
+                                                         size=num_samples)
+        b = np.random.RandomState(0).multivariate_normal(mean=mean_1, cov=cov,
+                                                         size=num_samples)
+
+        significance = 0.01
+        num_resamples = int(3 / significance + 1)
+
+        result = dcor.homogeneity.energy_test(a, b,
+                                              num_resamples=num_resamples,
+                                              random_state=0)
+
+        self.assertLess(result.p_value, significance)
+
+    def test_same_distribution_different_covariances(self):
+
+        vector_size = 10
+        num_samples = 100
+        mean = np.zeros(vector_size)
+        cov_0 = np.eye(vector_size)
+        cov_1 = 3 * np.eye(vector_size)
+
+        a = np.random.RandomState(0).multivariate_normal(mean=mean, cov=cov_0,
+                                                         size=num_samples)
+        b = np.random.RandomState(0).multivariate_normal(mean=mean, cov=cov_1,
+                                                         size=num_samples)
+
+        significance = 0.01
+        num_resamples = int(3 / significance + 1)
+
+        result = dcor.homogeneity.energy_test(a, b,
+                                              num_resamples=num_resamples,
+                                              random_state=0)
+
+        self.assertLess(result.p_value, significance)
+
+    def test_different_distributions(self):
+
+        num_samples = 100
+
+        a = np.random.RandomState(0).standard_normal(size=(num_samples, 1))
+        b = np.random.RandomState(0).standard_t(df=1, size=(num_samples, 1))
+
+        significance = 0.01
+        num_resamples = int(3 / significance + 1)
+
+        result = dcor.homogeneity.energy_test(a, b,
+                                              num_resamples=num_resamples,
+                                              random_state=0)
+
+        self.assertLess(result.p_value, significance)
 
 
 if __name__ == "__main__":
