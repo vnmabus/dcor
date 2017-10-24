@@ -15,6 +15,7 @@ from __future__ import unicode_literals
 
 import collections
 import math
+import warnings
 
 import numba
 
@@ -39,6 +40,22 @@ def _check_kwargs_empty(kwargs):
     if kwargs:
         raise TypeError("Unexpected keyword argument '{arg}'".format(
             arg=list(kwargs.keys())[0]))
+
+
+def _check_valid_energy_exponent(exponent):
+    if not 0 < exponent < 2:
+        warnings.warn('The energy distance is not guaranteed to be '
+                      'a valid metric if the exponent value is '
+                      'not in the range :math:`(0, 2)`. The exponent passed '
+                      'is {exponent}.'.format(exponent=exponent))
+
+
+def _check_valid_dcov_exponent(exponent):
+    if not 0 < exponent < 2:
+        warnings.warn('Distance covariance is not guaranteed to '
+                      'characterize independence if the exponent value is '
+                      'not in the range :math:`(0, 2)`. The exponent passed '
+                      'is {exponent}.'.format(exponent=exponent))
 
 
 def double_centered(a):
@@ -486,15 +503,17 @@ def _transform_to_2d(t):
     return t
 
 
-def _distance_matrix_generic(x, centering):
+def _distance_matrix_generic(x, centering, exponent=1):
     '''
     Computes a centered distance matrix given a matrix.
     '''
 
+    _check_valid_dcov_exponent(exponent)
+
     x = _transform_to_2d(np.asfarray(x))
 
     # Calculate distance matrices
-    a = distances._pdist(x)
+    a = distances._pdist(x, exponent=exponent)
 
     # Double centering
     a = centering(a)
@@ -502,36 +521,40 @@ def _distance_matrix_generic(x, centering):
     return a
 
 
-def _distance_matrix(x):
+def _distance_matrix(x, exponent=1):
     '''
     Computes the double centered distance matrix given a matrix.
     '''
 
-    return _distance_matrix_generic(x, centering=double_centered)
+    return _distance_matrix_generic(x, centering=double_centered,
+                                    exponent=exponent)
 
 
-def _u_distance_matrix(x):
+def _u_distance_matrix(x, exponent=1):
     '''
     Computes the :math:`U`-centered distance matrices given two matrices.
     '''
 
-    return _distance_matrix_generic(x, centering=u_centered)
+    return _distance_matrix_generic(x, centering=u_centered,
+                                    exponent=exponent)
 
 
-def _u_distance_covariance_sqr_naive(x, y):
+def _u_distance_covariance_sqr_naive(x, y, exponent=1):
     '''
     Computes the unbiased estimator for distance covariance between two
     matrices, using an :math:`O(N^2)` algorithm.
     '''
 
-    a = _u_distance_matrix(x)
-    b = _u_distance_matrix(y)
+    a = _u_distance_matrix(x, exponent=exponent)
+    b = _u_distance_matrix(y, exponent=exponent)
 
     return u_product(a, b)
 
 
-def distance_covariance_sqr(x, y):
+def distance_covariance_sqr(x, y, **kwargs):
     '''
+    distance_covariance_sqr(x, y, *, exponent=1)
+
     Computes the usual (biased) estimator for the squared distance covariance
     between two random vectors.
 
@@ -543,6 +566,10 @@ def distance_covariance_sqr(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
 
     Returns
     -------
@@ -569,17 +596,21 @@ def distance_covariance_sqr(x, y):
     1.0
     >>> dcor.distance_covariance_sqr(b, b)
     0.25
+    >>> dcor.distance_covariance_sqr(a, b, exponent=0.5) # doctest: +ELLIPSIS
+    0.3705904...
 
     '''
 
-    a = _distance_matrix(x)
-    b = _distance_matrix(y)
+    a = _distance_matrix(x, **kwargs)
+    b = _distance_matrix(y, **kwargs)
 
     return average_product(a, b)
 
 
-def distance_covariance(x, y):
+def distance_covariance(x, y, **kwargs):
     '''
+    distance_covariance(x, y, *, exponent=1)
+
     Computes the usual (biased) estimator for the distance covariance
     between two random vectors.
 
@@ -591,6 +622,10 @@ def distance_covariance(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
 
     Returns
     -------
@@ -617,16 +652,19 @@ def distance_covariance(x, y):
     1.0
     >>> dcor.distance_covariance(b, b)
     0.5
+    >>> dcor.distance_covariance(a, b, exponent=0.5) # doctest: +ELLIPSIS
+    0.6087614...
     '''
-    return np.sqrt(distance_covariance_sqr(x, y))
+    return np.sqrt(distance_covariance_sqr(x, y, **kwargs))
 
 
-def _distance_sqr_stats_naive_generic(x, y, matrix_centered, product):
+def _distance_sqr_stats_naive_generic(x, y, matrix_centered, product,
+                                      exponent=1):
     '''
     Compute generic squared stats.
     '''
-    a = matrix_centered(x)
-    b = matrix_centered(y)
+    a = matrix_centered(x, exponent=exponent)
+    b = matrix_centered(y, exponent=exponent)
 
     covariance_xy_sqr = product(a, b)
     variance_x_sqr = product(a, a)
@@ -648,8 +686,10 @@ def _distance_sqr_stats_naive_generic(x, y, matrix_centered, product):
                  variance_y=variance_y_sqr)
 
 
-def distance_stats_sqr(x, y):
+def distance_stats_sqr(x, y, **kwargs):
     '''
+    distance_stats_sqr(x, y, *, exponent=1)
+
     Computes the usual (biased) estimators for the squared distance covariance
     and squared distance correlation between two random vectors, and the
     individual squared distance variances.
@@ -662,6 +702,10 @@ def distance_stats_sqr(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
 
     Returns
     -------
@@ -698,17 +742,22 @@ variance_x=52.0, variance_y=0.25)
     >>> dcor.distance_stats_sqr(b, b)
     Stats(covariance_xy=0.25, correlation_xy=1.0, variance_x=0.25, \
 variance_y=0.25)
+    >>> dcor.distance_stats_sqr(a, b, exponent=0.5) # doctest: +ELLIPSIS
+    Stats(covariance_xy=0.3705904..., correlation_xy=0.4493308..., \
+variance_x=2.7209220..., variance_y=0.25)
 
     '''
 
     return _distance_sqr_stats_naive_generic(
         x, y,
         matrix_centered=_distance_matrix,
-        product=average_product)
+        product=average_product, **kwargs)
 
 
-def distance_stats(x, y):
+def distance_stats(x, y, **kwargs):
     '''
+    distance_stats(x, y, *, exponent=1)
+
     Computes the usual (biased) estimators for the distance covariance
     and distance correlation between two random vectors, and the
     individual distance variances.
@@ -721,6 +770,10 @@ def distance_stats(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
 
     Returns
     -------
@@ -757,13 +810,18 @@ variance_x=7.2111025509279782, variance_y=0.5)
     >>> dcor.distance_stats(b, b)
     Stats(covariance_xy=0.5, correlation_xy=1.0, variance_x=0.5, \
 variance_y=0.5)
+    >>> dcor.distance_stats(a, b, exponent=0.5) # doctest: +ELLIPSIS
+    Stats(covariance_xy=0.6087614..., correlation_xy=0.6703214..., \
+variance_x=1.6495217..., variance_y=0.5)
     '''
 
-    return Stats(*[np.sqrt(s) for s in distance_stats_sqr(x, y)])
+    return Stats(*[np.sqrt(s) for s in distance_stats_sqr(x, y, **kwargs)])
 
 
-def distance_correlation_sqr(x, y):
+def distance_correlation_sqr(x, y, **kwargs):
     '''
+    distance_correlation_sqr(x, y, *, exponent=1)
+
     Computes the usual (biased) estimator for the squared distance correlation
     between two random vectors.
 
@@ -775,6 +833,10 @@ def distance_correlation_sqr(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
 
     Returns
     -------
@@ -797,17 +859,21 @@ def distance_correlation_sqr(x, y):
     >>> b = np.array([[1], [0], [0], [1]])
     >>> dcor.distance_correlation_sqr(a, a)
     1.0
-    >>> dcor.distance_correlation_sqr(a, b)
-    0.27735009811261457
+    >>> dcor.distance_correlation_sqr(a, b) # doctest: +ELLIPSIS
+    0.2773500...
     >>> dcor.distance_correlation_sqr(b, b)
     1.0
+    >>> dcor.distance_correlation_sqr(a, b, exponent=0.5) # doctest: +ELLIPSIS
+    0.4493308...
     '''
 
-    return distance_stats_sqr(x, y).correlation_xy
+    return distance_stats_sqr(x, y, **kwargs).correlation_xy
 
 
-def distance_correlation(x, y):
+def distance_correlation(x, y, **kwargs):
     '''
+    distance_correlation(x, y, *, exponent=1)
+
     Computes the usual (biased) estimator for the distance correlation
     between two random vectors.
 
@@ -819,6 +885,10 @@ def distance_correlation(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
 
     Returns
     -------
@@ -841,16 +911,18 @@ def distance_correlation(x, y):
     >>> b = np.array([[1], [0], [0], [1]])
     >>> dcor.distance_correlation(a, a)
     1.0
-    >>> dcor.distance_correlation(a, b)
-    0.52664038784792666
+    >>> dcor.distance_correlation(a, b) # doctest: +ELLIPSIS
+    0.5266403...
     >>> dcor.distance_correlation(b, b)
     1.0
+    >>> dcor.distance_correlation(a, b, exponent=0.5) # doctest: +ELLIPSIS
+    0.6703214...
     '''
 
-    return distance_stats(x, y).correlation_xy
+    return distance_stats(x, y, **kwargs).correlation_xy
 
 
-def _u_distance_correlation_sqr_naive(x, y):
+def _u_distance_correlation_sqr_naive(x, y, exponent=1):
     '''
     Computes distance correlation estimator between two matrices
     using the U-statistic.
@@ -859,7 +931,8 @@ def _u_distance_correlation_sqr_naive(x, y):
     return _distance_sqr_stats_naive_generic(
         x, y,
         matrix_centered=_u_distance_matrix,
-        product=u_product).correlation_xy
+        product=u_product,
+        exponent=exponent).correlation_xy
 
 
 def _is_random_variable(x):
@@ -870,17 +943,17 @@ def _is_random_variable(x):
     return len(x.shape) == 1 or x.shape[1] == 1
 
 
-def _can_use_u_fast_algorithm(x, y):
+def _can_use_u_fast_algorithm(x, y, exponent=1):
     '''
     Returns a boolean indicating if the fast :math:`O(NlogN)` algorithm for
     the unbiased distance stats can be used.
 
     The algorithm can only be used for random variables (not vectors) where
-    the number of instances is greater than 3.
+    the number of instances is greater than 3. Also, the exponent must be 1.
     '''
 
     return (_is_random_variable(x) and _is_random_variable(y) and
-            x.shape[0] > 3 and y.shape[0] > 3)
+            x.shape[0] > 3 and y.shape[0] > 3 and exponent == 1)
 
 
 @numba.jit
@@ -1076,8 +1149,10 @@ def _u_distance_correlation_sqr_fast(x, y):
     return _u_distance_stats_sqr_fast(x, y).correlation_xy
 
 
-def u_distance_stats_sqr(x, y):
+def u_distance_stats_sqr(x, y, **kwargs):
     '''
+    u_distance_stats_sqr(x, y, *, exponent=1)
+
     Computes the unbiased estimators for the squared distance covariance
     and squared distance correlation between two random vectors, and the
     individual squared distance variances.
@@ -1090,6 +1165,10 @@ def u_distance_stats_sqr(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
 
     Returns
     -------
@@ -1120,28 +1199,34 @@ def u_distance_stats_sqr(x, y):
     ...               [9, 10, 11, 12],
     ...               [13, 14, 15, 16]])
     >>> b = np.array([[1], [0], [0], [1]])
-    >>> dcor.u_distance_stats_sqr(a, a)
-    Stats(covariance_xy=42.666666666666671, correlation_xy=1.0, \
-variance_x=42.666666666666671, variance_y=42.666666666666671)
-    >>> dcor.u_distance_stats_sqr(a, b)
-    Stats(covariance_xy=-2.666666666666667, correlation_xy=-0.5, \
-variance_x=42.666666666666671, variance_y=0.66666666666666663)
-    >>> dcor.u_distance_stats_sqr(b, b)
-    Stats(covariance_xy=0.66666666666666652, correlation_xy=1.0, \
-variance_x=0.66666666666666652, variance_y=0.66666666666666652)
+    >>> dcor.u_distance_stats_sqr(a, a) # doctest: +ELLIPSIS
+    Stats(covariance_xy=42.6666666..., correlation_xy=1.0, \
+variance_x=42.6666666..., variance_y=42.6666666...)
+    >>> dcor.u_distance_stats_sqr(a, b) # doctest: +ELLIPSIS
+    Stats(covariance_xy=-2.6666666..., correlation_xy=-0.5, \
+variance_x=42.6666666..., variance_y=0.6666666...)
+    >>> dcor.u_distance_stats_sqr(b, b) # doctest: +ELLIPSIS
+    Stats(covariance_xy=0.6666666..., correlation_xy=1.0, \
+variance_x=0.6666666..., variance_y=0.6666666...)
+    >>> dcor.u_distance_stats_sqr(a, b, exponent=0.5) # doctest: +ELLIPSIS
+    Stats(covariance_xy=-0.2996598..., correlation_xy=-0.4050479..., \
+variance_x=0.8209855..., variance_y=0.6666666...)
 
     '''
-    if _can_use_u_fast_algorithm(x, y):
+    if _can_use_u_fast_algorithm(x, y, **kwargs):
         return _u_distance_stats_sqr_fast(x, y)
     else:
         return _distance_sqr_stats_naive_generic(
             x, y,
             matrix_centered=_u_distance_matrix,
-            product=u_product)
+            product=u_product,
+            **kwargs)
 
 
-def u_distance_covariance_sqr(x, y):
+def u_distance_covariance_sqr(x, y, **kwargs):
     '''
+    u_distance_covariance_sqr(x, y, *, exponent=1)
+
     Computes the unbiased estimator for the squared distance covariance
     between two random vectors.
 
@@ -1153,6 +1238,10 @@ def u_distance_covariance_sqr(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
 
     Returns
     -------
@@ -1178,22 +1267,26 @@ def u_distance_covariance_sqr(x, y):
     ...               [9, 10, 11, 12],
     ...               [13, 14, 15, 16]])
     >>> b = np.array([[1], [0], [0], [1]])
-    >>> dcor.u_distance_covariance_sqr(a, a)
-    42.666666666666671
-    >>> dcor.u_distance_covariance_sqr(a, b)
-    -2.666666666666667
-    >>> dcor.u_distance_covariance_sqr(b, b)
-    0.66666666666666652
+    >>> dcor.u_distance_covariance_sqr(a, a) # doctest: +ELLIPSIS
+    42.6666666...
+    >>> dcor.u_distance_covariance_sqr(a, b) # doctest: +ELLIPSIS
+    -2.6666666...
+    >>> dcor.u_distance_covariance_sqr(b, b) # doctest: +ELLIPSIS
+    0.6666666...
+    >>> dcor.u_distance_covariance_sqr(a, b, exponent=0.5) # doctest: +ELLIPSIS
+    -0.2996598...
     '''
 
-    if _can_use_u_fast_algorithm(x, y):
+    if _can_use_u_fast_algorithm(x, y, **kwargs):
         return _u_distance_covariance_sqr_fast(x, y)
     else:
-        return _u_distance_covariance_sqr_naive(x, y)
+        return _u_distance_covariance_sqr_naive(x, y, **kwargs)
 
 
-def u_distance_correlation_sqr(x, y):
+def u_distance_correlation_sqr(x, y, **kwargs):
     '''
+    u_distance_correlation_sqr(x, y, *, exponent=1)
+
     Computes the bias-corrected estimator for the squared distance correlation
     between two random vectors.
 
@@ -1205,6 +1298,10 @@ def u_distance_correlation_sqr(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
 
     Returns
     -------
@@ -1237,12 +1334,15 @@ def u_distance_correlation_sqr(x, y):
     -0.5
     >>> dcor.u_distance_correlation_sqr(b, b)
     1.0
+    >>> dcor.u_distance_correlation_sqr(a, b, exponent=0.5)
+    ... # doctest: +ELLIPSIS
+    -0.4050479...
     '''
 
-    if _can_use_u_fast_algorithm(x, y):
+    if _can_use_u_fast_algorithm(x, y, **kwargs):
         return _u_distance_correlation_sqr_fast(x, y)
     else:
-        return _u_distance_correlation_sqr_naive(x, y)
+        return _u_distance_correlation_sqr_naive(x, y, **kwargs)
 
 
 def partial_distance_covariance(x, y, z):
@@ -1379,7 +1479,7 @@ def _energy_distance_from_distance_matrices(
 
 def energy_distance(x, y, **kwargs):
     '''
-    energy_distance(x, y, *, metric=None)
+    energy_distance(x, y, *, exponent=1)
 
     Computes the estimator for the energy distance of the
     random vectors corresponding to :math:`x` and :math:`y`.
@@ -1393,9 +1493,8 @@ def energy_distance(x, y, **kwargs):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
-    metric: callable
-        Distance metric to use. If :code:`None`, then it uses the Euclidean
-        distance.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
 
     Returns
     -------
@@ -1420,36 +1519,27 @@ def energy_distance(x, y, **kwargs):
     >>> dcor.energy_distance(b, b)
     0.0
 
-    A different metric can also be used instead of the Euclidean distance:
+    A different exponent for the Euclidean distance in the range
+    :math:`(0, 2)` can be used:
 
-    >>> euclidean_1_5 = dcor.distances.euclidean_power(1.5)
-    >>> dcor.energy_distance(a, a, metric=euclidean_1_5)
+    >>> dcor.energy_distance(a, a, exponent=1.5)
     0.0
-    >>> dcor.energy_distance(a, b, metric=euclidean_1_5)
+    >>> dcor.energy_distance(a, b, exponent=1.5)
     ... # doctest: +ELLIPSIS
     99.7863955...
-    >>> dcor.energy_distance(b, b, metric=euclidean_1_5)
+    >>> dcor.energy_distance(b, b, exponent=1.5)
     0.0
 
-    However, if the metric is not of strong negative type, the energy
-    distance is not guaranteed to be a metric:
-
-    >>> manhattan_distance = dcor.distances.minkowski(1)
-    >>> dcor.energy_distance(a, a, metric=manhattan_distance)
-    0.0
-    >>> dcor.energy_distance(a, b, metric=manhattan_distance)
-    ... # doctest: +ELLIPSIS
-    40.6666666...
-    >>> dcor.energy_distance(b, b, metric=manhattan_distance)
-    0.0
     '''
 
-    metric = kwargs.pop('metric', None)
+    exponent = kwargs.pop('exponent', 1)
     _check_kwargs_empty(kwargs)
 
-    distance_xx = distances._pdist(x, metric=metric)
-    distance_yy = distances._pdist(y, metric=metric)
-    distance_xy = distances._cdist(x, y, metric=metric)
+    _check_valid_energy_exponent(exponent)
+
+    distance_xx = distances._pdist(x, exponent=exponent)
+    distance_yy = distances._pdist(y, exponent=exponent)
+    distance_xy = distances._cdist(x, y, exponent=exponent)
 
     return _energy_distance_from_distance_matrices(distance_xx=distance_xx,
                                                    distance_yy=distance_yy,

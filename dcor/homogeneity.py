@@ -29,7 +29,7 @@ def _energy_test_statistic_from_distance_matrices(
 
 def energy_test_statistic(x, y, **kwargs):
     '''
-    energy_test_statistic(x, y, *, metric=None)
+    energy_test_statistic(x, y, *, exponent=1)
 
     Computes the statistic for homogeneity based on the energy distance, for
     random vectors corresponding to :math:`x` and :math:`y`.
@@ -42,9 +42,8 @@ def energy_test_statistic(x, y, **kwargs):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
-    metric: callable
-        Distance metric to use. If :code:`None`, then it uses the Euclidean
-        distance.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
 
     Returns
     -------
@@ -128,7 +127,7 @@ def _random_state_init(random_state):
 
 def energy_test(*args, **kwargs):
     '''
-    energy_test(*args, num_resamples=0, metric=None, random_state=None)
+    energy_test(*args, num_resamples=0, exponent=1, random_state=None)
 
     Computes the test of homogeneity based on the energy distance, for
     an arbitrary number of random vectors.
@@ -143,9 +142,8 @@ def energy_test(*args, **kwargs):
         variables while the rows are individual instances of the random vector.
     num_resamples: int
         Number of permutations resamples to take in the permutation test.
-    metric: callable
-        Distance metric to use. If :code:`None`, then it uses the Euclidean
-        distance.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
     random_state: {None, int, array_like, numpy.random.RandomState}
         Random state to generate the permutations.
 
@@ -184,11 +182,15 @@ def energy_test(*args, **kwargs):
     HypothesisTest(p_value=0.3333333..., statistic=35.2766732...)
     >>> dcor.homogeneity.energy_test(a, c, num_resamples=7, random_state=0)
     HypothesisTest(p_value=0.125, statistic=4233.8935035...)
+
+    A different exponent for the Euclidean distance in the range
+    :math:`(0, 2)` can be used:
+
+    >>> dcor.homogeneity.energy_test(a, b, exponent=1.5) # doctest: +ELLIPSIS
+    HypothesisTest(p_value=1.0, statistic=171.0623923...)
     '''
 
     random_state = _random_state_init(kwargs.pop("random_state", None))
-
-    metric = kwargs.pop("metric", None)
 
     # k
     num_samples = len(args)
@@ -196,7 +198,10 @@ def energy_test(*args, **kwargs):
     # B
     num_resamples = kwargs.pop("num_resamples", 0)
 
+    exponent = kwargs.pop("exponent", 1)
+
     _dcor._check_kwargs_empty(kwargs)
+    _dcor._check_valid_energy_exponent(exponent)
 
     # alpha
     # significance_level = 1.0 / (num_resamples + 1)
@@ -215,7 +220,7 @@ def energy_test(*args, **kwargs):
     sample_indexes[1:] = _np.cumsum(sample_sizes)[:-1]
 
     # Compute the distance matrix once
-    sample_distances = _distances._pdist(pooled_samples, metric=metric)
+    sample_distances = _distances._pdist(pooled_samples, exponent=exponent)
 
     # epsilon_n
     observed_energy = _energy_test_statistic_multivariate_from_distance_matrix(
