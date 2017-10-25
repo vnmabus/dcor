@@ -210,7 +210,7 @@ def energy_test(*args, **kwargs):
     sample_sizes = [a.shape[0] for a in args]
 
     # {W_1, ..., W_n}
-    pooled_samples = _np.concatenate(args)
+    pooled_samples = _np.concatenate([_dcor._transform_to_2d(a) for a in args])
 
     # n
     pooled_sample_size = pooled_samples.shape[0]

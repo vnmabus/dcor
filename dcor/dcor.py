@@ -44,18 +44,22 @@ def _check_kwargs_empty(kwargs):
 
 def _check_valid_energy_exponent(exponent):
     if not 0 < exponent < 2:
-        warnings.warn('The energy distance is not guaranteed to be '
-                      'a valid metric if the exponent value is '
-                      'not in the range :math:`(0, 2)`. The exponent passed '
-                      'is {exponent}.'.format(exponent=exponent))
+        warning_msg = ('The energy distance is not guaranteed to be '
+                       'a valid metric if the exponent value is '
+                       'not in the range (0, 2). The exponent passed '
+                       'is {exponent}.'.format(exponent=exponent))
+
+        warnings.warn(warning_msg)
 
 
 def _check_valid_dcov_exponent(exponent):
     if not 0 < exponent < 2:
-        warnings.warn('Distance covariance is not guaranteed to '
-                      'characterize independence if the exponent value is '
-                      'not in the range :math:`(0, 2)`. The exponent passed '
-                      'is {exponent}.'.format(exponent=exponent))
+        warning_msg = ('Distance covariance is not guaranteed to '
+                       'characterize independence if the exponent value is '
+                       'not in the range (0, 2). The exponent passed '
+                       'is {exponent}.'.format(exponent=exponent))
+
+        warnings.warn(warning_msg)
 
 
 def double_centered(a):
@@ -1531,6 +1535,9 @@ def energy_distance(x, y, **kwargs):
     0.0
 
     '''
+
+    x = _transform_to_2d(x)
+    y = _transform_to_2d(y)
 
     exponent = kwargs.pop('exponent', 1)
     _check_kwargs_empty(kwargs)
