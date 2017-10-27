@@ -72,6 +72,9 @@ def energy_test_statistic(x, y, **kwargs):
     >>> dcor.homogeneity.energy_test_statistic(b, b)
     0.0
     '''
+    
+    x = _dcor._transform_to_2d(x)
+    y = _dcor._transform_to_2d(y)
 
     n = x.shape[0]
     m = y.shape[0]
@@ -206,11 +209,13 @@ def energy_test(*args, **kwargs):
     # alpha
     # significance_level = 1.0 / (num_resamples + 1)
 
+    samples = [_dcor._transform_to_2d(a) for a in args]
+
     # {n_1, ..., n_k}
-    sample_sizes = [a.shape[0] for a in args]
+    sample_sizes = [a.shape[0] for a in samples]
 
     # {W_1, ..., W_n}
-    pooled_samples = _np.concatenate([_dcor._transform_to_2d(a) for a in args])
+    pooled_samples = _np.concatenate(samples)
 
     # n
     pooled_sample_size = pooled_samples.shape[0]

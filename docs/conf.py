@@ -66,8 +66,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'dcor'
-copyright = '2017, Author'
-author = 'Author'
+copyright = '2017, Carlos Ramos Carreño'
+author = 'Carlos Ramos Carreño'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

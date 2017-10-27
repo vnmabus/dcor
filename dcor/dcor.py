@@ -62,6 +62,24 @@ def _check_valid_dcov_exponent(exponent):
         warnings.warn(warning_msg)
 
 
+def _sqrt(x):
+    '''
+    Sqrt function for ndarrays that tries to use the exponentiation operator
+    if the objects stored do not supply a sqrt method.
+    '''
+    try:
+        return np.sqrt(x)
+    except AttributeError:
+        exponent = 0.5
+
+        try:
+            exponent = np.take(x, 0).from_float(exponent)
+        except AttributeError:
+            pass
+
+        return x ** exponent
+
+
 def double_centered(a):
     '''
     Returns a copy of the matrix :math:`a` in which both the sum of its
@@ -113,8 +131,8 @@ def double_centered(a):
     mu = np.sum(a) / (dim * dim)
     sum_cols = np.sum(a, 0, keepdims=True)
     sum_rows = np.sum(a, 1, keepdims=True)
-    mu_cols = np.ones((dim, 1)).dot(sum_cols / dim)
-    mu_rows = (sum_rows / dim).dot(np.ones((1, dim)))
+    mu_cols = sum_cols / dim
+    mu_rows = sum_rows / dim
 
     return a - mu_rows - mu_cols + mu
 
@@ -514,7 +532,7 @@ def _distance_matrix_generic(x, centering, exponent=1):
 
     _check_valid_dcov_exponent(exponent)
 
-    x = _transform_to_2d(np.asfarray(x))
+    x = _transform_to_2d(x)
 
     # Calculate distance matrices
     a = distances._pdist(x, exponent=exponent)
@@ -659,7 +677,7 @@ def distance_covariance(x, y, **kwargs):
     >>> dcor.distance_covariance(a, b, exponent=0.5) # doctest: +ELLIPSIS
     0.6087614...
     '''
-    return np.sqrt(distance_covariance_sqr(x, y, **kwargs))
+    return _sqrt(distance_covariance_sqr(x, y, **kwargs))
 
 
 def _distance_sqr_stats_naive_generic(x, y, matrix_centered, product,
@@ -674,8 +692,8 @@ def _distance_sqr_stats_naive_generic(x, y, matrix_centered, product,
     variance_x_sqr = product(a, a)
     variance_y_sqr = product(b, b)
 
-    denominator_sqr = variance_x_sqr * variance_y_sqr
-    denominator = math.sqrt(denominator_sqr)
+    denominator_sqr = np.absolute(variance_x_sqr * variance_y_sqr)
+    denominator = _sqrt(denominator_sqr)
 
     # Comparisons using a tolerance can change results if the
     # covariance has a similar order of magnitude
@@ -819,7 +837,7 @@ variance_y=0.5)
 variance_x=1.6495217..., variance_y=0.5)
     '''
 
-    return Stats(*[np.sqrt(s) for s in distance_stats_sqr(x, y, **kwargs)])
+    return Stats(*[_sqrt(s) for s in distance_stats_sqr(x, y, **kwargs)])
 
 
 def distance_correlation_sqr(x, y, **kwargs):
@@ -964,14 +982,14 @@ def _can_use_u_fast_algorithm(x, y, exponent=1):
 def _dyad_update(y, c):
 
     n = y.shape[0]
-    gamma = np.zeros(n)
+    gamma = np.zeros(n, dtype=c.dtype)
 
     # Step 1: get the smallest L such that n <= 2^L
     L = int(math.ceil(np.log2(n)))
 
     # Step 2: assign s(l, k) = 0
     S_len = 2 ** (L + 1)
-    S = np.zeros(S_len)
+    S = np.zeros(S_len, dtype=c.dtype)
 
     pos_sums = np.arange(L)
     pos_sums[:] = 2 ** (L - pos_sums)
@@ -1053,8 +1071,8 @@ def _u_distance_covariance_sqr_fast(x, y):
     '''
     Fast algorithm for the distance covariance.
     '''
-    x = np.asfarray(x)
-    y = np.asfarray(y)
+    x = np.asarray(x)
+    y = np.asarray(y)
 
     x = np.ravel(x)
     y = np.ravel(y)
@@ -1106,7 +1124,7 @@ def _u_distance_covariance_sqr_fast(x, y):
     b_dot_dot = 2 * np.sum(alpha_y * y) - 2 * np.sum(beta_y)
 
     # Step 7
-    gamma_1 = _partial_sum_2d(x, y, np.ones(n))
+    gamma_1 = _partial_sum_2d(x, y, np.ones(n, dtype=x.dtype))
     gamma_x = _partial_sum_2d(x, y, x)
     gamma_y = _partial_sum_2d(x, y, y)
     gamma_xy = _partial_sum_2d(x, y, x * y)
@@ -1130,8 +1148,8 @@ def _u_distance_stats_sqr_fast(x, y):
     variance_x_sqr = _u_distance_covariance_sqr_fast(x, x)
     variance_y_sqr = _u_distance_covariance_sqr_fast(y, y)
     denominator_sqr_signed = variance_x_sqr * variance_y_sqr
-    denominator_sqr = np.fabs(denominator_sqr_signed)
-    denominator = math.sqrt(denominator_sqr)
+    denominator_sqr = np.absolute(denominator_sqr_signed)
+    denominator = _sqrt(denominator_sqr)
 
     # Comparisons using a tolerance can change results if the
     # covariance has a similar order of magnitude
@@ -1466,7 +1484,7 @@ def partial_distance_correlation(x, y, z):
     if denom_sqr == 0:
         correlation = denom_sqr.dtype.type(0)
     else:
-        correlation = u_product(a_proj, b_proj) / np.sqrt(denom_sqr)
+        correlation = u_product(a_proj, b_proj) / _sqrt(denom_sqr)
 
     return correlation
 

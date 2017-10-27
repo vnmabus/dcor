@@ -1,9 +1,26 @@
 from __future__ import absolute_import, division, print_function
 
 import scipy.spatial
+import numpy as _np
 
 
-def _pdist(x, exponent=1):
+def _cdist_naive(x, y, exponent=1):
+    '''
+    Pairwise distance, custom implementation.
+    '''
+
+    squared_norms = ((x[_np.newaxis, :, :] - y[:, _np.newaxis, :]) ** 2).sum(2)
+
+    exponent = exponent / 2
+    try:
+        exponent = squared_norms.take(0).from_float(exponent)
+    except AttributeError:
+        pass
+
+    return squared_norms ** exponent
+
+
+def _pdist_scipy(x, exponent=1):
     '''
     Pairwise distance between points in a set.
     '''
@@ -22,7 +39,7 @@ def _pdist(x, exponent=1):
     return distances
 
 
-def _cdist(x, y, exponent=1):
+def _cdist_scipy(x, y, exponent=1):
     '''
     Pairwise distance between the points in two sets.
     '''
@@ -38,3 +55,39 @@ def _cdist(x, y, exponent=1):
         distances **= exponent / 2
 
     return distances
+
+
+def _can_be_double(x):
+    '''
+    Return if the array can be safely converted to double in
+    intermediate steps.
+    '''
+
+    return (_np.issubdtype(x.dtype, float) and
+            x.dtype.itemsize <= _np.dtype(float).itemsize)
+
+
+def _pdist(x, exponent=1):
+    '''
+    As Scipy converts every value to double, this wrapper uses
+    a less efficient implementation if the original dtype
+    can not be converted to double.
+    '''
+
+    if _can_be_double(x):
+        return _pdist_scipy(x, exponent)
+    else:
+        return _cdist_naive(x, x, exponent)
+
+
+def _cdist(x, y, exponent=1):
+    '''
+    As Scipy converts every value to double, this wrapper uses
+    a less efficient implementation if the original dtype
+    can not be converted to double.
+    '''
+
+    if _can_be_double(x) and _can_be_double(y):
+        return _cdist_scipy(x, y, exponent)
+    else:
+        return _cdist_naive(x, y, exponent)
