@@ -61,10 +61,17 @@ def _can_be_double(x):
     '''
     Return if the array can be safely converted to double in
     intermediate steps.
+
+    That happens when the dtype is a float with the same size of
+    a double or narrower, or when is an integer that can be safely
+    converted to double (we assume that this is the case when the
+    size of the integer is half of the size of a double or narrower).
     '''
 
-    return (_np.issubdtype(x.dtype, float) and
-            x.dtype.itemsize <= _np.dtype(float).itemsize)
+    return ((_np.issubdtype(x.dtype, float) and
+            x.dtype.itemsize <= _np.dtype(float).itemsize) or
+            (_np.issubdtype(x.dtype, int) and
+            x.dtype.itemsize <= _np.dtype(float).itemsize / 2))
 
 
 def _pdist(x, exponent=1):

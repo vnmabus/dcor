@@ -260,9 +260,11 @@ class TestEnergyTest(unittest.TestCase):
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
+        random_state = np.random.RandomState(0)
+
         result = dcor.homogeneity.energy_test(a, b,
                                               num_resamples=num_resamples,
-                                              random_state=0)
+                                              random_state=random_state)
 
         self.assertGreater(result.p_value, significance)
 
@@ -329,4 +331,4 @@ class TestEnergyTest(unittest.TestCase):
 
 if __name__ == "__main__":
     # import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()
+    unittest.main()  # pragma: no cover

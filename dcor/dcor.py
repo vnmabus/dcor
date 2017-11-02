@@ -32,6 +32,24 @@ HypothesisTest = collections.namedtuple('HypothesisTest', ['p_value',
                                         'statistic'])
 
 
+def _jit(function):
+    '''
+    Compile a function using a jit compiler. The function is always
+    compiled to check errors, but is only used outside tests, so
+    that code coverage analysis can be performed in jitted functions.
+
+    The tests set sys._called_from_test in conftest.py.
+    '''
+    import sys
+
+    compiled = numba.jit(function)
+
+    if hasattr(sys, '_called_from_test'):
+        return function
+    else:  # pragma: no cover
+        return compiled
+
+
 def _check_kwargs_empty(kwargs):
     '''
     Raise an apropiate exception if the kwargs dictionary is not empty.
@@ -978,7 +996,7 @@ def _can_use_u_fast_algorithm(x, y, exponent=1):
             x.shape[0] > 3 and y.shape[0] > 3 and exponent == 1)
 
 
-@numba.jit
+@_jit
 def _dyad_update(y, c):
 
     n = y.shape[0]
@@ -1078,11 +1096,8 @@ def _u_distance_covariance_sqr_fast(x, y):
     y = np.ravel(y)
 
     n = x.shape[0]
-    if n <= 3:
-        raise ValueError(
-            "Expected dimension of the matrix > 3 and found {dim}".format(
-                dim=n))
-    assert(n == y.shape[0])
+    assert n > 3
+    assert n == y.shape[0]
     temp = range(n)
 
     # Step 1
