@@ -77,10 +77,10 @@ References
     :scale: 100%
     :target: https://dcor.readthedocs.io/en/latest/?badge=latest
     
-.. |coverage| image:: http://codecov.io/github/vnmabus/dcor/coverage.svg?branch=devel
+.. |coverage| image:: http://codecov.io/github/vnmabus/dcor/coverage.svg?branch=develop
     :alt: Coverage Status
     :scale: 100%
-    :target: https://codecov.io/github/vnmabus/dcor?branch=devel
+    :target: https://codecov.io/gh/vnmabus/dcor/branch/develop
     
 .. |pypi| image:: https://badge.fury.io/py/dcor.svg
     :alt: Pypi version

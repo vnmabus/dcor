@@ -6,7 +6,7 @@
 dcor version |version|
 ======================
 
-|build-status|
+|build-status| |docs| |coverage| |pypi|
 
 Distance covariance and distance correlation are
 dependency measures between random vectors introduced in :cite:`a-distance_correlation`.
@@ -44,3 +44,18 @@ Indices and tables
     :alt: build status
     :scale: 100%
     :target: https://travis-ci.org/vnmabus/dcor
+    
+.. |docs| image:: https://readthedocs.org/projects/dcor/badge/?version=latest
+    :alt: Documentation Status
+    :scale: 100%
+    :target: https://dcor.readthedocs.io/en/latest/?badge=latest
+    
+.. |coverage| image:: http://codecov.io/github/vnmabus/dcor/coverage.svg?branch=develop
+    :alt: Coverage Status
+    :scale: 100%
+    :target: https://codecov.io/gh/vnmabus/dcor/branch/develop
+    
+.. |pypi| image:: https://badge.fury.io/py/dcor.svg
+    :alt: Pypi version
+    :scale: 100%
+    :target: https://pypi.python.org/pypi/dcor/
