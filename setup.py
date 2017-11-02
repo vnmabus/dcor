@@ -89,6 +89,6 @@ setup(name='dcor',
                         'scipy',
                         'setuptools'],
       setup_requires=pytest_runner,
-      tests_require=['pytest'],
+      tests_require=['pytest-cov'],
       test_suite='dcor.tests',
       zip_safe=False)

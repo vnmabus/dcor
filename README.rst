@@ -1,7 +1,7 @@
 dcor
 ====
 
-|build-status| |docs| |coverage|
+|build-status| |docs| |coverage| |pypi|
 
 dcor: distance correlation and related E-statistics in Python.
 
@@ -81,3 +81,8 @@ References
     :alt: Coverage Status
     :scale: 100%
     :target: https://codecov.io/github/vnmabus/dcor?branch=devel
+    
+.. |pypi| image:: https://badge.fury.io/py/dcor.svg
+    :alt: Pypi version
+    :scale: 100%
+    :target: https://pypi.python.org/pypi/dcor/
