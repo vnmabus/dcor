@@ -72,7 +72,7 @@ def energy_test_statistic(x, y, **kwargs):
     >>> dcor.homogeneity.energy_test_statistic(b, b)
     0.0
     '''
-    
+
     x = _dcor._transform_to_2d(x)
     y = _dcor._transform_to_2d(y)
 

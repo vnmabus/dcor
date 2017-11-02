@@ -5,3 +5,7 @@ python:
     - "3.6"
 script: 
     - "python setup.py test"
+before_install:
+  pip install codecov
+after_success:
+  codecov
