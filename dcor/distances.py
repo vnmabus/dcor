@@ -64,14 +64,13 @@ def _can_be_double(x):
 
     That happens when the dtype is a float with the same size of
     a double or narrower, or when is an integer that can be safely
-    converted to double (we assume that this is the case when the
-    size of the integer is half of the size of a double or narrower).
+    converted to double (if the roundtrip conversion works).
     '''
 
     return ((_np.issubdtype(x.dtype, float) and
             x.dtype.itemsize <= _np.dtype(float).itemsize) or
             (_np.issubdtype(x.dtype, int) and
-            x.dtype.itemsize <= _np.dtype(float).itemsize / 2))
+            _np.all(_np.asfarray(x).astype(dtype=x.dtype) == x)))
 
 
 def _pdist(x, exponent=1):

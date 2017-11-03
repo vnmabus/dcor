@@ -1545,12 +1545,10 @@ def energy_distance(x, y, **kwargs):
     >>> a = np.array([[1, 2, 3, 4],
     ...               [5, 6, 7, 8],
     ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]],
-    ...              dtype=np.int32)
+    ...               [13, 14, 15, 16]])
     >>> b = np.array([[1, 0, 0, 1],
     ...               [0, 1, 1, 1],
-    ...               [1, 1, 1, 1]],
-    ...              dtype=np.int32)
+    ...               [1, 1, 1, 1]])
     >>> dcor.energy_distance(a, a)
     0.0
     >>> dcor.energy_distance(a, b) # doctest: +ELLIPSIS
