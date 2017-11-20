@@ -1,3 +1,11 @@
+"""
+Distance functions between sets of points.
+
+This module provide functions that compute the distance between one or two
+sets of points. The Scipy implementation is used when the conversion to
+a double precision floating point number will not cause loss of precision.
+"""
+
 from __future__ import absolute_import, division, print_function
 
 import scipy.spatial
@@ -5,10 +13,7 @@ import numpy as _np
 
 
 def _cdist_naive(x, y, exponent=1):
-    '''
-    Pairwise distance, custom implementation.
-    '''
-
+    """Pairwise distance, custom implementation."""
     squared_norms = ((x[_np.newaxis, :, :] - y[:, _np.newaxis, :]) ** 2).sum(2)
 
     exponent = exponent / 2
@@ -21,10 +26,7 @@ def _cdist_naive(x, y, exponent=1):
 
 
 def _pdist_scipy(x, exponent=1):
-    '''
-    Pairwise distance between points in a set.
-    '''
-
+    """Pairwise distance between points in a set."""
     metric = 'euclidean'
 
     if exponent != 1:
@@ -40,10 +42,7 @@ def _pdist_scipy(x, exponent=1):
 
 
 def _cdist_scipy(x, y, exponent=1):
-    '''
-    Pairwise distance between the points in two sets.
-    '''
-
+    """Pairwise distance between the points in two sets."""
     metric = 'euclidean'
 
     if exponent != 1:
@@ -58,15 +57,14 @@ def _cdist_scipy(x, y, exponent=1):
 
 
 def _can_be_double(x):
-    '''
-    Return if the array can be safely converted to double in
-    intermediate steps.
+    """
+    Return if the array can be safely converted to double.
 
     That happens when the dtype is a float with the same size of
     a double or narrower, or when is an integer that can be safely
     converted to double (if the roundtrip conversion works).
-    '''
 
+    """
     return ((_np.issubdtype(x.dtype, float) and
             x.dtype.itemsize <= _np.dtype(float).itemsize) or
             (_np.issubdtype(x.dtype, int) and
@@ -74,12 +72,14 @@ def _can_be_double(x):
 
 
 def _pdist(x, exponent=1):
-    '''
+    """
+    Pairwise distance between points in a set.
+
     As Scipy converts every value to double, this wrapper uses
     a less efficient implementation if the original dtype
     can not be converted to double.
-    '''
 
+    """
     if _can_be_double(x):
         return _pdist_scipy(x, exponent)
     else:
@@ -87,12 +87,14 @@ def _pdist(x, exponent=1):
 
 
 def _cdist(x, y, exponent=1):
-    '''
+    """
+    Pairwise distance between points in two sets.
+
     As Scipy converts every value to double, this wrapper uses
     a less efficient implementation if the original dtype
     can not be converted to double.
-    '''
 
+    """
     if _can_be_double(x) and _can_be_double(y):
         return _cdist_scipy(x, y, exponent)
     else:

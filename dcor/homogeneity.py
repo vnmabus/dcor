@@ -1,35 +1,42 @@
+"""
+Functions for testing homogeneity of several distributions.
+
+The functions in this module provide methods for testing if
+the samples generated from two random vectors have the same
+distribution.
+"""
+
 from __future__ import absolute_import, division, print_function
 
 import numpy as _np
 
-from . import dcor as _dcor
+from . import _energy
+from . import _utils
 from . import distances as _distances
+from ._utils import _transform_to_2d, _check_kwargs_empty
 
 
 def _energy_test_statistic_coefficient(n, m):
-    '''
-    Coefficient of the test statistic.
-    '''
+    """Coefficient of the test statistic."""
     return n * m / (n + m)
 
 
 def _energy_test_statistic_from_distance_matrices(
         distance_xx, distance_yy, distance_xy, n, m):
-    '''
-    Test statistic with precomputed distance matrices.
-    '''
-
-    energy_distance = _dcor._energy_distance_from_distance_matrices(
+    """Test statistic with precomputed distance matrices."""
+    energy_distance = _energy._energy_distance_from_distance_matrices(
         distance_xx=distance_xx, distance_yy=distance_yy,
         distance_xy=distance_xy
-        )
+    )
 
     return _energy_test_statistic_coefficient(n, m) * energy_distance
 
 
 def energy_test_statistic(x, y, **kwargs):
-    '''
+    """
     energy_test_statistic(x, y, *, exponent=1)
+
+    Homogeneity statistic.
 
     Computes the statistic for homogeneity based on the energy distance, for
     random vectors corresponding to :math:`x` and :math:`y`.
@@ -71,29 +78,25 @@ def energy_test_statistic(x, y, **kwargs):
     35.2766732...
     >>> dcor.homogeneity.energy_test_statistic(b, b)
     0.0
-    '''
 
-    x = _dcor._transform_to_2d(x)
-    y = _dcor._transform_to_2d(y)
+    """
+    x = _transform_to_2d(x)
+    y = _transform_to_2d(y)
 
     n = x.shape[0]
     m = y.shape[0]
 
     coefficient = _energy_test_statistic_coefficient(n, m)
 
-    return coefficient * _dcor.energy_distance(x, y, **kwargs)
+    return coefficient * _energy.energy_distance(x, y, **kwargs)
 
 
 def _energy_test_statistic_multivariate_from_distance_matrix(
         distance, indexes, sizes):
-    '''
-    Computes the statistic for several random vectors given
-    the distance matrix.
-    '''
-
+    """Statistic for several random vectors given the distance matrix."""
     energy = 0.0
 
-    for i in range(len(indexes)):
+    for i, _ in enumerate(indexes):
         for j in range(i + 1, len(indexes)):
             range_i = range(indexes[i], indexes[i] + sizes[i])
             range_j = range(indexes[j], indexes[j] + sizes[j])
@@ -115,11 +118,14 @@ def _energy_test_statistic_multivariate_from_distance_matrix(
 
 
 def _random_state_init(random_state):
-    '''
-    Initialize a RandomState object, if its not already a
-    RandomState or similar object.
-    '''
+    """
+    Initialize a RandomState object.
 
+    If the object is a RandomState, or cannot be used to
+    initialize one, it will be assumed that is a similar object
+    and returned.
+
+    """
     try:
         random_state = _np.random.RandomState(random_state)
     except TypeError:
@@ -128,11 +134,13 @@ def _random_state_init(random_state):
     return random_state
 
 
-def energy_test(*args, **kwargs):
-    '''
+def energy_test(*args, **kwargs):  # pylint:disable=too-many-locals
+    """
     energy_test(*args, num_resamples=0, exponent=1, random_state=None)
 
-    Computes the test of homogeneity based on the energy distance, for
+    Test of homogeneity based on the energy distance.
+
+    Compute the test of homogeneity based on the energy distance, for
     an arbitrary number of random vectors.
 
     The test is a permutation test where the null hypothesis is that all
@@ -191,8 +199,8 @@ def energy_test(*args, **kwargs):
 
     >>> dcor.homogeneity.energy_test(a, b, exponent=1.5) # doctest: +ELLIPSIS
     HypothesisTest(p_value=1.0, statistic=171.0623923...)
-    '''
 
+    """
     random_state = _random_state_init(kwargs.pop("random_state", None))
 
     # k
@@ -203,13 +211,13 @@ def energy_test(*args, **kwargs):
 
     exponent = kwargs.pop("exponent", 1)
 
-    _dcor._check_kwargs_empty(kwargs)
-    _dcor._check_valid_energy_exponent(exponent)
+    _check_kwargs_empty(kwargs)
+    _energy._check_valid_energy_exponent(exponent)
 
     # alpha
     # significance_level = 1.0 / (num_resamples + 1)
 
-    samples = [_dcor._transform_to_2d(a) for a in args]
+    samples = [_transform_to_2d(a) for a in args]
 
     # {n_1, ..., n_k}
     sample_sizes = [a.shape[0] for a in samples]
@@ -232,7 +240,7 @@ def energy_test(*args, **kwargs):
         distance=sample_distances,
         indexes=sample_indexes,
         sizes=sample_sizes
-        )
+    )
 
     # epsilon^(b)_n
     bootstrap_energies = _np.ones(num_resamples, dtype=observed_energy.dtype)
@@ -247,14 +255,14 @@ def energy_test(*args, **kwargs):
             distance=permuted_distance_matrix,
             indexes=sample_indexes,
             sizes=sample_sizes
-            )
+        )
 
         bootstrap_energies[bootstrap] = energy
 
     extreme_results = bootstrap_energies > observed_energy
     p_value = (_np.sum(extreme_results) + 1) / (num_resamples + 1)
 
-    return _dcor.HypothesisTest(
-            p_value=p_value,
-            statistic=observed_energy
-        )
+    return _utils.HypothesisTest(
+        p_value=p_value,
+        statistic=observed_energy
+    )

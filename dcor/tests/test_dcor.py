@@ -1,30 +1,40 @@
+"""Tests of the dcor package"""
+
 from decimal import Decimal
 from fractions import Fraction
 import re
 import unittest
 
 import dcor
-import dcor.dcor as dcor_internals
+import dcor._dcor as dcor_internals
 import numpy as np
 
 
 class TestVersion(unittest.TestCase):
+    """Tests of the version number."""
 
     def test_version(self):
-        regex = re.compile("\d+\.\d+(\.\d+)?")
+        """Test that the version has the right format."""
+        regex = re.compile(r"\d+\.\d+(\.\d+)?")
         self.assertTrue(regex.match(dcor.__version__))
         self.assertNotEqual(dcor.__version__, "0.0")
 
 
 class TestDistanceCorrelation(unittest.TestCase):
+    """Distance correlation tests"""
 
     def setUp(self):
+        """Set the common parameters"""
         self.test_max_size = 10
 
-    def tearDown(self):
-        pass
-
     def test_double_centered(self):
+        """
+        Test that the double centering is right.
+
+        Check that the sum of the rows and colums of a double centered
+        matrix is 0.
+
+        """
         for i in range(1, self.test_max_size + 1):
             matrix = np.random.RandomState(i).rand(i, i)
 
@@ -36,36 +46,29 @@ class TestDistanceCorrelation(unittest.TestCase):
             np.testing.assert_allclose(column_sum, np.zeros(i), atol=1e-8)
             np.testing.assert_allclose(row_sum, np.zeros(i), atol=1e-8)
 
-    def test_average_product(self):
-        size = 5
+    def test_dyad_update(self):  # pylint:disable=no-self-use
+        """Compare dyad update results with the original code in the paper."""
+        y = np.array([1, 2, 3])
+        c = np.array([4, 5, 6])
 
-        matrix1 = np.random.RandomState(0).rand(size, size)
-        matrix2 = np.zeros((size, size))
-
-        result = dcor.average_product(matrix1, matrix2)
-
-        self.assertAlmostEqual(result, 0)
-
-    def test_dyad_update(self):
-        Y = np.array([1, 2, 3])
-        C = np.array([4, 5, 6])
-
-        gamma = dcor_internals._dyad_update(Y, C)
+        gamma = dcor_internals._dyad_update(y, c)
         expected_gamma = [0., 4., 9.]
 
         np.testing.assert_allclose(gamma, expected_gamma)
 
-    def test_partial_sum_2d(self):
-        X = [1, 2, 3]
-        Y = [4, 5, 6]
-        C = [7, 8, 9]
+    def test_partial_sum_2d(self):  # pylint:disable=no-self-use
+        """Compare partial sum results with the original code in the paper."""
+        x = [1, 2, 3]
+        y = [4, 5, 6]
+        c = [7, 8, 9]
 
-        gamma = dcor_internals._partial_sum_2d(X, Y, C)
+        gamma = dcor_internals._partial_sum_2d(x, y, c)
         expected_gamma = [17., 16., 15.]
 
         np.testing.assert_allclose(gamma, expected_gamma)
 
     def test_distance_correlation_naive(self):
+        """Compare distance correlation with the energy package."""
         matrix1 = np.array(((1, 2, 3), (4, 5, 6), (7, 8, 9)))
         matrix2 = np.array(((7, 3, 6), (2, 1, 4), (3, 8, 1)))
         matrix3 = np.array(((1, 1, 1), (2, 1, 1), (1, 1, 1)))
@@ -88,7 +91,7 @@ class TestDistanceCorrelation(unittest.TestCase):
         self.assertAlmostEqual(correlation, 0.31623, places=5)
 
     def test_distance_correlation_fast(self):
-        pass
+        """Compare fast distance correlation with the energy package."""
         arr1 = np.array(((1,), (2,), (3,), (4,), (5,), (6,)))
         arr2 = np.array(((1,), (7,), (5,), (5,), (6,), (2,)))
 
@@ -112,6 +115,13 @@ class TestDistanceCorrelation(unittest.TestCase):
                                                     vector_type=None,
                                                     type_cov=None,
                                                     type_cor=None):
+        """
+        Auxiliar function for testing U-distance correlation in vectors.
+
+        This function is provided to check that the results are the
+        same with different dtypes, but that the dtype of the result is
+        the right one.
+        """
         cast = vector_type if vector_type is not None else lambda x: x
         if type_cov is None:
             type_cov = vector_type
@@ -148,25 +158,40 @@ class TestDistanceCorrelation(unittest.TestCase):
         self.assertAlmostEqual(correlation, cast(1), places=5)
 
     def test_u_distance_correlation_vector(self):
+        """Check U-distance with vectors of float."""
         return self._test_u_distance_correlation_vector_generic(
-                vector_type=None
-            )
+            vector_type=None
+        )
 
     def test_u_distance_correlation_vector_fractions(self):
+        """
+        Check U-distance with vectors of fractions.
+
+        Note that the correlation is given in floating point, as
+        fractions can not generally represent a square root.
+        """
         return self._test_u_distance_correlation_vector_generic(
-                vector_type=Fraction,
-                type_cor=float
-            )
+            vector_type=Fraction,
+            type_cor=float
+        )
 
     def test_u_distance_correlation_vector_decimal(self):
+        """Check U-distance with vectors of Decimal."""
         return self._test_u_distance_correlation_vector_generic(
-                vector_type=Decimal
-            )
+            vector_type=Decimal
+        )
 
     def _test_distance_correlation_vector_generic(self,
                                                   vector_type=None,
                                                   type_cov=None,
                                                   type_cor=None):
+        """
+        Auxiliar function for testing distance correlation in vectors.
+
+        This function is provided to check that the results are the
+        same with different dtypes, but that the dtype of the result is
+        the right one.
+        """
         cast = vector_type if vector_type is not None else lambda x: x
         if type_cov is None:
             type_cov = vector_type
@@ -207,24 +232,32 @@ class TestDistanceCorrelation(unittest.TestCase):
         print(covariance, correlation)
 
     def test_distance_correlation_vector(self):
+        """Check distance correlation with vectors of float."""
         return self._test_distance_correlation_vector_generic(
-                vector_type=None
-            )
+            vector_type=None
+        )
 
     def test_distance_correlation_vector_fractions(self):
+        """
+        Check distance correlation with vectors of fractions.
+
+        Note that the covariance and correlation are given in floating
+        point, as fractions can not generally represent a square root.
+        """
         return self._test_distance_correlation_vector_generic(
-                vector_type=Fraction,
-                type_cov=float,
-                type_cor=float
-            )
+            vector_type=Fraction,
+            type_cov=float,
+            type_cor=float
+        )
 
     def test_distance_correlation_vector_decimal(self):
+        """Check distance correlation with vectors of Decimal."""
         return self._test_distance_correlation_vector_generic(
-                vector_type=Decimal,
-            )
+            vector_type=Decimal,
+        )
 
     def test_u_statistic(self):
-
+        """Test that the fast and naive algorithms for unbiased dcor match"""
         for seed in range(5):
 
             random_state = np.random.RandomState(seed)
@@ -242,9 +275,16 @@ class TestDistanceCorrelation(unittest.TestCase):
 
 
 class TestEnergyTest(unittest.TestCase):
+    """Tests for the homogeneity energy test function."""
 
     def test_same_distribution_same_parameters(self):
+        """
+        Test that the test works on equal distributions.
 
+        As the distributions are the same, the test should not reject
+        the null hypothesis.
+
+        """
         vector_size = 10
         num_samples = 100
         mean = np.zeros(vector_size)
@@ -269,7 +309,13 @@ class TestEnergyTest(unittest.TestCase):
         self.assertGreater(result.p_value, significance)
 
     def test_same_distribution_different_means(self):
+        """
+        Test that the test works on distributions with different means.
 
+        As the distributions are not the same, the test should reject
+        the null hypothesis.
+
+        """
         vector_size = 10
         num_samples = 100
         mean_0 = np.zeros(vector_size)
@@ -291,7 +337,13 @@ class TestEnergyTest(unittest.TestCase):
         self.assertLess(result.p_value, significance)
 
     def test_same_distribution_different_covariances(self):
+        """
+        Test that the test works on distributions with different covariance.
 
+        As the distributions are not the same, the test should reject
+        the null hypothesis.
+
+        """
         vector_size = 10
         num_samples = 100
         mean = np.zeros(vector_size)
@@ -313,7 +365,13 @@ class TestEnergyTest(unittest.TestCase):
         self.assertLess(result.p_value, significance)
 
     def test_different_distributions(self):
+        """
+        Test that the test works on different distributions.
 
+        As the distributions are not the same, the test should reject
+        the null hypothesis.
+
+        """
         num_samples = 100
 
         a = np.random.RandomState(0).standard_normal(size=(num_samples, 1))

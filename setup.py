@@ -1,6 +1,7 @@
 # encoding: utf-8
 
-"""dcor: distance correlation and related E-statistics in Python.
+"""
+dcor: distance correlation and related E-statistics in Python.
 
 E-statistics are functions of distances between statistical observations
 in metric spaces.
@@ -24,7 +25,6 @@ It also provides tests based on these E-statistics:
 
 References
 ----------
-
 .. [SR13] Gábor J. Székely and Maria L. Rizzo. Energy statistics: a class of
            statistics based on distances. Journal of Statistical Planning and
            Inference, 143(8):1249 – 1272, 2013.
@@ -41,7 +41,6 @@ References
            doi:10.1214/009053607000000505.
 
 """
-
 import os
 import sys
 
@@ -59,8 +58,8 @@ with open(os.path.join(os.path.dirname(__file__),
 
 setup(name='dcor',
       version=version,
-      description=DOCLINES[0],
-      long_description="\n".join(DOCLINES[2:]),
+      description=DOCLINES[1],
+      long_description="\n".join(DOCLINES[3:]),
       url='https://dcor.readthedocs.io',
       author='Carlos Ramos Carreño',
       author_email='vnmabus@gmail.com',
@@ -84,6 +83,9 @@ setup(name='dcor',
         'Topic :: Scientific/Engineering :: Mathematics',
         'Topic :: Software Development :: Libraries :: Python Modules',
       ],
+      keywords=['distance correlation', 'distance covariance',
+                'energy distance', 'e-statistic',
+                'dependency measure', 'homogeneity'],
       install_requires=['numpy',
                         'numba',
                         'scipy',
