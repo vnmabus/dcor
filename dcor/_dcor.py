@@ -611,7 +611,7 @@ def _u_distance_covariance_sqr_fast(x, y):  # pylint:disable=too-many-locals
 
     # Step 9
     d_cov = (aijbij / n / (n - 3) - 2 * sum_ab / n / (n - 2) / (n - 3) +
-             a_dot_dot * b_dot_dot / n / (n - 1) / (n - 2) / (n - 3))
+             a_dot_dot / n * b_dot_dot / (n - 1) / (n - 2) / (n - 3))
 
     return d_cov
 

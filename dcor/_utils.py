@@ -72,3 +72,18 @@ def _transform_to_2d(t):
         t = np.atleast_2d(t).T
 
     return t
+
+
+def _can_be_double(x):
+    """
+    Return if the array can be safely converted to double.
+
+    That happens when the dtype is a float with the same size of
+    a double or narrower, or when is an integer that can be safely
+    converted to double (if the roundtrip conversion works).
+
+    """
+    return ((np.issubdtype(x.dtype, float) and
+            x.dtype.itemsize <= np.dtype(float).itemsize) or
+            (np.issubdtype(x.dtype, int) and
+            np.all(np.asfarray(x).astype(dtype=x.dtype) == x)))

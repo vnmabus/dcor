@@ -111,6 +111,13 @@ class TestDistanceCorrelation(unittest.TestCase):
             arr1, arr1)
         self.assertAlmostEqual(correlation, 1, places=5)
 
+    def test_u_distance_covariance_fast_overflow(self):
+        """Test potential overflow in fast distance correlation"""
+        arr1 = np.concatenate((np.zeros(500, dtype=int),
+                               np.ones(500, dtype=int)))
+        covariance = dcor_internals._u_distance_covariance_sqr_fast(arr1, arr1)
+        self.assertAlmostEqual(covariance, 0.25050, places=5)
+
     def _test_u_distance_correlation_vector_generic(self,
                                                     vector_type=None,
                                                     type_cov=None,
@@ -122,45 +129,48 @@ class TestDistanceCorrelation(unittest.TestCase):
         same with different dtypes, but that the dtype of the result is
         the right one.
         """
-        cast = vector_type if vector_type is not None else lambda x: x
         if type_cov is None:
             type_cov = vector_type
         if type_cor is None:
             type_cor = vector_type
 
-        arr1 = np.array([cast(1), cast(2), cast(3),
-                         cast(4), cast(5), cast(6)])
-        arr2 = np.array([cast(1), cast(7), cast(5),
-                         cast(5), cast(6), cast(2)])
+        arr1 = np.array([vector_type(1), vector_type(2), vector_type(3),
+                         vector_type(4), vector_type(5), vector_type(6)])
+        arr2 = np.array([vector_type(1), vector_type(7), vector_type(5),
+                         vector_type(5), vector_type(6), vector_type(2)])
 
         covariance = dcor.u_distance_covariance_sqr(
             arr1, arr2)
-        if type_cov:
-            self.assertIsInstance(covariance, type_cov)
-        self.assertAlmostEqual(covariance, cast(-0.88889), places=5)
+        self.assertIsInstance(covariance, type_cov)
+        self.assertAlmostEqual(covariance, type_cov(-0.88889), places=5)
 
         correlation = dcor.u_distance_correlation_sqr(
             arr1, arr2)
-        if type_cor:
-            self.assertIsInstance(correlation, type_cor)
-        self.assertAlmostEqual(correlation, cast(-0.41613), places=5)
+        self.assertIsInstance(correlation, type_cor)
+        self.assertAlmostEqual(correlation, type_cor(-0.41613), places=5)
 
         covariance = dcor.u_distance_covariance_sqr(
             arr1, arr1)
-        if type_cov:
-            self.assertIsInstance(covariance, type_cov)
-        self.assertAlmostEqual(covariance, cast(1.5556), places=4)
+        self.assertIsInstance(covariance, type_cov)
+        self.assertAlmostEqual(covariance, type_cov(1.5556), places=4)
 
         correlation = dcor.u_distance_correlation_sqr(
             arr1, arr1)
-        if type_cor:
-            self.assertIsInstance(correlation, type_cor)
-        self.assertAlmostEqual(correlation, cast(1), places=5)
+        self.assertIsInstance(correlation, type_cor)
+        self.assertAlmostEqual(correlation, type_cor(1), places=5)
 
     def test_u_distance_correlation_vector(self):
         """Check U-distance with vectors of float."""
         return self._test_u_distance_correlation_vector_generic(
-            vector_type=None
+            vector_type=float
+        )
+
+    def test_u_distance_correlation_vector_ints(self):
+        """Check U-distance with vectors of integers."""
+        return self._test_u_distance_correlation_vector_generic(
+            vector_type=int,
+            type_cov=float,
+            type_cor=float
         )
 
     def test_u_distance_correlation_vector_fractions(self):
@@ -192,49 +202,52 @@ class TestDistanceCorrelation(unittest.TestCase):
         same with different dtypes, but that the dtype of the result is
         the right one.
         """
-        cast = vector_type if vector_type is not None else lambda x: x
         if type_cov is None:
             type_cov = vector_type
         if type_cor is None:
             type_cor = vector_type
 
-        arr1 = np.array([cast(1), cast(2), cast(3),
-                         cast(4), cast(5), cast(6)])
-        arr2 = np.array([cast(1), cast(7), cast(5),
-                         cast(5), cast(6), cast(2)])
+        arr1 = np.array([vector_type(1), vector_type(2), vector_type(3),
+                         vector_type(4), vector_type(5), vector_type(6)])
+        arr2 = np.array([vector_type(1), vector_type(7), vector_type(5),
+                         vector_type(5), vector_type(6), vector_type(2)])
 
         covariance = dcor.distance_covariance_sqr(
             arr1, arr2)
-        if type_cov:
-            self.assertIsInstance(covariance, type_cov)
-        self.assertAlmostEqual(covariance, cast(0.6851851), places=6)
+        self.assertIsInstance(covariance, type_cov)
+        self.assertAlmostEqual(covariance, type_cov(0.6851851), places=6)
 
         correlation = dcor.distance_correlation_sqr(
             arr1, arr2)
-        if type_cor:
-            self.assertIsInstance(correlation, type_cor)
-        self.assertAlmostEqual(correlation, cast(0.3066099), places=6)
+        self.assertIsInstance(correlation, type_cor)
+        self.assertAlmostEqual(correlation, type_cor(0.3066099), places=6)
 
         print(covariance, correlation)
 
         covariance = dcor.distance_covariance_sqr(
             arr1, arr1)
-        if type_cov:
-            self.assertIsInstance(covariance, type_cov)
-        self.assertAlmostEqual(covariance, cast(1.706791), places=5)
+        self.assertIsInstance(covariance, type_cov)
+        self.assertAlmostEqual(covariance, type_cov(1.706791), places=5)
 
         correlation = dcor.distance_correlation_sqr(
             arr1, arr1)
-        if type_cor:
-            self.assertIsInstance(correlation, type_cor)
-        self.assertAlmostEqual(correlation, cast(1), places=5)
+        self.assertIsInstance(correlation, type_cor)
+        self.assertAlmostEqual(correlation, type_cor(1), places=5)
 
         print(covariance, correlation)
 
     def test_distance_correlation_vector(self):
         """Check distance correlation with vectors of float."""
         return self._test_distance_correlation_vector_generic(
-            vector_type=None
+            vector_type=float
+        )
+
+    def test_distance_correlation_vector_ints(self):
+        """Check distance correlation with vectors of integers."""
+        return self._test_distance_correlation_vector_generic(
+            vector_type=int,
+            type_cov=float,
+            type_cor=float
         )
 
     def test_distance_correlation_vector_fractions(self):

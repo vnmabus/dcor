@@ -8,8 +8,10 @@ a double precision floating point number will not cause loss of precision.
 
 from __future__ import absolute_import, division, print_function
 
-import scipy.spatial
 import numpy as _np
+import scipy.spatial as _spatial
+
+from ._utils import _can_be_double
 
 
 def _cdist_naive(x, y, exponent=1):
@@ -32,8 +34,8 @@ def _pdist_scipy(x, exponent=1):
     if exponent != 1:
         metric = 'sqeuclidean'
 
-    distances = scipy.spatial.distance.pdist(x, metric=metric)
-    distances = scipy.spatial.distance.squareform(distances)
+    distances = _spatial.distance.pdist(x, metric=metric)
+    distances = _spatial.distance.squareform(distances)
 
     if exponent != 1:
         distances **= exponent / 2
@@ -48,27 +50,12 @@ def _cdist_scipy(x, y, exponent=1):
     if exponent != 1:
         metric = 'sqeuclidean'
 
-    distances = scipy.spatial.distance.cdist(x, y, metric=metric)
+    distances = _spatial.distance.cdist(x, y, metric=metric)
 
     if exponent != 1:
         distances **= exponent / 2
 
     return distances
-
-
-def _can_be_double(x):
-    """
-    Return if the array can be safely converted to double.
-
-    That happens when the dtype is a float with the same size of
-    a double or narrower, or when is an integer that can be safely
-    converted to double (if the roundtrip conversion works).
-
-    """
-    return ((_np.issubdtype(x.dtype, float) and
-            x.dtype.itemsize <= _np.dtype(float).itemsize) or
-            (_np.issubdtype(x.dtype, int) and
-            _np.all(_np.asfarray(x).astype(dtype=x.dtype) == x)))
 
 
 def _pdist(x, exponent=1):
