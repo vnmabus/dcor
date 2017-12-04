@@ -10,12 +10,15 @@ import errno as _errno
 import os as _os
 
 from . import homogeneity  # noqa
+from . import independence  # noqa
 from ._dcor import (distance_covariance_sqr, distance_covariance,  # noqa
                    distance_correlation_sqr, distance_correlation,
                    distance_stats_sqr, distance_stats,
                    u_distance_covariance_sqr,
                    u_distance_correlation_sqr,
-                   u_distance_stats_sqr)
+                   u_distance_stats_sqr,
+                   distance_correlation_af_inv_sqr,
+                   distance_correlation_af_inv)
 from ._dcor_internals import (double_centered, u_centered,  # noqa
                               average_product, u_product,
                               u_projection,

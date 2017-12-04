@@ -9,6 +9,8 @@ from __future__ import unicode_literals
 
 import warnings
 
+import scipy.linalg
+
 import numpy as np
 
 from . import distances
@@ -506,6 +508,17 @@ def _distance_matrix(x, exponent=1):
 
 
 def _u_distance_matrix(x, exponent=1):
-    """Compute the :math:`U`-centered distance matrices given two matrices."""
+    """Compute the :math:`U`-centered distance matrices given a matrix."""
     return _distance_matrix_generic(x, centering=u_centered,
                                     exponent=exponent)
+
+
+def _af_inv_scaled(x):
+    """Scale a random vector for using the affinely invariant measures"""
+    x = _transform_to_2d(x)
+
+    cov_matrix = np.atleast_2d(np.cov(x, rowvar=False))
+
+    cov_matrix_power = scipy.linalg.fractional_matrix_power(cov_matrix, -0.5)
+
+    return x.dot(cov_matrix_power)

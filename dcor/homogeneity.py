@@ -13,7 +13,7 @@ import numpy as _np
 from . import _energy
 from . import _utils
 from . import distances as _distances
-from ._utils import _transform_to_2d, _check_kwargs_empty
+from ._utils import _transform_to_2d, _check_kwargs_empty, _random_state_init
 
 
 def _energy_test_statistic_coefficient(n, m):
@@ -115,23 +115,6 @@ def _energy_test_statistic_multivariate_from_distance_matrix(
             energy += pairwise_energy
 
     return energy
-
-
-def _random_state_init(random_state):
-    """
-    Initialize a RandomState object.
-
-    If the object is a RandomState, or cannot be used to
-    initialize one, it will be assumed that is a similar object
-    and returned.
-
-    """
-    try:
-        random_state = _np.random.RandomState(random_state)
-    except TypeError:
-        pass
-
-    return random_state
 
 
 def energy_test(*args, **kwargs):  # pylint:disable=too-many-locals

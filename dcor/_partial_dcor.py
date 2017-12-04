@@ -3,6 +3,8 @@
 from __future__ import absolute_import, division, print_function
 from __future__ import unicode_literals
 
+import numpy as np
+
 from ._dcor_internals import _u_distance_matrix, u_complementary_projection
 from ._dcor_internals import u_product
 from ._utils import _sqrt
@@ -68,7 +70,7 @@ def partial_distance_covariance(x, y, z):
     return u_product(proj(a), proj(b))
 
 
-def partial_distance_correlation(x, y, z):
+def partial_distance_correlation(x, y, z):  # pylint:disable=too-many-locals
     """
     Partial distance correlation estimator.
 
@@ -107,8 +109,8 @@ def partial_distance_correlation(x, y, z):
     >>> c = np.array([[1], [2], [2], [1], [2]])
     >>> dcor.partial_distance_correlation(a, a, c)
     1.0
-    >>> dcor.partial_distance_correlation(a, b, c)
-    -0.5
+    >>> dcor.partial_distance_correlation(a, b, c) # doctest: +ELLIPSIS
+    -0.5...
     >>> dcor.partial_distance_correlation(b, b, c)
     1.0
     >>> dcor.partial_distance_correlation(a, c, c)
@@ -119,16 +121,25 @@ def partial_distance_correlation(x, y, z):
     b = _u_distance_matrix(y)
     c = _u_distance_matrix(z)
 
-    proj = u_complementary_projection(c)
+    aa = u_product(a, a)
+    bb = u_product(b, b)
+    cc = u_product(c, c)
+    ab = u_product(a, b)
+    ac = u_product(a, c)
+    bc = u_product(b, c)
 
-    a_proj = proj(a)
-    b_proj = proj(b)
+    denom_sqr = aa * bb
+    r_xy = ab / _sqrt(denom_sqr) if denom_sqr != 0 else denom_sqr
+    r_xy = np.clip(r_xy, -1, 1)
 
-    denom_sqr = u_product(a_proj, a_proj) * u_product(b_proj, b_proj)
+    denom_sqr = aa * cc
+    r_xz = ac / _sqrt(denom_sqr) if denom_sqr != 0 else denom_sqr
+    r_xz = np.clip(r_xz, -1, 1)
 
-    if denom_sqr == 0:
-        correlation = denom_sqr.dtype.type(0)
-    else:
-        correlation = u_product(a_proj, b_proj) / _sqrt(denom_sqr)
+    denom_sqr = bb * cc
+    r_yz = bc / _sqrt(denom_sqr) if denom_sqr != 0 else denom_sqr
+    r_yz = np.clip(r_yz, -1, 1)
 
-    return correlation
+    denom = _sqrt(1 - r_xz ** 2) * _sqrt(1 - r_yz ** 2)
+
+    return (r_xy - r_xz * r_yz) / denom if denom != 0 else denom

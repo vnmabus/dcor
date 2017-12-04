@@ -19,6 +19,7 @@ from __future__ import unicode_literals
 import collections
 import math
 
+from dcor._dcor_internals import _af_inv_scaled
 import numpy as np
 
 from ._dcor_internals import _distance_matrix, _u_distance_matrix
@@ -411,6 +412,124 @@ def distance_correlation(x, y, **kwargs):
 
     """
     return distance_stats(x, y, **kwargs).correlation_xy
+
+
+def distance_correlation_af_inv_sqr(x, y, **kwargs):
+    """
+    distance_correlation_af_inv_sqr(x, y, *, exponent=1)
+
+    Computes the estimator for the square of the affinely invariant distance
+    correlation between two random vectors.
+
+    .. warning:: The return value of this function is undefined when the
+                 covariance matrix of :math:`x` or :math:`y` is singular.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
+
+    Returns
+    -------
+    numpy scalar
+        Value of the estimator of the squared affinely invariant
+        distance correlation.
+
+    See Also
+    --------
+    distance_correlation
+    u_distance_correlation
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 3, 2, 5],
+    ...               [5, 7, 6, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 15, 15, 16]])
+    >>> b = np.array([[1], [0], [0], [1]])
+    >>> dcor.distance_correlation_af_inv_sqr(a, a)
+    1.0
+    >>> dcor.distance_correlation_af_inv_sqr(a, b) # doctest: +ELLIPSIS
+    0.2713803...
+    >>> dcor.distance_correlation_af_inv_sqr(b, b)
+    1.0
+    >>> dcor.distance_correlation_af_inv_sqr(a, b, exponent=0.5)
+    ...                                       # doctest: +ELLIPSIS
+    0.4434084...
+
+    """
+    x = _af_inv_scaled(x)
+    y = _af_inv_scaled(y)
+
+    correlation = distance_correlation_sqr(x, y, **kwargs)
+    return 0 if np.isnan(correlation) else correlation
+
+
+def distance_correlation_af_inv(x, y, **kwargs):
+    """
+    distance_correlation_af_inv(x, y, *, exponent=1)
+
+    Computes the estimator for the affinely invariant distance
+    correlation between two random vectors.
+
+    .. warning:: The return value of this function is undefined when the
+                 covariance matrix of :math:`x` or :math:`y` is singular.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
+
+    Returns
+    -------
+    numpy scalar
+        Value of the estimator of the squared affinely invariant
+        distance correlation.
+
+    See Also
+    --------
+    distance_correlation
+    u_distance_correlation
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 3, 2, 5],
+    ...               [5, 7, 6, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 15, 15, 16]])
+    >>> b = np.array([[1], [0], [0], [1]])
+    >>> dcor.distance_correlation_af_inv(a, a)
+    1.0
+    >>> dcor.distance_correlation_af_inv(a, b) # doctest: +ELLIPSIS
+    0.5209417...
+    >>> dcor.distance_correlation_af_inv(b, b)
+    1.0
+    >>> dcor.distance_correlation_af_inv(a, b, exponent=0.5)
+    ...                                       # doctest: +ELLIPSIS
+    0.6658892...
+
+    """
+    return _sqrt(distance_correlation_af_inv_sqr(x, y, **kwargs))
 
 
 def _u_distance_correlation_sqr_naive(x, y, exponent=1):

@@ -87,3 +87,20 @@ def _can_be_double(x):
             x.dtype.itemsize <= np.dtype(float).itemsize) or
             (np.issubdtype(x.dtype, int) and
             np.all(np.asfarray(x).astype(dtype=x.dtype) == x)))
+
+
+def _random_state_init(random_state):
+    """
+    Initialize a RandomState object.
+
+    If the object is a RandomState, or cannot be used to
+    initialize one, it will be assumed that is a similar object
+    and returned.
+
+    """
+    try:
+        random_state = np.random.RandomState(random_state)
+    except TypeError:
+        pass
+
+    return random_state
