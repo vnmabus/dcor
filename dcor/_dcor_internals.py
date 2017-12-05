@@ -9,8 +9,6 @@ from __future__ import unicode_literals
 
 import warnings
 
-import scipy.linalg
-
 import numpy as np
 
 from . import distances
@@ -513,12 +511,24 @@ def _u_distance_matrix(x, exponent=1):
                                     exponent=exponent)
 
 
+def _mat_sqrt_inv(matrix):
+    eigenvalues, eigenvectors = np.linalg.eigh(matrix)
+
+    # Eliminate negative values
+    np.clip(eigenvalues, a_min=0, a_max=None, out=eigenvalues)
+
+    eigenvalues[eigenvalues == 0] = np.inf
+    eigenvalues_sqrt_inv = 1 / np.sqrt(eigenvalues)
+
+    return eigenvectors @ np.diag(eigenvalues_sqrt_inv) @ eigenvectors.T
+
+
 def _af_inv_scaled(x):
     """Scale a random vector for using the affinely invariant measures"""
     x = _transform_to_2d(x)
 
     cov_matrix = np.atleast_2d(np.cov(x, rowvar=False))
 
-    cov_matrix_power = scipy.linalg.fractional_matrix_power(cov_matrix, -0.5)
+    cov_matrix_power = _mat_sqrt_inv(cov_matrix)
 
     return x.dot(cov_matrix_power)

@@ -48,6 +48,8 @@ def _sqrt(x):
     if the objects stored do not supply a sqrt method.
 
     """
+    x = np.clip(x, a_min=0, a_max=None)
+
     try:
         return np.sqrt(x)
     except AttributeError:

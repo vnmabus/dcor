@@ -414,9 +414,9 @@ def distance_correlation(x, y, **kwargs):
     return distance_stats(x, y, **kwargs).correlation_xy
 
 
-def distance_correlation_af_inv_sqr(x, y, **kwargs):
+def distance_correlation_af_inv_sqr(x, y):
     """
-    distance_correlation_af_inv_sqr(x, y, *, exponent=1)
+    Square of the affinely invariant distance correlation.
 
     Computes the estimator for the square of the affinely invariant distance
     correlation between two random vectors.
@@ -432,10 +432,6 @@ def distance_correlation_af_inv_sqr(x, y, **kwargs):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
-    exponent: float
-        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
-        Equivalently, it is twice the Hurst parameter of fractional Brownian
-        motion.
 
     Returns
     -------
@@ -460,24 +456,21 @@ def distance_correlation_af_inv_sqr(x, y, **kwargs):
     >>> dcor.distance_correlation_af_inv_sqr(a, a)
     1.0
     >>> dcor.distance_correlation_af_inv_sqr(a, b) # doctest: +ELLIPSIS
-    0.2713803...
+    0.5773502...
     >>> dcor.distance_correlation_af_inv_sqr(b, b)
     1.0
-    >>> dcor.distance_correlation_af_inv_sqr(a, b, exponent=0.5)
-    ...                                       # doctest: +ELLIPSIS
-    0.4434084...
 
     """
     x = _af_inv_scaled(x)
     y = _af_inv_scaled(y)
 
-    correlation = distance_correlation_sqr(x, y, **kwargs)
+    correlation = distance_correlation_sqr(x, y)
     return 0 if np.isnan(correlation) else correlation
 
 
-def distance_correlation_af_inv(x, y, **kwargs):
+def distance_correlation_af_inv(x, y):
     """
-    distance_correlation_af_inv(x, y, *, exponent=1)
+    Affinely invariant distance correlation.
 
     Computes the estimator for the affinely invariant distance
     correlation between two random vectors.
@@ -493,10 +486,6 @@ def distance_correlation_af_inv(x, y, **kwargs):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
-    exponent: float
-        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
-        Equivalently, it is twice the Hurst parameter of fractional Brownian
-        motion.
 
     Returns
     -------
@@ -521,15 +510,12 @@ def distance_correlation_af_inv(x, y, **kwargs):
     >>> dcor.distance_correlation_af_inv(a, a)
     1.0
     >>> dcor.distance_correlation_af_inv(a, b) # doctest: +ELLIPSIS
-    0.5209417...
+    0.7598356...
     >>> dcor.distance_correlation_af_inv(b, b)
     1.0
-    >>> dcor.distance_correlation_af_inv(a, b, exponent=0.5)
-    ...                                       # doctest: +ELLIPSIS
-    0.6658892...
 
     """
-    return _sqrt(distance_correlation_af_inv_sqr(x, y, **kwargs))
+    return _sqrt(distance_correlation_af_inv_sqr(x, y))
 
 
 def _u_distance_correlation_sqr_naive(x, y, exponent=1):
