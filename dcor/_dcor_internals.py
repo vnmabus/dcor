@@ -520,7 +520,7 @@ def _mat_sqrt_inv(matrix):
     eigenvalues[eigenvalues == 0] = np.inf
     eigenvalues_sqrt_inv = 1 / np.sqrt(eigenvalues)
 
-    return eigenvectors @ np.diag(eigenvalues_sqrt_inv) @ eigenvectors.T
+    return eigenvectors.dot(np.diag(eigenvalues_sqrt_inv)).dot(eigenvectors.T)
 
 
 def _af_inv_scaled(x):
