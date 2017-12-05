@@ -1,20 +1,31 @@
+"""
+Distance correlation and related e-statistics.
+
+This package provide a Python implementation of
+distance correlation and other e-statistics, such as
+energy distance.
+"""
+
 import errno as _errno
 import os as _os
 
-from . import homogeneity
-from .dcor import (double_centered, u_centered,
-                   average_product, u_product,
-                   u_projection,
-                   u_complementary_projection,
-                   distance_covariance_sqr, distance_covariance,
+from . import homogeneity  # noqa
+from . import independence  # noqa
+from ._dcor import (distance_covariance_sqr, distance_covariance,  # noqa
                    distance_correlation_sqr, distance_correlation,
                    distance_stats_sqr, distance_stats,
                    u_distance_covariance_sqr,
                    u_distance_correlation_sqr,
                    u_distance_stats_sqr,
-                   partial_distance_covariance,
-                   partial_distance_correlation,
-                   energy_distance)
+                   distance_correlation_af_inv_sqr,
+                   distance_correlation_af_inv)
+from ._dcor_internals import (double_centered, u_centered,  # noqa
+                              average_product, u_product,
+                              u_projection,
+                              u_complementary_projection)
+from ._energy import energy_distance  # noqa
+from ._partial_dcor import (partial_distance_covariance,  # noqa
+                            partial_distance_correlation)
 
 
 try:

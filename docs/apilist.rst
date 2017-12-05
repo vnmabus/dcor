@@ -32,6 +32,18 @@ As these estimators are signed, no functions are provided for taking the square 
    dcor.u_distance_covariance_sqr
    dcor.u_distance_correlation_sqr
    dcor.u_distance_stats_sqr
+   
+Affinely invariant distance correlation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+These functions compute the estimators for the affinely invariant distance correlation,
+a variant of distance correlation that is invariant by invertible affine transformations
+of the input parameters.
+
+.. autosummary::
+   :toctree: functions
+   
+   dcor.distance_correlation_af_inv_sqr
+   dcor.distance_correlation_af_inv
 
 Partial distance covariance and partial distance correlation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

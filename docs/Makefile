@@ -49,6 +49,7 @@ help:
 .PHONY: clean
 clean:
 	rm -rf $(BUILDDIR)/* functions/*
+	rm -rf $(BUILDDIR)/* modules/*
 
 .PHONY: html
 html:
