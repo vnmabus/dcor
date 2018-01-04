@@ -216,7 +216,8 @@ def energy_test(*args, **kwargs):  # pylint:disable=too-many-locals
     sample_indexes[1:] = _np.cumsum(sample_sizes)[:-1]
 
     # Compute the distance matrix once
-    sample_distances = _distances._pdist(pooled_samples, exponent=exponent)
+    sample_distances = _distances.pairwise_distances(pooled_samples,
+                                                     exponent=exponent)
 
     # epsilon_n
     observed_energy = _energy_test_statistic_multivariate_from_distance_matrix(

@@ -491,7 +491,7 @@ def _distance_matrix_generic(x, centering, exponent=1):
     x = _transform_to_2d(x)
 
     # Calculate distance matrices
-    a = distances._pdist(x, exponent=exponent)
+    a = distances.pairwise_distances(x, exponent=exponent)
 
     # Double centering
     a = centering(a)
