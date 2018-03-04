@@ -11,7 +11,56 @@ import numpy as _np
 
 from . import _dcor_internals
 from . import _utils
-from ._utils import _random_state_init, _check_kwargs_empty
+from ._utils import _random_state_init
+
+
+def _partial_distance_covariance_test_imp(x, y, z, num_resamples=0,
+                                          random_state=None):
+    """
+    Real implementation of :func:`partial_distance_covariance_test`.
+
+    This function is used to make parameters ``num_resamples``, ``exponent``
+    and ``random_state`` keyword-only in Python 2.
+
+    """
+    # pylint:disable=too-many-locals
+    random_state = _random_state_init(random_state)
+
+    # Compute U-centered matrices
+    u_x = _dcor_internals._u_distance_matrix(x)
+    u_y = _dcor_internals._u_distance_matrix(y)
+    u_z = _dcor_internals._u_distance_matrix(z)
+
+    # Compute projections
+    proj = _dcor_internals.u_complementary_projection(u_z)
+
+    p_xz = proj(u_x)
+    p_yz = proj(u_y)
+
+    num_dimensions = u_x.shape[0]
+
+    # epsilon_n
+    observed_pdcov = num_dimensions * _dcor_internals.u_product(p_xz, p_yz)
+
+    # epsilon^(b)_n
+    bootstrap_pdcov = _np.ones(num_resamples, dtype=observed_pdcov.dtype)
+
+    for bootstrap in range(num_resamples):
+        permuted_index = random_state.permutation(num_dimensions)
+
+        permuted_p_xz = p_xz[_np.ix_(permuted_index, permuted_index)]
+
+        pdcov = num_dimensions * _dcor_internals.u_product(permuted_p_xz, p_yz)
+
+        bootstrap_pdcov[bootstrap] = pdcov
+
+    extreme_results = bootstrap_pdcov > observed_pdcov
+    p_value = (_np.sum(extreme_results) + 1) / (num_resamples + 1)
+
+    return _utils.HypothesisTest(
+        p_value=p_value,
+        statistic=observed_pdcov
+    )
 
 
 def partial_distance_covariance_test(x, y, z, **kwargs):
@@ -89,46 +138,4 @@ def partial_distance_covariance_test(x, y, z, **kwargs):
     HypothesisTest(p_value=1.0, statistic=-7.5701764...e-12)
 
     """
-    # pylint:disable=too-many-locals
-    random_state = _random_state_init(kwargs.pop("random_state", None))
-
-    # B
-    num_resamples = kwargs.pop("num_resamples", 0)
-
-    _check_kwargs_empty(kwargs)
-
-    # Compute U-centered matrices
-    u_x = _dcor_internals._u_distance_matrix(x)
-    u_y = _dcor_internals._u_distance_matrix(y)
-    u_z = _dcor_internals._u_distance_matrix(z)
-
-    # Compute projections
-    proj = _dcor_internals.u_complementary_projection(u_z)
-
-    p_xz = proj(u_x)
-    p_yz = proj(u_y)
-
-    num_dimensions = u_x.shape[0]
-
-    # epsilon_n
-    observed_pdcov = num_dimensions * _dcor_internals.u_product(p_xz, p_yz)
-
-    # epsilon^(b)_n
-    bootstrap_pdcov = _np.ones(num_resamples, dtype=observed_pdcov.dtype)
-
-    for bootstrap in range(num_resamples):
-        permuted_index = random_state.permutation(num_dimensions)
-
-        permuted_p_xz = p_xz[_np.ix_(permuted_index, permuted_index)]
-
-        pdcov = num_dimensions * _dcor_internals.u_product(permuted_p_xz, p_yz)
-
-        bootstrap_pdcov[bootstrap] = pdcov
-
-    extreme_results = bootstrap_pdcov > observed_pdcov
-    p_value = (_np.sum(extreme_results) + 1) / (num_resamples + 1)
-
-    return _utils.HypothesisTest(
-        p_value=p_value,
-        statistic=observed_pdcov
-    )
+    return _partial_distance_covariance_test_imp(x, y, z, **kwargs)

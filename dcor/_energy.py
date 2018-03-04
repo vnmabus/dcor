@@ -8,7 +8,7 @@ import warnings
 import numpy as np
 
 from . import distances
-from ._utils import _transform_to_2d, _check_kwargs_empty
+from ._utils import _transform_to_2d
 
 
 def _check_valid_energy_exponent(exponent):
@@ -26,6 +26,28 @@ def _energy_distance_from_distance_matrices(
     """Compute energy distance with precalculated distance matrices."""
     return (2 * np.mean(distance_xy) - np.mean(distance_xx) -
             np.mean(distance_yy))
+
+
+def _energy_distance_imp(x, y, exponent=1):
+    """
+    Real implementation of :func:`energy_distance`.
+
+    This function is used to make parameter ``exponent`` keyword-only in
+    Python 2.
+
+    """
+    x = _transform_to_2d(x)
+    y = _transform_to_2d(y)
+
+    _check_valid_energy_exponent(exponent)
+
+    distance_xx = distances.pairwise_distances(x, exponent=exponent)
+    distance_yy = distances.pairwise_distances(y, exponent=exponent)
+    distance_xy = distances.pairwise_distances(x, y, exponent=exponent)
+
+    return _energy_distance_from_distance_matrices(distance_xx=distance_xx,
+                                                   distance_yy=distance_yy,
+                                                   distance_xy=distance_xy)
 
 
 def energy_distance(x, y, **kwargs):
@@ -82,18 +104,4 @@ def energy_distance(x, y, **kwargs):
     0.0
 
     """
-    x = _transform_to_2d(x)
-    y = _transform_to_2d(y)
-
-    exponent = kwargs.pop('exponent', 1)
-    _check_kwargs_empty(kwargs)
-
-    _check_valid_energy_exponent(exponent)
-
-    distance_xx = distances.pairwise_distances(x, exponent=exponent)
-    distance_yy = distances.pairwise_distances(y, exponent=exponent)
-    distance_xy = distances.pairwise_distances(x, y, exponent=exponent)
-
-    return _energy_distance_from_distance_matrices(distance_xx=distance_xx,
-                                                   distance_yy=distance_yy,
-                                                   distance_xy=distance_xy)
+    return _energy_distance_imp(x, y, **kwargs)

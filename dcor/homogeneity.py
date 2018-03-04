@@ -13,7 +13,7 @@ import numpy as _np
 from . import _energy
 from . import _utils
 from . import distances as _distances
-from ._utils import _transform_to_2d, _check_kwargs_empty, _random_state_init
+from ._utils import _transform_to_2d, _random_state_init
 
 
 def _energy_test_statistic_coefficient(n, m):
@@ -117,7 +117,77 @@ def _energy_test_statistic_multivariate_from_distance_matrix(
     return energy
 
 
-def energy_test(*args, **kwargs):  # pylint:disable=too-many-locals
+def _energy_test_imp(*args, num_resamples=0,  # pylint:disable=too-many-locals
+                     exponent=1, random_state=None):
+    """
+    Real implementation of :func:`energy_test`.
+
+    This function is used to make parameters ``num_resamples``, ``exponent``
+    and ``random_state`` keyword-only in Python 2.
+    """
+    random_state = _random_state_init(random_state)
+
+    # k
+    num_samples = len(args)
+
+    _energy._check_valid_energy_exponent(exponent)
+
+    # alpha
+    # significance_level = 1.0 / (num_resamples + 1)
+
+    samples = [_transform_to_2d(a) for a in args]
+
+    # {n_1, ..., n_k}
+    sample_sizes = [a.shape[0] for a in samples]
+
+    # {W_1, ..., W_n}
+    pooled_samples = _np.concatenate(samples)
+
+    # n
+    pooled_sample_size = pooled_samples.shape[0]
+
+    # {m_0, ..., m_(k-1)}
+    sample_indexes = _np.zeros(num_samples, dtype=int)
+    sample_indexes[1:] = _np.cumsum(sample_sizes)[:-1]
+
+    # Compute the distance matrix once
+    sample_distances = _distances.pairwise_distances(pooled_samples,
+                                                     exponent=exponent)
+
+    # epsilon_n
+    observed_energy = _energy_test_statistic_multivariate_from_distance_matrix(
+        distance=sample_distances,
+        indexes=sample_indexes,
+        sizes=sample_sizes
+    )
+
+    # epsilon^(b)_n
+    bootstrap_energies = _np.ones(num_resamples, dtype=observed_energy.dtype)
+
+    for bootstrap in range(num_resamples):
+        permuted_index = random_state.permutation(pooled_sample_size)
+
+        permuted_distance_matrix = sample_distances[
+            _np.ix_(permuted_index, permuted_index)]
+
+        energy = _energy_test_statistic_multivariate_from_distance_matrix(
+            distance=permuted_distance_matrix,
+            indexes=sample_indexes,
+            sizes=sample_sizes
+        )
+
+        bootstrap_energies[bootstrap] = energy
+
+    extreme_results = bootstrap_energies > observed_energy
+    p_value = (_np.sum(extreme_results) + 1) / (num_resamples + 1)
+
+    return _utils.HypothesisTest(
+        p_value=p_value,
+        statistic=observed_energy
+    )
+
+
+def energy_test(*args, **kwargs):
     """
     energy_test(*args, num_resamples=0, exponent=1, random_state=None)
 
@@ -184,69 +254,4 @@ def energy_test(*args, **kwargs):  # pylint:disable=too-many-locals
     HypothesisTest(p_value=1.0, statistic=171.0623923...)
 
     """
-    random_state = _random_state_init(kwargs.pop("random_state", None))
-
-    # k
-    num_samples = len(args)
-
-    # B
-    num_resamples = kwargs.pop("num_resamples", 0)
-
-    exponent = kwargs.pop("exponent", 1)
-
-    _check_kwargs_empty(kwargs)
-    _energy._check_valid_energy_exponent(exponent)
-
-    # alpha
-    # significance_level = 1.0 / (num_resamples + 1)
-
-    samples = [_transform_to_2d(a) for a in args]
-
-    # {n_1, ..., n_k}
-    sample_sizes = [a.shape[0] for a in samples]
-
-    # {W_1, ..., W_n}
-    pooled_samples = _np.concatenate(samples)
-
-    # n
-    pooled_sample_size = pooled_samples.shape[0]
-
-    # {m_0, ..., m_(k-1)}
-    sample_indexes = _np.zeros(num_samples, dtype=int)
-    sample_indexes[1:] = _np.cumsum(sample_sizes)[:-1]
-
-    # Compute the distance matrix once
-    sample_distances = _distances.pairwise_distances(pooled_samples,
-                                                     exponent=exponent)
-
-    # epsilon_n
-    observed_energy = _energy_test_statistic_multivariate_from_distance_matrix(
-        distance=sample_distances,
-        indexes=sample_indexes,
-        sizes=sample_sizes
-    )
-
-    # epsilon^(b)_n
-    bootstrap_energies = _np.ones(num_resamples, dtype=observed_energy.dtype)
-
-    for bootstrap in range(num_resamples):
-        permuted_index = random_state.permutation(pooled_sample_size)
-
-        permuted_distance_matrix = sample_distances[
-            _np.ix_(permuted_index, permuted_index)]
-
-        energy = _energy_test_statistic_multivariate_from_distance_matrix(
-            distance=permuted_distance_matrix,
-            indexes=sample_indexes,
-            sizes=sample_sizes
-        )
-
-        bootstrap_energies[bootstrap] = energy
-
-    extreme_results = bootstrap_energies > observed_energy
-    p_value = (_np.sum(extreme_results) + 1) / (num_resamples + 1)
-
-    return _utils.HypothesisTest(
-        p_value=p_value,
-        statistic=observed_energy
-    )
+    return _energy_test_imp(*args, **kwargs)

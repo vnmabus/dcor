@@ -43,7 +43,7 @@ def _float_copy_to_out(out, origin):
 
 def _double_centered_imp(a, out=None):
     """
-    Real implementation of double_centered.
+    Real implementation of :func:`double_centered`.
 
     This function is used to make parameter ``out`` keyword-only in
     Python 2.
@@ -133,7 +133,7 @@ def double_centered(a, **kwargs):
 
 def _u_centered_imp(a, out=None):
     """
-    Real implementation of u_centered.
+    Real implementation of :func:`u_centered`.
 
     This function is used to make parameter ``out`` keyword-only in
     Python 2.
