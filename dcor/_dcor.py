@@ -138,13 +138,13 @@ def distance_covariance(x, y, **kwargs):
     ...               [9, 10, 11, 12],
     ...               [13, 14, 15, 16]])
     >>> b = np.array([[1], [0], [0], [1]])
-    >>> dcor.distance_covariance(a, a)
-    7.2111025509279782
+    >>> dcor.distance_covariance(a, a) # doctest: +ELLIPSIS
+    7.2111025...
     >>> dcor.distance_covariance(a, b)
     1.0
     >>> dcor.distance_covariance(b, b)
     0.5
-    >>> dcor.distance_covariance(a, b, exponent=0.5) # doctest: +ELLIPSIS
+    >>> dcor.distance_covariance(a, b, exponent=0.5)
     0.6087614...
 
     """
@@ -228,7 +228,7 @@ def distance_stats_sqr(x, y, **kwargs):
     Stats(covariance_xy=52.0, correlation_xy=1.0, variance_x=52.0,
     variance_y=52.0)
     >>> dcor.distance_stats_sqr(a, b) # doctest: +NORMALIZE_WHITESPACE
-    Stats(covariance_xy=1.0, correlation_xy=0.27735009811261457,
+    Stats(covariance_xy=1.0, correlation_xy=0.2773500...,
     variance_x=52.0, variance_y=0.25)
     >>> dcor.distance_stats_sqr(b, b) # doctest: +NORMALIZE_WHITESPACE
     Stats(covariance_xy=0.25, correlation_xy=1.0, variance_x=0.25,
@@ -293,11 +293,11 @@ def distance_stats(x, y, **kwargs):
     ...               [13, 14, 15, 16]])
     >>> b = np.array([[1], [0], [0], [1]])
     >>> dcor.distance_stats(a, a) # doctest: +NORMALIZE_WHITESPACE
-    Stats(covariance_xy=7.2111025509279782, correlation_xy=1.0,
-    variance_x=7.2111025509279782, variance_y=7.2111025509279782)
+    Stats(covariance_xy=7.2111025..., correlation_xy=1.0,
+    variance_x=7.2111025..., variance_y=7.2111025...)
     >>> dcor.distance_stats(a, b) # doctest: +NORMALIZE_WHITESPACE
-    Stats(covariance_xy=1.0, correlation_xy=0.52664038784792666,
-    variance_x=7.2111025509279782, variance_y=0.5)
+    Stats(covariance_xy=1.0, correlation_xy=0.5266403...,
+    variance_x=7.2111025..., variance_y=0.5)
     >>> dcor.distance_stats(b, b) # doctest: +NORMALIZE_WHITESPACE
     Stats(covariance_xy=0.5, correlation_xy=1.0, variance_x=0.5,
     variance_y=0.5)

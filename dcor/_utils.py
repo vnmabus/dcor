@@ -78,9 +78,9 @@ def _can_be_double(x):
     converted to double (if the roundtrip conversion works).
 
     """
-    return ((np.issubdtype(x.dtype, float) and
+    return ((np.issubdtype(x.dtype, np.floating) and
             x.dtype.itemsize <= np.dtype(float).itemsize) or
-            (np.issubdtype(x.dtype, int) and
+            (np.issubdtype(x.dtype, np.signedinteger) and
             np.can_cast(x, float)))
 
 

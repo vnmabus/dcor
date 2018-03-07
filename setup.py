@@ -91,6 +91,8 @@ setup(name='dcor',
                         'scipy',
                         'setuptools'],
       setup_requires=pytest_runner,
-      tests_require=['pytest-cov'],
+      tests_require=['pytest-cov',
+                     'numpy>=1.14'  # The printing format for numpy changes
+                     ],
       test_suite='dcor.tests',
       zip_safe=False)
