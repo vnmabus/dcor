@@ -117,7 +117,7 @@ def _energy_test_statistic_multivariate_from_distance_matrix(
     return energy
 
 
-def _energy_test_imp(*args, num_resamples=0,  # pylint:disable=too-many-locals
+def _energy_test_imp(samples, num_resamples=0,  # pylint:disable=too-many-locals
                      exponent=1, random_state=None):
     """
     Real implementation of :func:`energy_test`.
@@ -128,14 +128,12 @@ def _energy_test_imp(*args, num_resamples=0,  # pylint:disable=too-many-locals
     random_state = _random_state_init(random_state)
 
     # k
-    num_samples = len(args)
+    num_samples = len(samples)
 
     _energy._check_valid_energy_exponent(exponent)
 
     # alpha
     # significance_level = 1.0 / (num_resamples + 1)
-
-    samples = [_transform_to_2d(a) for a in args]
 
     # {n_1, ..., n_k}
     sample_sizes = [a.shape[0] for a in samples]
@@ -254,4 +252,7 @@ def energy_test(*args, **kwargs):
     HypothesisTest(p_value=1.0, statistic=171.0623923...)
 
     """
-    return _energy_test_imp(*args, **kwargs)
+
+    samples = [_transform_to_2d(a) for a in args]
+
+    return _energy_test_imp(samples, **kwargs)
