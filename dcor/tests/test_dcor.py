@@ -259,7 +259,6 @@ class TestDistanceCorrelation(unittest.TestCase):
         """
         return self._test_distance_correlation_vector_generic(
             vector_type=Fraction,
-            type_cov=float,
             type_cor=float
         )
 
@@ -268,6 +267,23 @@ class TestDistanceCorrelation(unittest.TestCase):
         return self._test_distance_correlation_vector_generic(
             vector_type=Decimal,
         )
+
+    def test_statistic(self):
+        """Test that the fast and naive algorithms for biased dcor match"""
+        for seed in range(5):
+
+            random_state = np.random.RandomState(seed)
+
+            for i in range(4, self.test_max_size + 1):
+                arr1 = random_state.rand(i, 1)
+                arr2 = random_state.rand(i, 1)
+
+                stat = dcor_internals._distance_correlation_sqr_naive(
+                    arr1, arr2)
+                stat_fast = dcor_internals._distance_correlation_sqr_fast(
+                    arr1, arr2)
+
+                self.assertAlmostEqual(stat, stat_fast)
 
     def test_u_statistic(self):
         """Test that the fast and naive algorithms for unbiased dcor match"""

@@ -9,6 +9,8 @@ import numpy as np
 
 def pairwise(function, x, y=None, **kwargs):
     """
+    pairwise(function, x, y=None, *, pool=None, is_symmetric=None, **kwargs)
+
     Computes a dependency measure between each pair of elements.
 
     Parameters
@@ -30,6 +32,8 @@ def pairwise(function, x, y=None, **kwargs):
         :code:`is_symmetric` of the function object is inspected to determine
         if the function is symmetric. If this attribute is absent, the function
         is assumed to not be symmetric.
+    kwargs: dictionary
+        Additional options necessary.
 
     Returns
     -------
