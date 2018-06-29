@@ -232,7 +232,7 @@ def u_centered(a, **kwargs):
     return _u_centered_imp(a, **kwargs)
 
 
-def average_product(a, b):
+def mean_product(a, b):
     r"""
     Average of the elements for an element-wise product of two matrices.
 
@@ -263,16 +263,16 @@ def average_product(a, b):
     >>> import dcor
     >>> a = np.array([[1, 2, 4], [1, 2, 4], [1, 2, 4]])
     >>> b = np.array([[1, .5, .25], [1, .5, .25], [1, .5, .25]])
-    >>> dcor.average_product(a, b)
+    >>> dcor.mean_product(a, b)
     1.0
-    >>> dcor.average_product(a, a)
+    >>> dcor.mean_product(a, a)
     7.0
 
     If the matrices involved are not square, but have the same dimensions,
     the average of the product is still well defined
 
     >>> c = np.array([[1, 2], [1, 2], [1, 2]])
-    >>> dcor.average_product(c, c)
+    >>> dcor.mean_product(c, c)
     2.5
 
     """
@@ -302,7 +302,7 @@ def u_product(a, b):
 
     See Also
     --------
-    average_product
+    mean_product
 
     Examples
     --------

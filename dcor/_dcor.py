@@ -23,7 +23,7 @@ from dcor._dcor_internals import _af_inv_scaled
 import numpy as np
 
 from ._dcor_internals import _distance_matrix, _u_distance_matrix
-from ._dcor_internals import average_product, u_product
+from ._dcor_internals import mean_product, u_product
 from ._utils import _sqrt, _jit
 
 
@@ -41,7 +41,7 @@ def _distance_covariance_sqr_naive(x, y, exponent=1):
     a = _distance_matrix(x, exponent=exponent)
     b = _distance_matrix(y, exponent=exponent)
 
-    return average_product(a, b)
+    return mean_product(a, b)
 
 
 def _u_distance_covariance_sqr_naive(x, y, exponent=1):
@@ -88,7 +88,7 @@ def _distance_correlation_sqr_naive(x, y, exponent=1):
     return _distance_sqr_stats_naive_generic(
         x, y,
         matrix_centered=_distance_matrix,
-        product=average_product,
+        product=mean_product,
         exponent=exponent).correlation_xy
 
 
@@ -387,6 +387,11 @@ def distance_covariance_sqr(x, y, **kwargs):
     distance_covariance
     u_distance_covariance_sqr
 
+    Notes
+    -----
+    The algorithm uses the fast distance covariance algorithm proposed in
+    :cite:`b-fast_distance_correlation` when possible.
+
     Examples
     --------
     >>> import numpy as np
@@ -502,6 +507,11 @@ def distance_covariance(x, y, **kwargs):
     distance_covariance_sqr
     u_distance_covariance_sqr
 
+    Notes
+    -----
+    The algorithm uses the fast distance covariance algorithm proposed in
+    :cite:`b-fast_distance_correlation` when possible.
+
     Examples
     --------
     >>> import numpy as np
@@ -562,6 +572,9 @@ def distance_stats_sqr(x, y, **kwargs):
     It is less efficient to compute the statistics separately, rather than
     using this function, because some computations can be shared.
 
+    The algorithm uses the fast distance covariance algorithm proposed in
+    :cite:`b-fast_distance_correlation` when possible.
+
     Examples
     --------
     >>> import numpy as np
@@ -592,7 +605,7 @@ def distance_stats_sqr(x, y, **kwargs):
         return _distance_sqr_stats_naive_generic(
             x, y,
             matrix_centered=_distance_matrix,
-            product=average_product,
+            product=mean_product,
             **kwargs)
 
 
@@ -712,6 +725,9 @@ def distance_stats(x, y, **kwargs):
     It is less efficient to compute the statistics separately, rather than
     using this function, because some computations can be shared.
 
+    The algorithm uses the fast distance covariance algorithm proposed in
+    :cite:`b-fast_distance_correlation` when possible.
+
     Examples
     --------
     >>> import numpy as np
@@ -768,6 +784,11 @@ def distance_correlation_sqr(x, y, **kwargs):
     --------
     distance_correlation
     u_distance_correlation_sqr
+
+    Notes
+    -----
+    The algorithm uses the fast distance covariance algorithm proposed in
+    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -885,6 +906,11 @@ def distance_correlation(x, y, **kwargs):
     --------
     distance_correlation_sqr
     u_distance_correlation_sqr
+
+    Notes
+    -----
+    The algorithm uses the fast distance covariance algorithm proposed in
+    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------

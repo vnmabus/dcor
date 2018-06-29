@@ -20,7 +20,7 @@ from ._dcor import (distance_covariance_sqr, distance_covariance,  # noqa
                    distance_correlation_af_inv_sqr,
                    distance_correlation_af_inv)
 from ._dcor_internals import (double_centered, u_centered,  # noqa
-                              average_product, u_product,
+                              mean_product, u_product,
                               u_projection,
                               u_complementary_projection)
 from ._energy import energy_distance  # noqa

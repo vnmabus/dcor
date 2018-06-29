@@ -87,7 +87,7 @@ distance covariance, and are also provided by this package.
    
    dcor.double_centered
    dcor.u_centered
-   dcor.average_product
+   dcor.mean_product
    dcor.u_product
    dcor.u_projection
    dcor.u_complementary_projection
