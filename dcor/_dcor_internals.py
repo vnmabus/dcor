@@ -25,6 +25,18 @@ def _check_valid_dcov_exponent(exponent):
         warnings.warn(warning_msg)
 
 
+def _check_same_n_elements(x, y):
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    if x.shape[0] != y.shape[0]:
+        raise ValueError('x and y must have the same number of examples. The '
+                         'number of samples of x is {x_shape} while the '
+                         'number of samples of y is {y_shape}.'.format(
+                             x_shape=x.shape[0],
+                             y_shape=y.shape[0]))
+
+
 def _float_copy_to_out(out, origin):
     """
     Copy origin to out and return it.
@@ -455,9 +467,12 @@ def u_projection(a):
     """
 
     if denominator == 0:
+
         def projection(a):  # noqa
             return np.zeros_like(c)
+
     else:
+
         def projection(a):  # noqa
             return u_product(a, c) / denominator * c
 

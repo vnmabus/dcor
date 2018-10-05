@@ -2,15 +2,9 @@
 from __future__ import absolute_import, division, print_function
 from __future__ import unicode_literals
 
-import collections
-
 import numba
 
 import numpy as np
-
-
-HypothesisTest = collections.namedtuple('HypothesisTest', ['p_value',
-                                        'statistic'])
 
 
 def _jit(function):
