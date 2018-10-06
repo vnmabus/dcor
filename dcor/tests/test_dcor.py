@@ -1,23 +1,12 @@
-"""Tests of the dcor package"""
+"""Tests of the distance covariance and correlation"""
 
 from decimal import Decimal
 from fractions import Fraction
-import re
 import unittest
 
 import dcor
 import dcor._dcor as dcor_internals
 import numpy as np
-
-
-class TestVersion(unittest.TestCase):
-    """Tests of the version number."""
-
-    def test_version(self):
-        """Test that the version has the right format."""
-        regex = re.compile(r"\d+\.\d+(\.\d+)?")
-        self.assertTrue(regex.match(dcor.__version__))
-        self.assertNotEqual(dcor.__version__, "0.0")
 
 
 class TestDistanceCorrelation(unittest.TestCase):
@@ -301,119 +290,6 @@ class TestDistanceCorrelation(unittest.TestCase):
                     arr1, arr2)
 
                 self.assertAlmostEqual(u_stat, u_stat_fast)
-
-
-class TestEnergyTest(unittest.TestCase):
-    """Tests for the homogeneity energy test function."""
-
-    def test_same_distribution_same_parameters(self):
-        """
-        Test that the test works on equal distributions.
-
-        As the distributions are the same, the test should not reject
-        the null hypothesis.
-
-        """
-        vector_size = 10
-        num_samples = 100
-        mean = np.zeros(vector_size)
-        cov = np.eye(vector_size)
-
-        a = np.random.RandomState(0).multivariate_normal(mean=mean,
-                                                         cov=cov,
-                                                         size=num_samples)
-        b = np.random.RandomState(0).multivariate_normal(mean=mean,
-                                                         cov=cov,
-                                                         size=num_samples)
-
-        significance = 0.01
-        num_resamples = int(3 / significance + 1)
-
-        random_state = np.random.RandomState(0)
-
-        result = dcor.homogeneity.energy_test(a, b,
-                                              num_resamples=num_resamples,
-                                              random_state=random_state)
-
-        self.assertGreater(result.p_value, significance)
-
-    def test_same_distribution_different_means(self):
-        """
-        Test that the test works on distributions with different means.
-
-        As the distributions are not the same, the test should reject
-        the null hypothesis.
-
-        """
-        vector_size = 10
-        num_samples = 100
-        mean_0 = np.zeros(vector_size)
-        mean_1 = np.ones(vector_size)
-        cov = np.eye(vector_size)
-
-        a = np.random.RandomState(0).multivariate_normal(mean=mean_0, cov=cov,
-                                                         size=num_samples)
-        b = np.random.RandomState(0).multivariate_normal(mean=mean_1, cov=cov,
-                                                         size=num_samples)
-
-        significance = 0.01
-        num_resamples = int(3 / significance + 1)
-
-        result = dcor.homogeneity.energy_test(a, b,
-                                              num_resamples=num_resamples,
-                                              random_state=0)
-
-        self.assertLess(result.p_value, significance)
-
-    def test_same_distribution_different_covariances(self):
-        """
-        Test that the test works on distributions with different covariance.
-
-        As the distributions are not the same, the test should reject
-        the null hypothesis.
-
-        """
-        vector_size = 10
-        num_samples = 100
-        mean = np.zeros(vector_size)
-        cov_0 = np.eye(vector_size)
-        cov_1 = 3 * np.eye(vector_size)
-
-        a = np.random.RandomState(0).multivariate_normal(mean=mean, cov=cov_0,
-                                                         size=num_samples)
-        b = np.random.RandomState(0).multivariate_normal(mean=mean, cov=cov_1,
-                                                         size=num_samples)
-
-        significance = 0.01
-        num_resamples = int(3 / significance + 1)
-
-        result = dcor.homogeneity.energy_test(a, b,
-                                              num_resamples=num_resamples,
-                                              random_state=0)
-
-        self.assertLess(result.p_value, significance)
-
-    def test_different_distributions(self):
-        """
-        Test that the test works on different distributions.
-
-        As the distributions are not the same, the test should reject
-        the null hypothesis.
-
-        """
-        num_samples = 100
-
-        a = np.random.RandomState(0).standard_normal(size=(num_samples, 1))
-        b = np.random.RandomState(0).standard_t(df=1, size=(num_samples, 1))
-
-        significance = 0.01
-        num_resamples = int(3 / significance + 1)
-
-        result = dcor.homogeneity.energy_test(a, b,
-                                              num_resamples=num_resamples,
-                                              random_state=0)
-
-        self.assertLess(result.p_value, significance)
 
 
 if __name__ == "__main__":
