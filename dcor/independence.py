@@ -120,9 +120,10 @@ def distance_covariance_test(x, y, **kwargs):
 
     """
     return _distance_covariance_test_imp(
-        x, y, ** kwargs,
+        x, y,
         _centering=_dcor_internals.double_centered,
-        _product=_dcor_internals.mean_product)
+        _product=_dcor_internals.mean_product,
+        ** kwargs)
 
 
 def _partial_distance_covariance_test_imp(x, y, z, num_resamples=0,
