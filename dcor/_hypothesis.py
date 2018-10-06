@@ -45,7 +45,7 @@ def _permutation_test_with_sym_matrix(matrix, statistic_function,
         bootstrap_statistics[bootstrap] = statistic_function(permuted_matrix)
 
     extreme_results = bootstrap_statistics > statistic
-    p_value = (np.sum(extreme_results) + 1) / (num_resamples + 1)
+    p_value = (np.sum(extreme_results) + 1.0) / (num_resamples + 1)
 
     return HypothesisTest(
         p_value=p_value,

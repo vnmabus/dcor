@@ -7,11 +7,9 @@ the samples generated from two random vectors are independent.
 
 from __future__ import absolute_import, division, print_function
 
-import numpy as _np
-
 from . import _dcor_internals
 from . import _hypothesis
-from ._utils import _random_state_init
+from ._utils import _random_state_init, _transform_to_2d
 
 
 def _distance_covariance_test_imp(x, y,
@@ -28,6 +26,9 @@ def _distance_covariance_test_imp(x, y,
     and ``random_state`` keyword-only in Python 2.
 
     """
+    x = _transform_to_2d(x)
+    y = _transform_to_2d(y)
+
     _dcor_internals._check_same_n_elements(x, y)
 
     random_state = _random_state_init(random_state)
