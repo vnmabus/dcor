@@ -90,7 +90,9 @@ def _cdist(x, y, exponent=1):
 
 
 def pairwise_distances(x, y=None, **kwargs):
-    """
+    r"""
+    pairwise_distances(x, y=None, *, exponent=1)
+
     Pairwise distance between points.
 
     Return the pairwise distance between points in two sets, or
@@ -105,6 +107,8 @@ def pairwise_distances(x, y=None, **kwargs):
         An :math:`l \times m` array of :math:`l` observations in
         a :math:`m`-dimensional space. If None, the distances will
         be computed between the points in :math:`x`.
+    exponent: float
+        Exponent of the Euclidean distance.
 
     Returns
     -------

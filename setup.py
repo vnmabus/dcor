@@ -22,6 +22,7 @@ such as:
 It also provides tests based on these E-statistics:
 
 - Test of homogeneity based on the energy distance.
+- Test of independence based on distance covariance.
 
 References
 ----------

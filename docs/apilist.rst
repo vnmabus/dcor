@@ -76,6 +76,15 @@ distribution.
    
    dcor.homogeneity.energy_test_statistic
    dcor.homogeneity.energy_test
+   
+Independence test
+^^^^^^^^^^^^^^^^^
+The following functions are used to test if two random vectors are independent.
+
+.. autosummary::
+   :toctree: functions
+   
+   dcor.independence.distance_covariance_test
 
 Internal computations
 ^^^^^^^^^^^^^^^^^^^^^
@@ -91,3 +100,12 @@ distance covariance, and are also provided by this package.
    dcor.u_product
    dcor.u_projection
    dcor.u_complementary_projection
+
+Compute distance matrices
+^^^^^^^^^^^^^^^^^^^^^^^^^
+These functions are used for computing distance matrices.
+
+.. autosummary::
+   :toctree: functions
+   
+   dcor.distances.pairwise_distances

@@ -57,7 +57,7 @@ def _distance_covariance_test_imp(x, y,
 
 def distance_covariance_test(x, y, **kwargs):
     """
-    distance_covariance_test(x, y, num_resamples=0, exponent=1,
+    distance_covariance_test(x, y, *, num_resamples=0, exponent=1, \
     random_state=None)
 
     Test of distance covariance independence.
@@ -76,6 +76,10 @@ def distance_covariance_test(x, y, **kwargs):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
     num_resamples: int
         Number of permutations resamples to take in the permutation test.
     random_state: {None, int, array_like, numpy.random.RandomState}
