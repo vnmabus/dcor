@@ -22,6 +22,7 @@ such as:
 It also provides tests based on these E-statistics:
 
 - Test of homogeneity based on the energy distance.
+- Test of independence based on distance covariance.
 
 References
 ----------
@@ -46,7 +47,6 @@ import sys
 
 from setuptools import setup, find_packages
 
-
 needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
 pytest_runner = ['pytest-runner'] if needs_pytest else []
 
@@ -60,7 +60,7 @@ setup(name='dcor',
       version=version,
       description=DOCLINES[1],
       long_description="\n".join(DOCLINES[3:]),
-      url='https://dcor.readthedocs.io',
+      url='https://github.com/vnmabus/dcor',
       author='Carlos Ramos Carreño',
       author_email='vnmabus@gmail.com',
       include_package_data=True,
@@ -91,6 +91,8 @@ setup(name='dcor',
                         'scipy',
                         'setuptools'],
       setup_requires=pytest_runner,
-      tests_require=['pytest-cov'],
+      tests_require=['pytest-cov',
+                     'numpy>=1.14'  # The printing format for numpy changes
+                     ],
       test_suite='dcor.tests',
       zip_safe=False)

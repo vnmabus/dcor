@@ -2,15 +2,9 @@
 from __future__ import absolute_import, division, print_function
 from __future__ import unicode_literals
 
-import collections
-
 import numba
 
 import numpy as np
-
-
-HypothesisTest = collections.namedtuple('HypothesisTest', ['p_value',
-                                        'statistic'])
 
 
 def _jit(function):
@@ -31,13 +25,6 @@ def _jit(function):
         return function
     else:  # pragma: no cover
         return compiled
-
-
-def _check_kwargs_empty(kwargs):
-    """Raise an apropiate exception if the kwargs dictionary is not empty."""
-    if kwargs:
-        raise TypeError("Unexpected keyword argument '{arg}'".format(
-            arg=list(kwargs.keys())[0]))
 
 
 def _sqrt(x):
@@ -85,10 +72,10 @@ def _can_be_double(x):
     converted to double (if the roundtrip conversion works).
 
     """
-    return ((np.issubdtype(x.dtype, float) and
+    return ((np.issubdtype(x.dtype, np.floating) and
             x.dtype.itemsize <= np.dtype(float).itemsize) or
-            (np.issubdtype(x.dtype, int) and
-            np.all(np.asfarray(x).astype(dtype=x.dtype) == x)))
+            (np.issubdtype(x.dtype, np.signedinteger) and
+            np.can_cast(x, float)))
 
 
 def _random_state_init(random_state):

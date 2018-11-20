@@ -6,9 +6,12 @@ List of modules
 .. autosummary::
    :toctree: modules
    
-   dcor._utils
+   dcor._dcor_internals
    dcor._dcor
    dcor._energy
-   dcor._dcor_internals
-   dcor.homogeneity
+   dcor._pairwise
+   dcor._partial_dcor
+   dcor._utils
    dcor.distances
+   dcor.homogeneity
+   dcor.independence

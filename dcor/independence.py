@@ -7,11 +7,162 @@ the samples generated from two random vectors are independent.
 
 from __future__ import absolute_import, division, print_function
 
-import numpy as _np
-
 from . import _dcor_internals
-from . import _utils
-from ._utils import _random_state_init, _check_kwargs_empty
+from . import _hypothesis
+from ._utils import _random_state_init, _transform_to_2d
+
+
+def _distance_covariance_test_imp(x, y,
+                                  _centering,
+                                  _product,
+                                  exponent=1,
+                                  num_resamples=0,
+                                  random_state=None
+                                  ):
+    """
+    Real implementation of :func:`distance_covariance_test`.
+
+    This function is used to make parameters ``num_resamples``, ``exponent``
+    and ``random_state`` keyword-only in Python 2.
+
+    """
+    x = _transform_to_2d(x)
+    y = _transform_to_2d(y)
+
+    _dcor_internals._check_same_n_elements(x, y)
+
+    random_state = _random_state_init(random_state)
+
+    # Compute U-centered matrices
+    u_x = _dcor_internals._distance_matrix_generic(
+        x,
+        centering=_centering,
+        exponent=exponent)
+    u_y = _dcor_internals._distance_matrix_generic(
+        y,
+        centering=_centering,
+        exponent=exponent)
+
+    # Use the dcov statistic
+    def statistic_function(distance_matrix):
+        return u_x.shape[0] * _product(
+            distance_matrix, u_y)
+
+    return _hypothesis._permutation_test_with_sym_matrix(
+        u_x,
+        statistic_function=statistic_function,
+        num_resamples=num_resamples,
+        random_state=random_state)
+
+
+def distance_covariance_test(x, y, **kwargs):
+    """
+    distance_covariance_test(x, y, *, num_resamples=0, exponent=1, \
+    random_state=None)
+
+    Test of distance covariance independence.
+
+    Compute the test of independence based on the distance
+    covariance, for two random vectors.
+
+    The test is a permutation test where the null hypothesis is that the two
+    random vectors are independent.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    exponent: float
+        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+        Equivalently, it is twice the Hurst parameter of fractional Brownian
+        motion.
+    num_resamples: int
+        Number of permutations resamples to take in the permutation test.
+    random_state: {None, int, array_like, numpy.random.RandomState}
+        Random state to generate the permutations.
+
+    Returns
+    -------
+    HypothesisTest
+        Results of the hypothesis test.
+
+    See Also
+    --------
+    distance_covariance
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1, 0, 0, 1],
+    ...               [0, 1, 1, 1],
+    ...               [1, 1, 1, 1],
+    ...               [1, 1, 0, 1]])
+    >>> dcor.independence.distance_covariance_test(a, a)
+    HypothesisTest(p_value=1.0, statistic=208.0)
+    >>> dcor.independence.distance_covariance_test(a, b)
+    ...                                      # doctest: +ELLIPSIS
+    HypothesisTest(p_value=1.0, statistic=11.75323056...)
+    >>> dcor.independence.distance_covariance_test(b, b)
+    HypothesisTest(p_value=1.0, statistic=1.3604610...)
+    >>> dcor.independence.distance_covariance_test(a, b,
+    ... num_resamples=5, random_state=0)
+    HypothesisTest(p_value=0.5, statistic=11.7532305...)
+    >>> dcor.independence.distance_covariance_test(a, b,
+    ... num_resamples=5, random_state=13)
+    HypothesisTest(p_value=0.3333333..., statistic=11.7532305...)
+    >>> dcor.independence.distance_covariance_test(a, a,
+    ... num_resamples=7, random_state=0)
+    HypothesisTest(p_value=0.125, statistic=208.0)
+
+    """
+    return _distance_covariance_test_imp(
+        x, y,
+        _centering=_dcor_internals.double_centered,
+        _product=_dcor_internals.mean_product,
+        ** kwargs)
+
+
+def _partial_distance_covariance_test_imp(x, y, z, num_resamples=0,
+                                          random_state=None):
+    """
+    Real implementation of :func:`partial_distance_covariance_test`.
+
+    This function is used to make parameters ``num_resamples``
+    and ``random_state`` keyword-only in Python 2.
+
+    """
+    random_state = _random_state_init(random_state)
+
+    # Compute U-centered matrices
+    u_x = _dcor_internals._u_distance_matrix(x)
+    u_y = _dcor_internals._u_distance_matrix(y)
+    u_z = _dcor_internals._u_distance_matrix(z)
+
+    # Compute projections
+    proj = _dcor_internals.u_complementary_projection(u_z)
+
+    p_xz = proj(u_x)
+    p_yz = proj(u_y)
+
+    # Use the pdcor statistic
+    def statistic_function(distance_matrix):
+        return u_x.shape[0] * _dcor_internals.u_product(
+            distance_matrix, p_yz)
+
+    return _hypothesis._permutation_test_with_sym_matrix(
+        p_xz,
+        statistic_function=statistic_function,
+        num_resamples=num_resamples,
+        random_state=random_state)
 
 
 def partial_distance_covariance_test(x, y, z, **kwargs):
@@ -24,8 +175,8 @@ def partial_distance_covariance_test(x, y, z, **kwargs):
     Compute the test of independence based on the partial distance
     covariance, for two random vectors conditioned on a third.
 
-    The test is a permutation test where the null hypothesis is that all
-    random vectors have the same distribution.
+    The test is a permutation test where the null hypothesis is that the first
+    two random vectors are independent given the third one.
 
     Parameters
     ----------
@@ -89,46 +240,4 @@ def partial_distance_covariance_test(x, y, z, **kwargs):
     HypothesisTest(p_value=1.0, statistic=-7.5701764...e-12)
 
     """
-    # pylint:disable=too-many-locals
-    random_state = _random_state_init(kwargs.pop("random_state", None))
-
-    # B
-    num_resamples = kwargs.pop("num_resamples", 0)
-
-    _check_kwargs_empty(kwargs)
-
-    # Compute U-centered matrices
-    u_x = _dcor_internals._u_distance_matrix(x)
-    u_y = _dcor_internals._u_distance_matrix(y)
-    u_z = _dcor_internals._u_distance_matrix(z)
-
-    # Compute projections
-    proj = _dcor_internals.u_complementary_projection(u_z)
-
-    p_xz = proj(u_x)
-    p_yz = proj(u_y)
-
-    num_dimensions = u_x.shape[0]
-
-    # epsilon_n
-    observed_pdcov = num_dimensions * _dcor_internals.u_product(p_xz, p_yz)
-
-    # epsilon^(b)_n
-    bootstrap_pdcov = _np.ones(num_resamples, dtype=observed_pdcov.dtype)
-
-    for bootstrap in range(num_resamples):
-        permuted_index = random_state.permutation(num_dimensions)
-
-        permuted_p_xz = p_xz[_np.ix_(permuted_index, permuted_index)]
-
-        pdcov = num_dimensions * _dcor_internals.u_product(permuted_p_xz, p_yz)
-
-        bootstrap_pdcov[bootstrap] = pdcov
-
-    extreme_results = bootstrap_pdcov > observed_pdcov
-    p_value = (_np.sum(extreme_results) + 1) / (num_resamples + 1)
-
-    return _utils.HypothesisTest(
-        p_value=p_value,
-        statistic=observed_pdcov
-    )
+    return _partial_distance_covariance_test_imp(x, y, z, **kwargs)

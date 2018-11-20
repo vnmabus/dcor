@@ -25,8 +25,64 @@ def _check_valid_dcov_exponent(exponent):
         warnings.warn(warning_msg)
 
 
-def double_centered(a):
+def _check_same_n_elements(x, y):
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    if x.shape[0] != y.shape[0]:
+        raise ValueError('x and y must have the same number of examples. The '
+                         'number of samples of x is {x_shape} while the '
+                         'number of samples of y is {y_shape}.'.format(
+                             x_shape=x.shape[0],
+                             y_shape=y.shape[0]))
+
+
+def _float_copy_to_out(out, origin):
+    """
+    Copy origin to out and return it.
+
+    If ``out`` is None, a new copy (casted to floating point) is used. If
+    ``out`` and ``origin`` are the same, we simply return it. Otherwise we
+    copy the values.
+
+    """
+    if out is None:
+        out = origin / 1  # The division forces cast to a floating point type
+    elif out is not origin:
+        np.copyto(out, origin)
+    return out
+
+
+def _double_centered_imp(a, out=None):
+    """
+    Real implementation of :func:`double_centered`.
+
+    This function is used to make parameter ``out`` keyword-only in
+    Python 2.
+
+    """
+    out = _float_copy_to_out(out, a)
+
+    dim = np.size(a, 0)
+
+    mu = np.sum(a) / (dim * dim)
+    sum_cols = np.sum(a, 0, keepdims=True)
+    sum_rows = np.sum(a, 1, keepdims=True)
+    mu_cols = sum_cols / dim
+    mu_rows = sum_rows / dim
+
+    # Do one operation at a time, to improve broadcasting memory usage.
+    out -= mu_rows
+    out -= mu_cols
+    out += mu
+
+    return out
+
+
+def double_centered(a, **kwargs):
     r"""
+    double_centered(a, *, out=None)
+
     Return a copy of the matrix :math:`a` which is double centered.
 
     A matrix is double centered if both the sum of its columns and the sum of
@@ -47,6 +103,9 @@ def double_centered(a):
     ----------
     a : (N, N) array_like
         Original matrix.
+    out: None or array_like
+        If not None, specifies where to return the resulting array. This
+        array should allow non integer numbers.
 
     Returns
     -------
@@ -63,28 +122,60 @@ def double_centered(a):
     >>> import dcor
     >>> a = np.array([[1, 2], [3, 4]])
     >>> dcor.double_centered(a)
-    array([[ 0.,  0.],
-           [ 0.,  0.]])
+    array([[0., 0.],
+           [0., 0.]])
     >>> b = np.array([[1, 2, 3], [2, 4, 5], [3, 5, 6]])
     >>> dcor.double_centered(b)
     array([[ 0.44444444, -0.22222222, -0.22222222],
            [-0.22222222,  0.11111111,  0.11111111],
            [-0.22222222,  0.11111111,  0.11111111]])
+    >>> c = np.array([[1., 2., 3.], [2., 4., 5.], [3., 5., 6.]])
+    >>> dcor.double_centered(c, out=c)
+    array([[ 0.44444444, -0.22222222, -0.22222222],
+           [-0.22222222,  0.11111111,  0.11111111],
+           [-0.22222222,  0.11111111,  0.11111111]])
+    >>> c
+    array([[ 0.44444444, -0.22222222, -0.22222222],
+           [-0.22222222,  0.11111111,  0.11111111],
+           [-0.22222222,  0.11111111,  0.11111111]])
 
     """
+    return _double_centered_imp(a, **kwargs)
+
+
+def _u_centered_imp(a, out=None):
+    """
+    Real implementation of :func:`u_centered`.
+
+    This function is used to make parameter ``out`` keyword-only in
+    Python 2.
+
+    """
+    out = _float_copy_to_out(out, a)
+
     dim = np.size(a, 0)
 
-    mu = np.sum(a) / (dim * dim)
+    u_mu = np.sum(a) / ((dim - 1) * (dim - 2))
     sum_cols = np.sum(a, 0, keepdims=True)
     sum_rows = np.sum(a, 1, keepdims=True)
-    mu_cols = sum_cols / dim
-    mu_rows = sum_rows / dim
+    u_mu_cols = np.ones((dim, 1)).dot(sum_cols / (dim - 2))
+    u_mu_rows = (sum_rows / (dim - 2)).dot(np.ones((1, dim)))
 
-    return a - mu_rows - mu_cols + mu
+    # Do one operation at a time, to improve broadcasting memory usage.
+    out -= u_mu_rows
+    out -= u_mu_cols
+    out += u_mu
+
+    # The diagonal is zero
+    out[np.eye(dim, dtype=bool)] = 0
+
+    return out
 
 
-def u_centered(a):
+def u_centered(a, **kwargs):
     r"""
+    u_centered(a, *, out=None)
+
     Return a copy of the matrix :math:`a` which is :math:`U`-centered.
 
     If the element of the i-th row and j-th column of the original
@@ -106,6 +197,9 @@ def u_centered(a):
     ----------
     a : (N, N) array_like
         Original matrix.
+    out: None or array_like
+        If not None, specifies where to return the resulting array. This
+        array should allow non integer numbers.
 
     Returns
     -------
@@ -125,6 +219,15 @@ def u_centered(a):
     array([[ 0. ,  0.5, -1.5],
            [ 0.5,  0. , -4.5],
            [-1.5, -4.5,  0. ]])
+    >>> b = np.array([[1., 2., 3.], [2., 4., 5.], [3., 5., 6.]])
+    >>> dcor.u_centered(b, out=b)
+    array([[ 0. ,  0.5, -1.5],
+           [ 0.5,  0. , -4.5],
+           [-1.5, -4.5,  0. ]])
+    >>> b
+    array([[ 0. ,  0.5, -1.5],
+           [ 0.5,  0. , -4.5],
+           [-1.5, -4.5,  0. ]])
 
     Note that when the matrix is 1x1 or 2x2, the formula performs
     a division by 0
@@ -134,27 +237,14 @@ def u_centered(a):
     >>> with warnings.catch_warnings():
     ...     warnings.simplefilter("ignore")
     ...     dcor.u_centered(b)
-    array([[  0.,  nan],
-           [ nan,   0.]])
+    array([[ 0., nan],
+           [nan,  0.]])
 
     """
-    dim = np.size(a, 0)
-
-    u_mu = np.sum(a) / ((dim - 1) * (dim - 2))
-    sum_cols = np.sum(a, 0, keepdims=True)
-    sum_rows = np.sum(a, 1, keepdims=True)
-    u_mu_cols = np.ones((dim, 1)).dot(sum_cols / (dim - 2))
-    u_mu_rows = (sum_rows / (dim - 2)).dot(np.ones((1, dim)))
-
-    centered_matrix = a - u_mu_rows - u_mu_cols + u_mu
-
-    # The diagonal is zero
-    centered_matrix[np.eye(dim, dtype=bool)] = 0
-
-    return centered_matrix
+    return _u_centered_imp(a, **kwargs)
 
 
-def average_product(a, b):
+def mean_product(a, b):
     r"""
     Average of the elements for an element-wise product of two matrices.
 
@@ -185,16 +275,16 @@ def average_product(a, b):
     >>> import dcor
     >>> a = np.array([[1, 2, 4], [1, 2, 4], [1, 2, 4]])
     >>> b = np.array([[1, .5, .25], [1, .5, .25], [1, .5, .25]])
-    >>> dcor.average_product(a, b)
+    >>> dcor.mean_product(a, b)
     1.0
-    >>> dcor.average_product(a, a)
+    >>> dcor.mean_product(a, a)
     7.0
 
     If the matrices involved are not square, but have the same dimensions,
     the average of the product is still well defined
 
     >>> c = np.array([[1, 2], [1, 2], [1, 2]])
-    >>> dcor.average_product(c, c)
+    >>> dcor.mean_product(c, c)
     2.5
 
     """
@@ -224,7 +314,7 @@ def u_product(a, b):
 
     See Also
     --------
-    average_product
+    mean_product
 
     Examples
     --------
@@ -356,10 +446,10 @@ def u_projection(a):
 
     >>> proj_null = dcor.u_projection(np.zeros((4, 4)))
     >>> proj_null(u_a)
-    array([[ 0.,  0.,  0.,  0.],
-           [ 0.,  0.,  0.,  0.],
-           [ 0.,  0.,  0.,  0.],
-           [ 0.,  0.,  0.,  0.]])
+    array([[0., 0., 0., 0.],
+           [0., 0., 0., 0.],
+           [0., 0., 0., 0.],
+           [0., 0., 0., 0.]])
 
     """
     c = a
@@ -377,9 +467,12 @@ def u_projection(a):
     """
 
     if denominator == 0:
+
         def projection(a):  # noqa
             return np.zeros_like(c)
+
     else:
+
         def projection(a):  # noqa
             return u_product(a, c) / denominator * c
 
@@ -443,19 +536,15 @@ def u_complementary_projection(a):
            [-5.33333333,  2.66666667,  2.66666667,  0.        ]])
     >>> proj_a = dcor.u_complementary_projection(u_a)
     >>> proj_a(u_a)
-    array([[ 0.,  0.,  0.,  0.],
-           [ 0.,  0.,  0.,  0.],
-           [ 0.,  0.,  0.,  0.],
-           [ 0.,  0.,  0.,  0.]])
+    array([[0., 0., 0., 0.],
+           [0., 0., 0., 0.],
+           [0., 0., 0., 0.],
+           [0., 0., 0., 0.]])
     >>> proj_a(u_b)
-    array([[  0.00000000e+00,  -4.44089210e-16,   4.00000000e+00,
-             -4.00000000e+00],
-           [ -4.44089210e-16,   0.00000000e+00,  -4.00000000e+00,
-              4.00000000e+00],
-           [  4.00000000e+00,  -4.00000000e+00,   0.00000000e+00,
-             -4.44089210e-16],
-           [ -4.00000000e+00,   4.00000000e+00,  -4.44089210e-16,
-              0.00000000e+00]])
+    array([[ 0.0000000e+00, -4.4408921e-16,  4.0000000e+00, -4.0000000e+00],
+           [-4.4408921e-16,  0.0000000e+00, -4.0000000e+00,  4.0000000e+00],
+           [ 4.0000000e+00, -4.0000000e+00,  0.0000000e+00, -4.4408921e-16],
+           [-4.0000000e+00,  4.0000000e+00, -4.4408921e-16,  0.0000000e+00]])
     >>> proj_null = dcor.u_complementary_projection(np.zeros((4, 4)))
     >>> proj_null(u_a)
     array([[ 0., -2.,  1.,  1.],
@@ -491,10 +580,10 @@ def _distance_matrix_generic(x, centering, exponent=1):
     x = _transform_to_2d(x)
 
     # Calculate distance matrices
-    a = distances._pdist(x, exponent=exponent)
+    a = distances.pairwise_distances(x, exponent=exponent)
 
     # Double centering
-    a = centering(a)
+    a = centering(a, out=a)
 
     return a
 

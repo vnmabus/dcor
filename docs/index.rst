@@ -27,6 +27,7 @@ References
 
    installation
    theory
+   energycomparison
    apilist
    internalapi
 
