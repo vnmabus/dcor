@@ -79,7 +79,7 @@ and :math:`(B_{i, j})_{i,j=1}^n`
    A_{i, j} &= a_{i,j} - \frac{1}{n} \sum_{l=1}^n a_{il} - \frac{1}{n}
    \sum_{k=1}^n a_{kj} + \frac{1}{n^2}\sum_{k=1}^n a_{kl}, \\
    B_{i, j} &= b_{i,j} - \frac{1}{n} \sum_{l=1}^n b_{il} - \frac{1}{n}
-   \sum_{k=1}^n b_{kj} + \frac{1}{n^2}\sum_{k=1}^n b_{kl}.
+   \sum_{k=1}^n b_{kj} + \frac{1}{n^2}\sum_{k,l=1}^n b_{kl}.
 
 Then
 
