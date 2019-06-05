@@ -195,7 +195,7 @@ Table of energy-dcor equivalents
             DX <- as.matrix(dx)
             DY <- as.matrix(dy)
             
-            dcovU_stats(x, y)
+            dcovU_stats(DX, DY)
             
       - .. code-block:: python
             
