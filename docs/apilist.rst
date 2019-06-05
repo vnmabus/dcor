@@ -85,6 +85,8 @@ The following functions are used to test if two random vectors are independent.
    :toctree: functions
    
    dcor.independence.distance_covariance_test
+   dcor.independence.distance_correlation_t_statistic
+   dcor.independence.distance_correlation_t_test
 
 Internal computations
 ^^^^^^^^^^^^^^^^^^^^^
