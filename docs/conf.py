@@ -108,6 +108,11 @@ autosummary_generate = True
 #
 html_theme = 'sphinx_rtd_theme'
 
+
+def setup(app):
+    app.add_stylesheet('css/wide.css')
+
+
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
