@@ -195,7 +195,7 @@ Table of energy-dcor equivalents
             DX <- as.matrix(dx)
             DY <- as.matrix(dy)
             
-            dcovU_stats(x, y)
+            dcovU_stats(DX, DY)
             
       - .. code-block:: python
             
@@ -303,4 +303,21 @@ Table of energy-dcor equivalents
                                                         num_resamples=10)
               
       -
-      
+    * - .. code-block:: R
+        
+            dcor.t(x, y)
+            
+      - .. code-block:: python
+            
+             dcor.independence.distance_correlation_t_statistic(x, y)
+              
+      -
+    * - .. code-block:: R
+        
+            dcor.ttest(x, y)
+            
+      - .. code-block:: python
+            
+             dcor.independence.distance_correlation_t_test(x, y)
+              
+      -

@@ -10,6 +10,9 @@ from __future__ import absolute_import, division, print_function
 from . import _dcor_internals
 from . import _hypothesis
 from ._utils import _random_state_init, _transform_to_2d
+from ._dcor import u_distance_correlation_sqr
+import numpy as np
+import scipy.stats
 
 
 def _distance_covariance_test_imp(x, y,
@@ -241,3 +244,117 @@ def partial_distance_covariance_test(x, y, z, **kwargs):
 
     """
     return _partial_distance_covariance_test_imp(x, y, z, **kwargs)
+
+
+def distance_correlation_t_statistic(x, y):
+    """
+    Transformation of the bias corrected version of distance correlation used
+    in :func:`distance_correlation_t_test`.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    numpy scalar
+        T statistic.
+
+    See Also
+    --------
+    distance_correlation_t_test
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1, 0, 0, 1],
+    ...               [0, 1, 1, 1],
+    ...               [1, 1, 1, 1],
+    ...               [1, 1, 0, 1]])
+    >>> with np.errstate(divide='ignore'):
+    ...     dcor.independence.distance_correlation_t_statistic(a, a)
+    inf
+    >>> dcor.independence.distance_correlation_t_statistic(a, b)
+    ...                                      # doctest: +ELLIPSIS
+    -0.4430164...
+    >>> with np.errstate(divide='ignore'):
+    ...     dcor.independence.distance_correlation_t_statistic(b, b)
+    inf
+
+    """
+    bcdcor = u_distance_correlation_sqr(x, y)
+
+    n = x.shape[0]
+    v = n * (n-3) / 2
+
+    return np.sqrt(v - 1) * bcdcor / np.sqrt(1 - bcdcor**2)
+
+
+def distance_correlation_t_test(x, y):
+    """
+    Test of independence for high dimension based on convergence to a Student t
+    distribution. The null hypothesis is that the two random vectors are
+    independent.
+
+    Parameters
+    ----------
+    x: array_like
+        First random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+    y: array_like
+        Second random vector. The columns correspond with the individual random
+        variables while the rows are individual instances of the random vector.
+
+    Returns
+    -------
+    HypothesisTest
+        Results of the hypothesis test.
+
+    See Also
+    --------
+    distance_correlation_t_statistic
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1, 0, 0, 1],
+    ...               [0, 1, 1, 1],
+    ...               [1, 1, 1, 1],
+    ...               [1, 1, 0, 1]])
+    >>> with np.errstate(divide='ignore'):
+    ...     dcor.independence.distance_correlation_t_test(a, a)
+    ...                                      # doctest: +ELLIPSIS
+    HypothesisTest(p_value=0.0, statistic=inf)
+    >>> dcor.independence.distance_correlation_t_test(a, b)
+    ...                                      # doctest: +ELLIPSIS
+    HypothesisTest(p_value=0.6327451..., statistic=-0.4430164...)
+    >>> with np.errstate(divide='ignore'):
+    ...     dcor.independence.distance_correlation_t_test(b, b)
+    ...                                      # doctest: +ELLIPSIS
+    HypothesisTest(p_value=0.0, statistic=inf)
+
+    """
+    t_test = distance_correlation_t_statistic(x, y)
+
+    n = x.shape[0]
+    v = n * (n-3) / 2
+    df = v - 1
+
+    p_value = 1 - scipy.stats.t.cdf(t_test, df=df)
+
+    return _hypothesis.HypothesisTest(p_value=p_value, statistic=t_test)

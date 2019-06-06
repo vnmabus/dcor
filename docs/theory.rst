@@ -77,9 +77,9 @@ and :math:`(B_{i, j})_{i,j=1}^n`
 
 .. math::
    A_{i, j} &= a_{i,j} - \frac{1}{n} \sum_{l=1}^n a_{il} - \frac{1}{n}
-   \sum_{k=1}^n a_{kj} + \frac{1}{n^2}\sum_{k=1}^n a_{kj}, \\
+   \sum_{k=1}^n a_{kj} + \frac{1}{n^2}\sum_{k,l=1}^n a_{kl}, \\
    B_{i, j} &= b_{i,j} - \frac{1}{n} \sum_{l=1}^n b_{il} - \frac{1}{n}
-   \sum_{k=1}^n b_{kj} + \frac{1}{n^2}\sum_{k=1}^n b_{kj}.
+   \sum_{k=1}^n b_{kj} + \frac{1}{n^2}\sum_{k,l=1}^n b_{kl}.
 
 Then
 
@@ -111,11 +111,11 @@ matrices :math:`(\widetilde{A}_{i, j})_{i,j=1}^n` and :math:`(\widetilde{B}_{i, 
    :label: ucentering
    
    \widetilde{A}_{i, j} &= \begin{cases} a_{i,j} - \frac{1}{n-2} \sum_{l=1}^n a_{il} -
-   \frac{1}{n-2} \sum_{k=1}^n a_{kj} + \frac{1}{(n-1)(n-2)}\sum_{k=1}^n a_{kj}, &\text{if } i \neq j, \\
+   \frac{1}{n-2} \sum_{k=1}^n a_{kj} + \frac{1}{(n-1)(n-2)}\sum_{k,l=1}^n a_{kl}, &\text{if } i \neq j, \\
    0, &\text{if } i = j,
    \end{cases} \\
    \widetilde{B}_{i, j} &= \begin{cases} b_{i,j} - \frac{1}{n-2} \sum_{l=1}^n b_{il} -
-   \frac{1}{n-2} \sum_{k=1}^n b_{kj} + \frac{1}{(n-1)(n-2)}\sum_{k=1}^n b_{kj}, &\text{if } i \neq j, \\
+   \frac{1}{n-2} \sum_{k=1}^n b_{kj} + \frac{1}{(n-1)(n-2)}\sum_{k,l=1}^n b_{kl}, &\text{if } i \neq j, \\
    0, &\text{if } i = j.
    \end{cases}
 

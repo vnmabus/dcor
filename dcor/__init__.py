@@ -9,6 +9,7 @@ energy distance.
 import errno as _errno
 import os as _os
 
+from . import distances  # noqa
 from . import homogeneity  # noqa
 from . import independence  # noqa
 from ._dcor import (distance_covariance_sqr, distance_covariance,  # noqa
@@ -27,7 +28,6 @@ from ._energy import energy_distance  # noqa
 from ._pairwise import pairwise
 from ._partial_dcor import (partial_distance_covariance,  # noqa
                             partial_distance_correlation)
-
 
 try:
     with open(_os.path.join(_os.path.dirname(__file__),
