@@ -45,7 +45,7 @@ def _compute_d(y, weights):
                 previous_index_1 = previous_indexes[subarray_1_idx]
                 previous_index_2 = previous_indexes[subarray_2_idx]
 
-                if y[previous_index_1] > y[previous_index_2]:
+                if y[previous_index_1] >= y[previous_index_2]:
                     current_indexes[indexes_idx] = previous_index_1
                     subarray_1_idx += 1
                 else:
