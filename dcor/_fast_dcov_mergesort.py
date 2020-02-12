@@ -5,11 +5,11 @@ Functions to compute fast distance covariance using mergesort.
 import numpy as np
 
 
-def _compute_d(y, weights):
+def _compute_weight_sums(y, weights):
 
     n_samples = len(y)
 
-    d = np.empty(n_samples, dtype=y.dtype)
+    weigth_sums = np.zeros(n_samples, dtype=y.dtype)
 
     # Buffer that contains the indexes of the current and
     # last iterations
@@ -37,7 +37,6 @@ def _compute_d(y, weights):
                 subarray_1_idx + merged_subarray_len - 1, n_samples - 1)
             subarray_2_idx_last = min(
                 subarray_2_idx + merged_subarray_len - 1, n_samples - 1)
-            e1_plus_1 = subarray_1_idx_last + 1
 
             # Merge the subarrays
             while (subarray_1_idx <= subarray_1_idx_last and
@@ -52,8 +51,9 @@ def _compute_d(y, weights):
                     current_indexes[indexes_idx] = previous_index_2
                     subarray_2_idx += 1
 
-                    d[previous_index_2] += (weights_cumsum[e1_plus_1] -
-                                            weights_cumsum[subarray_1_idx])
+                    weigth_sums[previous_index_2] += (
+                        weights_cumsum[subarray_1_idx_last + 1] -
+                        weights_cumsum[subarray_1_idx])
                 indexes_idx += 1
 
             # Join the remaining elements of one of the arrays (already sorted)
@@ -77,6 +77,4 @@ def _compute_d(y, weights):
         # Swap buffer
         previous_indexes, current_indexes = (current_indexes, previous_indexes)
 
-        print(previous_indexes + 1)
-
-    return d
+    return weigth_sums
