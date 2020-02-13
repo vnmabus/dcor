@@ -182,13 +182,3 @@ def _distance_covariance_sqr_avl_generic(
              a_dot_dot / n * b_dot_dot / d1 / d2 / d3)
 
     return d_cov
-
-
-def _distance_covariance_sqr_avl(x, y):
-    """Fast algorithm for the biased squared distance covariance"""
-    return _distance_covariance_sqr_avl_generic(x, y, unbiased=False)
-
-
-def _u_distance_covariance_sqr_avl(x, y):
-    """Fast algorithm for the unbiased squared distance covariance"""
-    return _distance_covariance_sqr_avl_generic(x, y, unbiased=True)
