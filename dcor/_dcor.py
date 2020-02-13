@@ -28,7 +28,7 @@ from ._utils import _sqrt, _jit
 
 
 Stats = collections.namedtuple('Stats', ['covariance_xy', 'correlation_xy',
-                               'variance_x', 'variance_y'])
+                                         'variance_x', 'variance_y'])
 
 
 def _distance_covariance_sqr_naive(x, y, exponent=1):
@@ -274,7 +274,7 @@ def _distance_covariance_sqr_fast_generic(
     a_i_dot = x_dot + (2 * alpha_x - n) * x - 2 * beta_x
     b_i_dot = y_dot + (2 * alpha_y - n) * y - 2 * beta_y
 
-    sum_ab = np.sum(a_i_dot * b_i_dot)
+    sum_ab = a_i_dot @ b_i_dot
 
     # Step 6
     a_dot_dot = 2 * np.sum(alpha_x * x) - 2 * np.sum(beta_x)
@@ -299,6 +299,8 @@ def _distance_covariance_sqr_fast_generic(
     # Step 9
     d_cov = (aijbij / n / d3 - 2 * sum_ab / n / d2 / d3 +
              a_dot_dot / n * b_dot_dot / d1 / d2 / d3)
+
+    print(d_cov)
 
     return d_cov
 

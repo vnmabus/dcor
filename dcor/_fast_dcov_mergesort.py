@@ -88,20 +88,23 @@ def _compute_weight_sums(y, weights):
 
 def _compute_aijbij_term(x, y):
     # x must be sorted
+    n = len(x)
 
     weights = np.hstack((np.ones_like(y), y, x, x * y))
     weight_sums = _compute_weight_sums(y, weights)
 
     term_1 = (x * y).T @ weight_sums[:, 0]
-    term_2 = x.T @ weight_sums[:, 0]
-    term_3 = y.T @ weight_sums[:, 0]
-    term_4 = np.sum(weight_sums[:, 0])
+    term_2 = x.T @ weight_sums[:, 1]
+    term_3 = y.T @ weight_sums[:, 2]
+    term_4 = np.sum(weight_sums[:, 3])
 
     # First term in the equation
     sums_term = term_1 - term_2 - term_3 + term_4
 
     # Second term in the equation
-    cov_term = (x - np.mean(x)).T @ (y - np.mean(y))
+    sum_x = np.sum(x)
+    sum_y = np.sum(y)
+    cov_term = n * x.T @ y - np.sum(sum_x * y + sum_y * x) + sum_x * sum_y
 
     d = 4 * sums_term - 2 * cov_term
 
@@ -114,7 +117,7 @@ def _compute_row_sums(x):
     x = x.ravel()
     n_samples = len(x)
 
-    term_1 = (2 * np.arange(n_samples) - n_samples) * x
+    term_1 = (2 * np.arange(1, n_samples + 1) - n_samples) * x
 
     sums = np.cumsum(x)
 
@@ -133,8 +136,12 @@ def _distance_covariance_mergesort_generic(x, y, unbiased=False):
     y = y[ordered_indexes]
 
     aijbij = _compute_aijbij_term(x, y)
-    a_i = _compute_row_sums(x)
-    b_i = _compute_row_sums(np.sort(y))
+    a_i = _compute_row_sums(x.ravel())
+
+    ordered_indexes_y = np.argsort(y.ravel())
+    b_i_perm = _compute_row_sums(y.ravel()[ordered_indexes_y])
+    b_i = np.empty_like(b_i_perm)
+    b_i[ordered_indexes_y] = b_i_perm
 
     a_dot_dot = np.sum(a_i)
     b_dot_dot = np.sum(b_i)
@@ -150,5 +157,7 @@ def _distance_covariance_mergesort_generic(x, y, unbiased=False):
 
     d_cov = (aijbij / n / d3 - 2 * sum_ab / n / d2 / d3 +
              a_dot_dot / n * b_dot_dot / d1 / d2 / d3)
+
+    print(d_cov)
 
     return d_cov
