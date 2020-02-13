@@ -7,7 +7,7 @@ import numpy as np
 from ._utils import _jit
 
 
-#@_jit
+@_jit
 def _compute_weight_sums(y, weights):
 
     n_samples = len(y)
@@ -52,7 +52,7 @@ def _compute_weight_sums(y, weights):
                 previous_index_1 = previous_indexes[subarray_1_idx]
                 previous_index_2 = previous_indexes[subarray_2_idx]
 
-                if y[previous_index_1] >= y[previous_index_2]:
+                if y[previous_index_1].item() >= y[previous_index_2].item():
                     current_indexes[indexes_idx] = previous_index_1
                     subarray_1_idx += 1
                 else:
@@ -86,12 +86,8 @@ def _compute_weight_sums(y, weights):
     return weight_sums
 
 
-def _distance_covariance_mergesort(x, y):
-
-    # Sort x in ascending order
-    ordered_indexes = np.argsort(x, axis=0).ravel()
-    x = x[ordered_indexes]
-    y = y[ordered_indexes]
+def _compute_aijbij_term(x, y):
+    # x must be sorted
 
     weights = np.hstack((np.ones_like(y), y, x, x * y))
     weight_sums = _compute_weight_sums(y, weights)
@@ -103,12 +99,56 @@ def _distance_covariance_mergesort(x, y):
 
     # First term in the equation
     sums_term = term_1 - term_2 - term_3 + term_4
-    print(sums_term)
 
     # Second term in the equation
     cov_term = (x - np.mean(x)).T @ (y - np.mean(y))
-    print(cov_term)
 
     d = 4 * sums_term - 2 * cov_term
 
     return d.item()
+
+
+def _compute_row_sums(x):
+    # x must be sorted
+
+    x = x.ravel()
+    n_samples = len(x)
+
+    term_1 = (2 * np.arange(n_samples) - n_samples) * x
+
+    sums = np.cumsum(x)
+
+    term_2 = sums[-1] - 2 * sums
+
+    return term_1 + term_2
+
+
+def _distance_covariance_mergesort_generic(x, y, unbiased=False):
+
+    n = len(x)
+
+    # Sort x in ascending order
+    ordered_indexes = np.argsort(x, axis=0).ravel()
+    x = x[ordered_indexes]
+    y = y[ordered_indexes]
+
+    aijbij = _compute_aijbij_term(x, y)
+    a_i = _compute_row_sums(x)
+    b_i = _compute_row_sums(np.sort(y))
+
+    a_dot_dot = np.sum(a_i)
+    b_dot_dot = np.sum(b_i)
+
+    sum_ab = a_i.T @ b_i
+
+    if unbiased:
+        d3 = (n - 3)
+        d2 = (n - 2)
+        d1 = (n - 1)
+    else:
+        d3 = d2 = d1 = n
+
+    d_cov = (aijbij / n / d3 - 2 * sum_ab / n / d2 / d3 +
+             a_dot_dot / n * b_dot_dot / d1 / d2 / d3)
+
+    return d_cov
