@@ -158,6 +158,4 @@ def _distance_covariance_mergesort_generic(x, y, unbiased=False):
     d_cov = (aijbij / n / d3 - 2 * sum_ab / n / d2 / d3 +
              a_dot_dot / n * b_dot_dot / d1 / d2 / d3)
 
-    print(d_cov)
-
     return d_cov
