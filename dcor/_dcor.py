@@ -213,8 +213,11 @@ def _can_use_fast_algorithm(x, y, exponent=1):
             x.shape[0] > 3 and y.shape[0] > 3 and exponent == 1)
 
 
-def _distance_stats_sqr_generic(x, y, dcov_function):
+def _distance_stats_sqr_generic(x, y, *, exponent=1, dcov_function):
     """Compute the distance stats using a dcov algorithm."""
+    if exponent != 1:
+        raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
+
     covariance_xy_sqr = dcov_function(x, y)
     variance_x_sqr = dcov_function(x, x)
     variance_y_sqr = dcov_function(y, y)

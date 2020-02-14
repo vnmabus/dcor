@@ -39,7 +39,7 @@ def _sqrt(x):
 
     try:
         return np.sqrt(x)
-    except AttributeError:
+    except (AttributeError, TypeError):
         exponent = 0.5
 
         try:

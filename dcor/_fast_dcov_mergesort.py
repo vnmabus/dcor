@@ -126,7 +126,11 @@ def _compute_row_sums(x):
     return term_1 + term_2
 
 
-def _distance_covariance_sqr_mergesort_generic(x, y, unbiased=False):
+def _distance_covariance_sqr_mergesort_generic(x, y,
+                                               *, exponent=1, unbiased=False):
+
+    if exponent != 1:
+        raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
 
     n = len(x)
 

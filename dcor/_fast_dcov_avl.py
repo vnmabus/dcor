@@ -108,10 +108,14 @@ def _partial_sum_2d(x, y, c):  # pylint:disable=too-many-locals
 
 
 def _distance_covariance_sqr_avl_generic(
-        x, y, unbiased=False):  # pylint:disable=too-many-locals
+        x, y, *, exponent=1, unbiased=False):  # pylint:disable=too-many-locals
     # This function has many locals so it can be compared
     # with the original algorithm.
     """Fast algorithm for the squared distance covariance."""
+
+    if exponent != 1:
+        raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
+
     x = np.asarray(x)
     y = np.asarray(y)
 
