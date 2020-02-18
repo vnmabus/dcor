@@ -17,9 +17,9 @@ from __future__ import absolute_import, division, print_function
 from __future__ import unicode_literals
 
 import collections
-from dcor._dcor_internals import _af_inv_scaled
 from enum import Enum
 
+from dcor._dcor_internals import _af_inv_scaled
 import numpy as np
 
 from ._dcor_internals import _distance_matrix, _u_distance_matrix
@@ -98,10 +98,10 @@ class _DcovAlgorithmInternals():
 class _DcovAlgorithmInternalsAuto():
     def _dispatch(self, x, y, *, method, **kwargs):
         if _can_use_fast_algorithm(x, y, **kwargs):
-            return getattr(DistanceCovarianceAlgorithm.AVL.value, method)(x, y)
+            return getattr(DistanceCovarianceMethod.AVL.value, method)(x, y)
         else:
             return getattr(
-                DistanceCovarianceAlgorithm.NAIVE.value, method)(
+                DistanceCovarianceMethod.NAIVE.value, method)(
                     x, y, **kwargs)
 
     def __getattr__(self, method):
@@ -238,7 +238,7 @@ def _distance_stats_sqr_generic(x, y, *, exponent=1, dcov_function):
                  variance_y=variance_y_sqr)
 
 
-class DistanceCovarianceAlgorithm(Enum):
+class DistanceCovarianceMethod(Enum):
     AUTO = _DcovAlgorithmInternalsAuto()
     NAIVE = _DcovAlgorithmInternals(
         dcov_sqr=_distance_covariance_sqr_naive,
@@ -254,14 +254,14 @@ class DistanceCovarianceAlgorithm(Enum):
 
 def _to_algorithm(algorithm):
     """Convert to algorithm if string"""
-    if isinstance(algorithm, DistanceCovarianceAlgorithm):
+    if isinstance(algorithm, DistanceCovarianceMethod):
         return algorithm
     else:
-        return DistanceCovarianceAlgorithm[algorithm.upper()]
+        return DistanceCovarianceMethod[algorithm.upper()]
 
 
 def distance_covariance_sqr(x, y, *, exponent=1,
-                            method=DistanceCovarianceAlgorithm.AUTO):
+                            method=DistanceCovarianceMethod.AUTO):
     """
     Computes the usual (biased) estimator for the squared distance covariance
     between two random vectors.
@@ -278,7 +278,7 @@ def distance_covariance_sqr(x, y, *, exponent=1,
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
-    method: DistanceCovarianceAlgorithm
+    method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
 
     Returns
@@ -321,7 +321,7 @@ def distance_covariance_sqr(x, y, *, exponent=1,
 
 
 def u_distance_covariance_sqr(x, y, *, exponent=1,
-                              method=DistanceCovarianceAlgorithm.AUTO):
+                              method=DistanceCovarianceMethod.AUTO):
     """
     Computes the unbiased estimator for the squared distance covariance
     between two random vectors.
@@ -338,7 +338,7 @@ def u_distance_covariance_sqr(x, y, *, exponent=1,
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
-    method: DistanceCovarianceAlgorithm
+    method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
 
     Returns
@@ -381,7 +381,7 @@ def u_distance_covariance_sqr(x, y, *, exponent=1,
 
 
 def distance_covariance(x, y, *, exponent=1,
-                        method=DistanceCovarianceAlgorithm.AUTO):
+                        method=DistanceCovarianceMethod.AUTO):
     """
     Computes the usual (biased) estimator for the distance covariance
     between two random vectors.
@@ -398,7 +398,7 @@ def distance_covariance(x, y, *, exponent=1,
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
-    method: DistanceCovarianceAlgorithm
+    method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
 
     Returns
@@ -440,7 +440,7 @@ def distance_covariance(x, y, *, exponent=1,
 
 
 def distance_stats_sqr(x, y, *, exponent=1,
-                       method=DistanceCovarianceAlgorithm.AUTO):
+                       method=DistanceCovarianceMethod.AUTO):
     """
     Computes the usual (biased) estimators for the squared distance covariance
     and squared distance correlation between two random vectors, and the
@@ -458,7 +458,7 @@ def distance_stats_sqr(x, y, *, exponent=1,
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
-    method: DistanceCovarianceAlgorithm
+    method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
 
     Returns
@@ -511,7 +511,7 @@ def distance_stats_sqr(x, y, *, exponent=1,
 
 
 def u_distance_stats_sqr(x, y, *, exponent=1,
-                         method=DistanceCovarianceAlgorithm.AUTO):
+                         method=DistanceCovarianceMethod.AUTO):
     """
     Computes the unbiased estimators for the squared distance covariance
     and squared distance correlation between two random vectors, and the
@@ -529,7 +529,7 @@ def u_distance_stats_sqr(x, y, *, exponent=1,
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
-    method: DistanceCovarianceAlgorithm
+    method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
 
     Returns
@@ -585,7 +585,7 @@ def u_distance_stats_sqr(x, y, *, exponent=1,
 
 
 def distance_stats(x, y, *, exponent=1,
-                   method=DistanceCovarianceAlgorithm.AUTO):
+                   method=DistanceCovarianceMethod.AUTO):
     """
     Computes the usual (biased) estimators for the distance covariance
     and distance correlation between two random vectors, and the
@@ -603,7 +603,7 @@ def distance_stats(x, y, *, exponent=1,
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
-    method: DistanceCovarianceAlgorithm
+    method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
 
     Returns
@@ -655,7 +655,7 @@ def distance_stats(x, y, *, exponent=1,
 
 
 def distance_correlation_sqr(x, y, *, exponent=1,
-                             method=DistanceCovarianceAlgorithm.AUTO):
+                             method=DistanceCovarianceMethod.AUTO):
     """
     Computes the usual (biased) estimator for the squared distance correlation
     between two random vectors.
@@ -672,7 +672,7 @@ def distance_correlation_sqr(x, y, *, exponent=1,
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
-    method: DistanceCovarianceAlgorithm
+    method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
 
     Returns
@@ -715,7 +715,7 @@ def distance_correlation_sqr(x, y, *, exponent=1,
 
 
 def u_distance_correlation_sqr(x, y, *, exponent=1,
-                               method=DistanceCovarianceAlgorithm.AUTO):
+                               method=DistanceCovarianceMethod.AUTO):
     """
     Computes the bias-corrected estimator for the squared distance correlation
     between two random vectors.
@@ -732,7 +732,7 @@ def u_distance_correlation_sqr(x, y, *, exponent=1,
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
-    method: DistanceCovarianceAlgorithm
+    method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
 
     Returns
@@ -777,7 +777,7 @@ def u_distance_correlation_sqr(x, y, *, exponent=1,
 
 
 def distance_correlation(x, y, *, exponent=1,
-                         method=DistanceCovarianceAlgorithm.AUTO):
+                         method=DistanceCovarianceMethod.AUTO):
     """
     Computes the usual (biased) estimator for the distance correlation
     between two random vectors.
@@ -794,7 +794,7 @@ def distance_correlation(x, y, *, exponent=1,
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
-    method: DistanceCovarianceAlgorithm
+    method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
 
     Returns
@@ -836,7 +836,7 @@ def distance_correlation(x, y, *, exponent=1,
 
 
 def distance_correlation_af_inv_sqr(x, y,
-                                    method=DistanceCovarianceAlgorithm.AUTO):
+                                    method=DistanceCovarianceMethod.AUTO):
     """
     Square of the affinely invariant distance correlation.
 
@@ -854,7 +854,7 @@ def distance_correlation_af_inv_sqr(x, y,
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
-    method: DistanceCovarianceAlgorithm
+    method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
 
     Returns
@@ -893,7 +893,7 @@ def distance_correlation_af_inv_sqr(x, y,
 
 
 def distance_correlation_af_inv(x, y,
-                                method=DistanceCovarianceAlgorithm.AUTO):
+                                method=DistanceCovarianceMethod.AUTO):
     """
     Affinely invariant distance correlation.
 
@@ -911,7 +911,7 @@ def distance_correlation_af_inv(x, y,
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
-    method: DistanceCovarianceAlgorithm
+    method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
 
     Returns

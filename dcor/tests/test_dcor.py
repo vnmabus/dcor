@@ -1,12 +1,11 @@
 """Tests of the distance covariance and correlation"""
 
-import dcor
-import dcor._fast_dcov_avl
 from decimal import Decimal
 from fractions import Fraction
 import unittest
 
-import dcor._dcor as dcor_internals
+import dcor
+import dcor._fast_dcov_avl
 import numpy as np
 
 
@@ -57,7 +56,7 @@ class TestDistanceCorrelation(unittest.TestCase):
 
         np.testing.assert_allclose(gamma, expected_gamma)
 
-    def test_distance_correlation_naive(self):
+    def test_distance_correlation_multivariate(self):
         """Compare distance correlation with the energy package."""
         matrix1 = np.array(((1, 2, 3), (4, 5, 6), (7, 8, 9)))
         matrix2 = np.array(((7, 3, 6), (2, 1, 4), (3, 8, 1)))
@@ -80,26 +79,28 @@ class TestDistanceCorrelation(unittest.TestCase):
             matrix1, matrix3)
         self.assertAlmostEqual(correlation, 0.31623, places=5)
 
-    def test_distance_correlation_avl(self):
-        """Compare fast distance correlation with the energy package."""
+    def test_distance_correlation_comparison(self):
+        """Compare all implementations of the distance correlation."""
         arr1 = np.array(((1,), (2,), (3,), (4,), (5,), (6,)))
         arr2 = np.array(((1,), (7,), (5,), (5,), (6,), (2,)))
 
-        covariance = dcor.u_distance_covariance_sqr(
-            arr1, arr2, method='avl')
-        self.assertAlmostEqual(covariance, -0.88889, places=5)
+        for method in dcor.DistanceCovarianceMethod:
+            with self.subTest(method=method):
+                covariance = dcor.u_distance_covariance_sqr(
+                    arr1, arr2, method=method)
+                self.assertAlmostEqual(covariance, -0.88889, places=5)
 
-        correlation = dcor.u_distance_correlation_sqr(
-            arr1, arr2, method='avl')
-        self.assertAlmostEqual(correlation, -0.41613, places=5)
+                correlation = dcor.u_distance_correlation_sqr(
+                    arr1, arr2, method=method)
+                self.assertAlmostEqual(correlation, -0.41613, places=5)
 
-        covariance = dcor.u_distance_covariance_sqr(
-            arr1, arr1,  method='avl')
-        self.assertAlmostEqual(covariance, 1.5556, places=4)
+                covariance = dcor.u_distance_covariance_sqr(
+                    arr1, arr1,  method=method)
+                self.assertAlmostEqual(covariance, 1.5556, places=4)
 
-        correlation = dcor.u_distance_correlation_sqr(
-            arr1, arr1,  method='avl')
-        self.assertAlmostEqual(correlation, 1, places=5)
+                correlation = dcor.u_distance_correlation_sqr(
+                    arr1, arr1,  method=method)
+                self.assertAlmostEqual(correlation, 1, places=5)
 
     def test_u_distance_covariance_avl_overflow(self):
         """Test potential overflow in fast distance correlation"""
@@ -271,10 +272,13 @@ class TestDistanceCorrelation(unittest.TestCase):
 
                 stat = dcor.distance_correlation_sqr(
                     arr1, arr2, method='naive')
-                stat_fast = dcor.distance_correlation_sqr(
-                    arr1, arr2, method='avl')
 
-                self.assertAlmostEqual(stat, stat_fast)
+                for method in dcor.DistanceCovarianceMethod:
+                    with self.subTest(method=method):
+                        stat2 = dcor.distance_correlation_sqr(
+                            arr1, arr2, method=method)
+
+                        self.assertAlmostEqual(stat, stat2)
 
     def test_u_statistic(self):
         """Test that the fast and naive algorithms for unbiased dcor match"""
@@ -288,10 +292,12 @@ class TestDistanceCorrelation(unittest.TestCase):
 
                 u_stat = dcor.u_distance_correlation_sqr(
                     arr1, arr2, method='naive')
-                u_stat_fast = dcor.u_distance_correlation_sqr(
-                    arr1, arr2, method='avl')
+                for method in dcor.DistanceCovarianceMethod:
+                    with self.subTest(method=method):
+                        u_stat2 = dcor.u_distance_correlation_sqr(
+                            arr1, arr2, method='avl')
 
-                self.assertAlmostEqual(u_stat, u_stat_fast)
+                        self.assertAlmostEqual(u_stat, u_stat2)
 
 
 if __name__ == "__main__":
