@@ -242,30 +242,37 @@ class DistanceCovarianceMethod(Enum):
     """
     Method used for computing the distance covariance.
 
-    Currently the following methods are implemented:
-        - AUTO: try to select the best algorithm. It will try to use a fast
-          algorithm if possible. Otherwise it will use the naive
-          implementation.
-        - NAIVE: use the usual estimator of the distance covariance, which is
-          :math:`O(n^2)`
-        - AVL: use the fast implementation from
-          :cite:`b-fast_distance_correlation_avl` which is
-          :math:`O(n\log n)`
-        - MERGESORT: use the fast implementation from
-          :cite:`b-fast_distance_correlation_mergesort` which is
-          :math:`O(n\log n)`
     """
     AUTO = _DcovAlgorithmInternalsAuto()
+    """
+    Try to select the best algorithm. It will try to use a fast
+    algorithm if possible. Otherwise it will use the naive
+    implementation.
+    """
     NAIVE = _DcovAlgorithmInternals(
         dcov_sqr=_distance_covariance_sqr_naive,
         u_dcov_sqr=_u_distance_covariance_sqr_naive,
         dcor_sqr=_distance_correlation_sqr_naive,
         u_dcor_sqr=_u_distance_correlation_sqr_naive,
         stats_generic=_distance_sqr_stats_naive_generic)
+    """
+    Use the usual estimator of the distance covariance, which is
+    :math:`O(n^2)`
+    """
     AVL = _DcovAlgorithmInternals(
         dcov_generic=_distance_covariance_sqr_avl_generic)
+    """
+    Use the fast implementation from
+    :cite:`b-fast_distance_correlation_avl` which is
+    :math:`O(n\log n)`
+    """
     MERGESORT = _DcovAlgorithmInternals(
         dcov_generic=_distance_covariance_sqr_mergesort_generic)
+    """
+    Use the fast implementation from
+    :cite:`b-fast_distance_correlation_mergesort` which is
+    :math:`O(n\log n)`
+    """
 
     def __repr__(self):
         return '%s.%s' % (self.__class__.__name__, self.name)
