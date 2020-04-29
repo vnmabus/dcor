@@ -239,6 +239,22 @@ def _distance_stats_sqr_generic(x, y, *, exponent=1, dcov_function):
 
 
 class DistanceCovarianceMethod(Enum):
+    """
+    Method used for computing the distance covariance.
+
+    Currently the following methods are implemented:
+        - AUTO: try to select the best algorithm. It will try to use a fast
+          algorithm if possible. Otherwise it will use the naive
+          implementation.
+        - NAIVE: use the usual estimator of the distance covariance, which is
+          :math:`O(n^2)`
+        - AVL: use the fast implementation from
+          :cite:`b-fast_distance_correlation_avl` which is
+          :math:`O(n\log n)`
+        - MERGESORT: use the fast implementation from
+          :cite:`b-fast_distance_correlation_mergesort` which is
+          :math:`O(n\log n)`
+    """
     AUTO = _DcovAlgorithmInternalsAuto()
     NAIVE = _DcovAlgorithmInternals(
         dcov_sqr=_distance_covariance_sqr_naive,
@@ -293,11 +309,6 @@ def distance_covariance_sqr(x, y, *, exponent=1,
     --------
     distance_covariance
     u_distance_covariance_sqr
-
-    Notes
-    -----
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -354,11 +365,6 @@ def u_distance_covariance_sqr(x, y, *, exponent=1,
     distance_covariance
     distance_covariance_sqr
 
-    Notes
-    -----
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
-
     Examples
     --------
     >>> import numpy as np
@@ -413,11 +419,6 @@ def distance_covariance(x, y, *, exponent=1,
     --------
     distance_covariance_sqr
     u_distance_covariance_sqr
-
-    Notes
-    -----
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -480,9 +481,6 @@ def distance_stats_sqr(x, y, *, exponent=1,
     -----
     It is less efficient to compute the statistics separately, rather than
     using this function, because some computations can be shared.
-
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -551,9 +549,6 @@ def u_distance_stats_sqr(x, y, *, exponent=1,
     -----
     It is less efficient to compute the statistics separately, rather than
     using this function, because some computations can be shared.
-
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -626,9 +621,6 @@ def distance_stats(x, y, *, exponent=1,
     It is less efficient to compute the statistics separately, rather than
     using this function, because some computations can be shared.
 
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
-
     Examples
     --------
     >>> import numpy as np
@@ -688,11 +680,6 @@ def distance_correlation_sqr(x, y, *, exponent=1,
     distance_correlation
     u_distance_correlation_sqr
 
-    Notes
-    -----
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
-
     Examples
     --------
     >>> import numpy as np
@@ -749,11 +736,6 @@ def u_distance_correlation_sqr(x, y, *, exponent=1,
     distance_correlation
     distance_correlation_sqr
 
-    Notes
-    -----
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
-
     Examples
     --------
     >>> import numpy as np
@@ -809,11 +791,6 @@ def distance_correlation(x, y, *, exponent=1,
     --------
     distance_correlation_sqr
     u_distance_correlation_sqr
-
-    Notes
-    -----
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
