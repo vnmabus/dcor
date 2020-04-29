@@ -4,7 +4,7 @@ Functions to compute fast distance covariance using mergesort.
 
 import numpy as np
 
-from ._utils import _jit
+from ._utils import _jit, _transform_to_2d
 
 
 @_jit
@@ -133,6 +133,9 @@ def _distance_covariance_sqr_mergesort_generic(x, y,
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
 
     n = len(x)
+
+    x = _transform_to_2d(x)
+    y = _transform_to_2d(y)
 
     # Sort x in ascending order
     ordered_indexes = np.argsort(x, axis=0).ravel()

@@ -17,9 +17,9 @@ from __future__ import absolute_import, division, print_function
 from __future__ import unicode_literals
 
 import collections
+from dcor._dcor_internals import _af_inv_scaled
 from enum import Enum
 
-from dcor._dcor_internals import _af_inv_scaled
 import numpy as np
 
 from ._dcor_internals import _distance_matrix, _u_distance_matrix
@@ -250,6 +250,9 @@ class DistanceCovarianceMethod(Enum):
         dcov_generic=_distance_covariance_sqr_avl_generic)
     MERGESORT = _DcovAlgorithmInternals(
         dcov_generic=_distance_covariance_sqr_mergesort_generic)
+
+    def __repr__(self):
+        return '%s.%s' % (self.__class__.__name__, self.name)
 
 
 def _to_algorithm(algorithm):
