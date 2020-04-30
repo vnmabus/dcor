@@ -39,7 +39,7 @@ def _sqrt(x):
 
     try:
         return np.sqrt(x)
-    except AttributeError:
+    except (AttributeError, TypeError):
         exponent = 0.5
 
         try:
@@ -73,9 +73,9 @@ def _can_be_double(x):
 
     """
     return ((np.issubdtype(x.dtype, np.floating) and
-            x.dtype.itemsize <= np.dtype(float).itemsize) or
+             x.dtype.itemsize <= np.dtype(float).itemsize) or
             (np.issubdtype(x.dtype, np.signedinteger) and
-            np.can_cast(x, float)))
+             np.can_cast(x, float)))
 
 
 def _random_state_init(random_state):

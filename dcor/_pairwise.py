@@ -73,8 +73,8 @@ def pairwise(function, x, y=None, **kwargs):
     A pool object can be used to improve performance for a large
     number of computations:
 
-    >>> import multiprocessing
-    >>> pool = multiprocessing.Pool()
+    >>> import multiprocessing.pool
+    >>> pool = multiprocessing.pool.ThreadPool()
     >>> dcor.pairwise(dcor.distance_correlation, a, b, pool=pool)
     array([[0.98182263, 0.99901855],
            [0.99989466, 0.98320103]])

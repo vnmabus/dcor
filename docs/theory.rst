@@ -128,8 +128,10 @@ Then, :math:`\Omega_n(x, y)` is defined as
 We can also obtain an estimator of :math:`\mathcal{R}^2(X, Y)` using :math:`\Omega_n(x, y)`,
 as we did with :math:`\mathcal{V}_n^2(x, y)`. :math:`\Omega_n(x, y)` does not verify that
 :math:`\Omega_n(x, y) \geq 0`, because sometimes could take negative values near :math:`0`.
-There is an algorithm that can compute :math:`\Omega_n(x, y)` for random variables
-with :math:`O(n\log n)` complexity :cite:`c-fast_distance_correlation`. Since
+
+There are algorithms that can compute :math:`\mathcal{V}_n^2(x, y)` and :math:`\Omega_n(x, y)`
+for random variables with :math:`O(n\log n)` complexity
+:cite:`c-fast_distance_correlation_avl,c-fast_distance_correlation_mergesort`. Since
 the estimator formulas explained above have complexity :math:`O(n^2)`, this
 improvement is significant, specially for larger samples.
 
