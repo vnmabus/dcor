@@ -17,18 +17,104 @@ from __future__ import absolute_import, division, print_function
 from __future__ import unicode_literals
 
 import collections
-import math
-
 from dcor._dcor_internals import _af_inv_scaled
+from enum import Enum
+
 import numpy as np
 
 from ._dcor_internals import _distance_matrix, _u_distance_matrix
 from ._dcor_internals import mean_product, u_product
-from ._utils import _sqrt, _jit
+from ._fast_dcov_avl import _distance_covariance_sqr_avl_generic
+from ._fast_dcov_mergesort import _distance_covariance_sqr_mergesort_generic
+from ._utils import _sqrt
+
+
+class _DcovAlgorithmInternals():
+
+    def __init__(self, *,
+                 dcov_sqr=None, u_dcov_sqr=None,
+                 dcor_sqr=None, u_dcor_sqr=None,
+                 stats_sqr=None, u_stats_sqr=None,
+                 dcov_generic=None,
+                 stats_generic=None):
+
+        # Dcov and U-Dcov
+        if dcov_generic is not None:
+            self.dcov_sqr = (
+                lambda *args, **kwargs: dcov_generic(
+                    *args, **kwargs, unbiased=False))
+            self.u_dcov_sqr = (
+                lambda *args, **kwargs: dcov_generic(
+                    *args, **kwargs, unbiased=True))
+        else:
+            self.dcov_sqr = dcov_sqr
+            self.u_dcov_sqr = u_dcov_sqr
+
+        # Stats
+        if stats_sqr is not None:
+            self.stats_sqr = stats_sqr
+        else:
+            if stats_generic is None:
+                self.stats_sqr = (
+                    lambda *args, **kwargs: _distance_stats_sqr_generic(
+                        *args, **kwargs, dcov_function=self.dcov_sqr))
+            else:
+                self.stats_sqr = (
+                    lambda *args, **kwargs: stats_generic(
+                        *args, **kwargs,
+                        matrix_centered=_distance_matrix,
+                        product=mean_product))
+
+        # U-Stats
+        if u_stats_sqr is not None:
+            self.u_stats_sqr = u_stats_sqr
+        else:
+            if stats_generic is None:
+                self.u_stats_sqr = (
+                    lambda *args, **kwargs: _distance_stats_sqr_generic(
+                        *args, **kwargs, dcov_function=self.u_dcov_sqr))
+            else:
+                self.u_stats_sqr = (
+                    lambda *args, **kwargs: stats_generic(
+                        *args, **kwargs,
+                        matrix_centered=_u_distance_matrix,
+                        product=u_product))
+
+        # Dcor
+        if dcor_sqr is not None:
+            self.dcor_sqr = dcor_sqr
+        else:
+            self.dcor_sqr = lambda *args, **kwargs: self.stats_sqr(
+                *args, **kwargs).correlation_xy
+
+        # U-Dcor
+        if u_dcor_sqr is not None:
+            self.u_dcor_sqr = u_dcor_sqr
+        else:
+            self.u_dcor_sqr = lambda *args, **kwargs: self.u_stats_sqr(
+                *args, **kwargs).correlation_xy
+
+
+class _DcovAlgorithmInternalsAuto():
+    def _dispatch(self, x, y, *, method, **kwargs):
+        if _can_use_fast_algorithm(x, y, **kwargs):
+            return getattr(DistanceCovarianceMethod.AVL.value, method)(x, y)
+        else:
+            return getattr(
+                DistanceCovarianceMethod.NAIVE.value, method)(
+                    x, y, **kwargs)
+
+    def __getattr__(self, method):
+        if method[0] != '_':
+            return lambda *args, **kwargs: self._dispatch(
+                *args, **kwargs, method=method)
+        else:
+            raise AttributeError("%r object has no attribute %r" %
+                                 (self.__class__.__name__, method))
 
 
 Stats = collections.namedtuple('Stats', ['covariance_xy', 'correlation_xy',
-                               'variance_x', 'variance_y'])
+                                         'variance_x', 'variance_y'])
 
 
 def _distance_covariance_sqr_naive(x, y, exponent=1):
@@ -127,194 +213,11 @@ def _can_use_fast_algorithm(x, y, exponent=1):
             x.shape[0] > 3 and y.shape[0] > 3 and exponent == 1)
 
 
-@_jit
-def _dyad_update(y, c):  # pylint:disable=too-many-locals
-    # This function has many locals so it can be compared
-    # with the original algorithm.
-    """
-    Inner function of the fast distance covariance.
+def _distance_stats_sqr_generic(x, y, *, exponent=1, dcov_function):
+    """Compute the distance stats using a dcov algorithm."""
+    if exponent != 1:
+        raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
 
-    This function is compiled because otherwise it would become
-    a bottleneck.
-
-    """
-    n = y.shape[0]
-    gamma = np.zeros(n, dtype=c.dtype)
-
-    # Step 1: get the smallest l such that n <= 2^l
-    l_max = int(math.ceil(np.log2(n)))
-
-    # Step 2: assign s(l, k) = 0
-    s_len = 2 ** (l_max + 1)
-    s = np.zeros(s_len, dtype=c.dtype)
-
-    pos_sums = np.arange(l_max)
-    pos_sums[:] = 2 ** (l_max - pos_sums)
-    pos_sums = np.cumsum(pos_sums)
-
-    # Step 3: iteration
-    for i in range(1, n):
-
-        # Step 3.a: update s(l, k)
-        for l in range(l_max):
-            k = int(math.ceil(y[i - 1] / 2 ** l))
-            pos = k - 1
-
-            if l > 0:
-                pos += pos_sums[l - 1]
-
-            s[pos] += c[i - 1]
-
-        # Steps 3.b and 3.c
-        for l in range(l_max):
-            k = int(math.floor((y[i] - 1) / 2 ** l))
-            if k / 2 > math.floor(k / 2):
-                pos = k - 1
-                if l > 0:
-                    pos += pos_sums[l - 1]
-
-                gamma[i] = gamma[i] + s[pos]
-
-    return gamma
-
-
-def _partial_sum_2d(x, y, c):  # pylint:disable=too-many-locals
-    # This function has many locals so it can be compared
-    # with the original algorithm.
-    x = np.asarray(x)
-    y = np.asarray(y)
-    c = np.asarray(c)
-
-    n = x.shape[0]
-
-    # Step 1: rearrange x, y and c so x is in ascending order
-    temp = range(n)
-
-    ix0 = np.argsort(x)
-    ix = np.zeros(n, dtype=int)
-    ix[ix0] = temp
-
-    x = x[ix0]
-    y = y[ix0]
-    c = c[ix0]
-
-    # Step 2
-    iy0 = np.argsort(y)
-    iy = np.zeros(n, dtype=int)
-    iy[iy0] = temp
-
-    y = iy + 1
-
-    # Step 3
-    sy = np.cumsum(c[iy0]) - c[iy0]
-
-    # Step 4
-    sx = np.cumsum(c) - c
-
-    # Step 5
-    c_dot = np.sum(c)
-
-    # Step 6
-    y = np.asarray(y)
-    c = np.asarray(c)
-    gamma1 = _dyad_update(y, c)
-
-    # Step 7
-    gamma = c_dot - c - 2 * sy[iy] - 2 * sx + 4 * gamma1
-    gamma = gamma[ix]
-
-    return gamma
-
-
-def _distance_covariance_sqr_fast_generic(
-        x, y, unbiased=False):  # pylint:disable=too-many-locals
-    # This function has many locals so it can be compared
-    # with the original algorithm.
-    """Fast algorithm for the squared distance covariance."""
-    x = np.asarray(x)
-    y = np.asarray(y)
-
-    x = np.ravel(x)
-    y = np.ravel(y)
-
-    n = x.shape[0]
-    assert n > 3
-    assert n == y.shape[0]
-    temp = range(n)
-
-    # Step 1
-    ix0 = np.argsort(x)
-    vx = x[ix0]
-
-    ix = np.zeros(n, dtype=int)
-    ix[ix0] = temp
-
-    iy0 = np.argsort(y)
-    vy = y[iy0]
-
-    iy = np.zeros(n, dtype=int)
-    iy[iy0] = temp
-
-    # Step 2
-    sx = np.cumsum(vx)
-    sy = np.cumsum(vy)
-
-    # Step 3
-    alpha_x = ix
-    alpha_y = iy
-
-    beta_x = sx[ix] - vx[ix]
-    beta_y = sy[iy] - vy[iy]
-
-    # Step 4
-    x_dot = np.sum(x)
-    y_dot = np.sum(y)
-
-    # Step 5
-    a_i_dot = x_dot + (2 * alpha_x - n) * x - 2 * beta_x
-    b_i_dot = y_dot + (2 * alpha_y - n) * y - 2 * beta_y
-
-    sum_ab = np.sum(a_i_dot * b_i_dot)
-
-    # Step 6
-    a_dot_dot = 2 * np.sum(alpha_x * x) - 2 * np.sum(beta_x)
-    b_dot_dot = 2 * np.sum(alpha_y * y) - 2 * np.sum(beta_y)
-
-    # Step 7
-    gamma_1 = _partial_sum_2d(x, y, np.ones(n, dtype=x.dtype))
-    gamma_x = _partial_sum_2d(x, y, x)
-    gamma_y = _partial_sum_2d(x, y, y)
-    gamma_xy = _partial_sum_2d(x, y, x * y)
-
-    # Step 8
-    aijbij = np.sum(x * y * gamma_1 + gamma_xy - x * gamma_y - y * gamma_x)
-
-    if unbiased:
-        d3 = (n - 3)
-        d2 = (n - 2)
-        d1 = (n - 1)
-    else:
-        d3 = d2 = d1 = n
-
-    # Step 9
-    d_cov = (aijbij / n / d3 - 2 * sum_ab / n / d2 / d3 +
-             a_dot_dot / n * b_dot_dot / d1 / d2 / d3)
-
-    return d_cov
-
-
-def _distance_covariance_sqr_fast(x, y):
-    """Fast algorithm for the biased squared distance covariance"""
-    return _distance_covariance_sqr_fast_generic(x, y, unbiased=False)
-
-
-def _u_distance_covariance_sqr_fast(x, y):
-    """Fast algorithm for the unbiased squared distance covariance"""
-    return _distance_covariance_sqr_fast_generic(x, y, unbiased=True)
-
-
-def _distance_stats_sqr_fast_generic(x, y, dcov_function):
-    """Compute the distance stats using the fast algorithm."""
     covariance_xy_sqr = dcov_function(x, y)
     variance_x_sqr = dcov_function(x, x)
     variance_y_sqr = dcov_function(y, y)
@@ -335,32 +238,57 @@ def _distance_stats_sqr_fast_generic(x, y, dcov_function):
                  variance_y=variance_y_sqr)
 
 
-def _distance_stats_sqr_fast(x, y):
-    """Compute the biased distance stats using the fast algorithm."""
-    return _distance_stats_sqr_fast_generic(x, y,
-                                            _distance_covariance_sqr_fast)
-
-
-def _u_distance_stats_sqr_fast(x, y):
-    """Compute the bias-corrected distance stats using the fast algorithm."""
-    return _distance_stats_sqr_fast_generic(x, y,
-                                            _u_distance_covariance_sqr_fast)
-
-
-def _distance_correlation_sqr_fast(x, y):
-    """Fast algorithm for bias-corrected squared distance correlation."""
-    return _distance_stats_sqr_fast(x, y).correlation_xy
-
-
-def _u_distance_correlation_sqr_fast(x, y):
-    """Fast algorithm for bias-corrected squared distance correlation."""
-    return _u_distance_stats_sqr_fast(x, y).correlation_xy
-
-
-def distance_covariance_sqr(x, y, **kwargs):
+class DistanceCovarianceMethod(Enum):
     """
-    distance_covariance_sqr(x, y, *, exponent=1)
+    Method used for computing the distance covariance.
 
+    """
+    AUTO = _DcovAlgorithmInternalsAuto()
+    """
+    Try to select the best algorithm. It will try to use a fast
+    algorithm if possible. Otherwise it will use the naive
+    implementation.
+    """
+    NAIVE = _DcovAlgorithmInternals(
+        dcov_sqr=_distance_covariance_sqr_naive,
+        u_dcov_sqr=_u_distance_covariance_sqr_naive,
+        dcor_sqr=_distance_correlation_sqr_naive,
+        u_dcor_sqr=_u_distance_correlation_sqr_naive,
+        stats_generic=_distance_sqr_stats_naive_generic)
+    """
+    Use the usual estimator of the distance covariance, which is
+    :math:`O(n^2)`
+    """
+    AVL = _DcovAlgorithmInternals(
+        dcov_generic=_distance_covariance_sqr_avl_generic)
+    """
+    Use the fast implementation from
+    :cite:`b-fast_distance_correlation_avl` which is
+    :math:`O(n\log n)`
+    """
+    MERGESORT = _DcovAlgorithmInternals(
+        dcov_generic=_distance_covariance_sqr_mergesort_generic)
+    """
+    Use the fast implementation from
+    :cite:`b-fast_distance_correlation_mergesort` which is
+    :math:`O(n\log n)`
+    """
+
+    def __repr__(self):
+        return '%s.%s' % (self.__class__.__name__, self.name)
+
+
+def _to_algorithm(algorithm):
+    """Convert to algorithm if string"""
+    if isinstance(algorithm, DistanceCovarianceMethod):
+        return algorithm
+    else:
+        return DistanceCovarianceMethod[algorithm.upper()]
+
+
+def distance_covariance_sqr(x, y, *, exponent=1,
+                            method=DistanceCovarianceMethod.AUTO):
+    """
     Computes the usual (biased) estimator for the squared distance covariance
     between two random vectors.
 
@@ -376,6 +304,8 @@ def distance_covariance_sqr(x, y, **kwargs):
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
+    method: DistanceCovarianceMethod
+        Method to use internally to compute the distance covariance.
 
     Returns
     -------
@@ -386,11 +316,6 @@ def distance_covariance_sqr(x, y, **kwargs):
     --------
     distance_covariance
     u_distance_covariance_sqr
-
-    Notes
-    -----
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -411,16 +336,14 @@ def distance_covariance_sqr(x, y, **kwargs):
     0.3705904...
 
     """
-    if _can_use_fast_algorithm(x, y, **kwargs):
-        return _distance_covariance_sqr_fast(x, y)
-    else:
-        return _distance_covariance_sqr_naive(x, y, **kwargs)
+    method = _to_algorithm(method)
+
+    return method.value.dcov_sqr(x, y, exponent=exponent)
 
 
-def u_distance_covariance_sqr(x, y, **kwargs):
+def u_distance_covariance_sqr(x, y, *, exponent=1,
+                              method=DistanceCovarianceMethod.AUTO):
     """
-    u_distance_covariance_sqr(x, y, *, exponent=1)
-
     Computes the unbiased estimator for the squared distance covariance
     between two random vectors.
 
@@ -436,6 +359,8 @@ def u_distance_covariance_sqr(x, y, **kwargs):
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
+    method: DistanceCovarianceMethod
+        Method to use internally to compute the distance covariance.
 
     Returns
     -------
@@ -446,11 +371,6 @@ def u_distance_covariance_sqr(x, y, **kwargs):
     --------
     distance_covariance
     distance_covariance_sqr
-
-    Notes
-    -----
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -471,16 +391,14 @@ def u_distance_covariance_sqr(x, y, **kwargs):
     -0.2996598...
 
     """
-    if _can_use_fast_algorithm(x, y, **kwargs):
-        return _u_distance_covariance_sqr_fast(x, y)
-    else:
-        return _u_distance_covariance_sqr_naive(x, y, **kwargs)
+    method = _to_algorithm(method)
+
+    return method.value.u_dcov_sqr(x, y, exponent=exponent)
 
 
-def distance_covariance(x, y, **kwargs):
+def distance_covariance(x, y, *, exponent=1,
+                        method=DistanceCovarianceMethod.AUTO):
     """
-    distance_covariance(x, y, *, exponent=1)
-
     Computes the usual (biased) estimator for the distance covariance
     between two random vectors.
 
@@ -496,6 +414,8 @@ def distance_covariance(x, y, **kwargs):
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
+    method: DistanceCovarianceMethod
+        Method to use internally to compute the distance covariance.
 
     Returns
     -------
@@ -506,11 +426,6 @@ def distance_covariance(x, y, **kwargs):
     --------
     distance_covariance_sqr
     u_distance_covariance_sqr
-
-    Notes
-    -----
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -531,13 +446,13 @@ def distance_covariance(x, y, **kwargs):
     0.6087614...
 
     """
-    return _sqrt(distance_covariance_sqr(x, y, **kwargs))
+    return _sqrt(distance_covariance_sqr(
+        x, y, exponent=exponent, method=method))
 
 
-def distance_stats_sqr(x, y, **kwargs):
+def distance_stats_sqr(x, y, *, exponent=1,
+                       method=DistanceCovarianceMethod.AUTO):
     """
-    distance_stats_sqr(x, y, *, exponent=1)
-
     Computes the usual (biased) estimators for the squared distance covariance
     and squared distance correlation between two random vectors, and the
     individual squared distance variances.
@@ -554,6 +469,8 @@ def distance_stats_sqr(x, y, **kwargs):
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
+    method: DistanceCovarianceMethod
+        Method to use internally to compute the distance covariance.
 
     Returns
     -------
@@ -571,9 +488,6 @@ def distance_stats_sqr(x, y, **kwargs):
     -----
     It is less efficient to compute the statistics separately, rather than
     using this function, because some computations can be shared.
-
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -599,20 +513,14 @@ def distance_stats_sqr(x, y, **kwargs):
     variance_x=2.7209220..., variance_y=0.25)
 
     """
-    if _can_use_fast_algorithm(x, y, **kwargs):
-        return _distance_stats_sqr_fast(x, y)
-    else:
-        return _distance_sqr_stats_naive_generic(
-            x, y,
-            matrix_centered=_distance_matrix,
-            product=mean_product,
-            **kwargs)
+    method = _to_algorithm(method)
+
+    return method.value.stats_sqr(x, y, exponent=exponent)
 
 
-def u_distance_stats_sqr(x, y, **kwargs):
+def u_distance_stats_sqr(x, y, *, exponent=1,
+                         method=DistanceCovarianceMethod.AUTO):
     """
-    u_distance_stats_sqr(x, y, *, exponent=1)
-
     Computes the unbiased estimators for the squared distance covariance
     and squared distance correlation between two random vectors, and the
     individual squared distance variances.
@@ -629,6 +537,8 @@ def u_distance_stats_sqr(x, y, **kwargs):
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
+    method: DistanceCovarianceMethod
+        Method to use internally to compute the distance covariance.
 
     Returns
     -------
@@ -646,9 +556,6 @@ def u_distance_stats_sqr(x, y, **kwargs):
     -----
     It is less efficient to compute the statistics separately, rather than
     using this function, because some computations can be shared.
-
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -677,20 +584,14 @@ def u_distance_stats_sqr(x, y, **kwargs):
     variance_x=0.8209855..., variance_y=0.6666666...)
 
     """
-    if _can_use_fast_algorithm(x, y, **kwargs):
-        return _u_distance_stats_sqr_fast(x, y)
-    else:
-        return _distance_sqr_stats_naive_generic(
-            x, y,
-            matrix_centered=_u_distance_matrix,
-            product=u_product,
-            **kwargs)
+    method = _to_algorithm(method)
+
+    return method.value.u_stats_sqr(x, y, exponent=exponent)
 
 
-def distance_stats(x, y, **kwargs):
+def distance_stats(x, y, *, exponent=1,
+                   method=DistanceCovarianceMethod.AUTO):
     """
-    distance_stats(x, y, *, exponent=1)
-
     Computes the usual (biased) estimators for the distance covariance
     and distance correlation between two random vectors, and the
     individual distance variances.
@@ -707,6 +608,8 @@ def distance_stats(x, y, **kwargs):
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
+    method: DistanceCovarianceMethod
+        Method to use internally to compute the distance covariance.
 
     Returns
     -------
@@ -724,9 +627,6 @@ def distance_stats(x, y, **kwargs):
     -----
     It is less efficient to compute the statistics separately, rather than
     using this function, because some computations can be shared.
-
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -752,13 +652,13 @@ def distance_stats(x, y, **kwargs):
     variance_x=1.6495217..., variance_y=0.5)
 
     """
-    return Stats(*[_sqrt(s) for s in distance_stats_sqr(x, y, **kwargs)])
+    return Stats(*[_sqrt(s) for s in distance_stats_sqr(
+        x, y, exponent=exponent, method=method)])
 
 
-def distance_correlation_sqr(x, y, **kwargs):
+def distance_correlation_sqr(x, y, *, exponent=1,
+                             method=DistanceCovarianceMethod.AUTO):
     """
-    distance_correlation_sqr(x, y, *, exponent=1)
-
     Computes the usual (biased) estimator for the squared distance correlation
     between two random vectors.
 
@@ -774,6 +674,8 @@ def distance_correlation_sqr(x, y, **kwargs):
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
+    method: DistanceCovarianceMethod
+        Method to use internally to compute the distance covariance.
 
     Returns
     -------
@@ -784,11 +686,6 @@ def distance_correlation_sqr(x, y, **kwargs):
     --------
     distance_correlation
     u_distance_correlation_sqr
-
-    Notes
-    -----
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -809,16 +706,14 @@ def distance_correlation_sqr(x, y, **kwargs):
     0.4493308...
 
     """
-    if _can_use_fast_algorithm(x, y, **kwargs):
-        return _distance_correlation_sqr_fast(x, y)
-    else:
-        return _distance_correlation_sqr_naive(x, y, **kwargs)
+    method = _to_algorithm(method)
+
+    return method.value.dcor_sqr(x, y, exponent=exponent)
 
 
-def u_distance_correlation_sqr(x, y, **kwargs):
+def u_distance_correlation_sqr(x, y, *, exponent=1,
+                               method=DistanceCovarianceMethod.AUTO):
     """
-    u_distance_correlation_sqr(x, y, *, exponent=1)
-
     Computes the bias-corrected estimator for the squared distance correlation
     between two random vectors.
 
@@ -834,6 +729,8 @@ def u_distance_correlation_sqr(x, y, **kwargs):
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
+    method: DistanceCovarianceMethod
+        Method to use internally to compute the distance covariance.
 
     Returns
     -------
@@ -845,11 +742,6 @@ def u_distance_correlation_sqr(x, y, **kwargs):
     --------
     distance_correlation
     distance_correlation_sqr
-
-    Notes
-    -----
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -871,16 +763,14 @@ def u_distance_correlation_sqr(x, y, **kwargs):
     -0.4050479...
 
     """
-    if _can_use_fast_algorithm(x, y, **kwargs):
-        return _u_distance_correlation_sqr_fast(x, y)
-    else:
-        return _u_distance_correlation_sqr_naive(x, y, **kwargs)
+    method = _to_algorithm(method)
+
+    return method.value.u_dcor_sqr(x, y, exponent=exponent)
 
 
-def distance_correlation(x, y, **kwargs):
+def distance_correlation(x, y, *, exponent=1,
+                         method=DistanceCovarianceMethod.AUTO):
     """
-    distance_correlation(x, y, *, exponent=1)
-
     Computes the usual (biased) estimator for the distance correlation
     between two random vectors.
 
@@ -896,6 +786,8 @@ def distance_correlation(x, y, **kwargs):
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
         Equivalently, it is twice the Hurst parameter of fractional Brownian
         motion.
+    method: DistanceCovarianceMethod
+        Method to use internally to compute the distance covariance.
 
     Returns
     -------
@@ -906,11 +798,6 @@ def distance_correlation(x, y, **kwargs):
     --------
     distance_correlation_sqr
     u_distance_correlation_sqr
-
-    Notes
-    -----
-    The algorithm uses the fast distance covariance algorithm proposed in
-    :cite:`b-fast_distance_correlation` when possible.
 
     Examples
     --------
@@ -931,10 +818,12 @@ def distance_correlation(x, y, **kwargs):
     0.6703214...
 
     """
-    return distance_stats(x, y, **kwargs).correlation_xy
+    return distance_stats(
+        x, y, exponent=exponent, method=method).correlation_xy
 
 
-def distance_correlation_af_inv_sqr(x, y):
+def distance_correlation_af_inv_sqr(x, y,
+                                    method=DistanceCovarianceMethod.AUTO):
     """
     Square of the affinely invariant distance correlation.
 
@@ -952,6 +841,8 @@ def distance_correlation_af_inv_sqr(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    method: DistanceCovarianceMethod
+        Method to use internally to compute the distance covariance.
 
     Returns
     -------
@@ -984,11 +875,12 @@ def distance_correlation_af_inv_sqr(x, y):
     x = _af_inv_scaled(x)
     y = _af_inv_scaled(y)
 
-    correlation = distance_correlation_sqr(x, y)
+    correlation = distance_correlation_sqr(x, y, method=method)
     return 0 if np.isnan(correlation) else correlation
 
 
-def distance_correlation_af_inv(x, y):
+def distance_correlation_af_inv(x, y,
+                                method=DistanceCovarianceMethod.AUTO):
     """
     Affinely invariant distance correlation.
 
@@ -1006,6 +898,8 @@ def distance_correlation_af_inv(x, y):
     y: array_like
         Second random vector. The columns correspond with the individual random
         variables while the rows are individual instances of the random vector.
+    method: DistanceCovarianceMethod
+        Method to use internally to compute the distance covariance.
 
     Returns
     -------
@@ -1035,4 +929,4 @@ def distance_correlation_af_inv(x, y):
     1.0
 
     """
-    return _sqrt(distance_correlation_af_inv_sqr(x, y))
+    return _sqrt(distance_correlation_af_inv_sqr(x, y, method=method))

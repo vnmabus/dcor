@@ -5,7 +5,7 @@ from fractions import Fraction
 import unittest
 
 import dcor
-import dcor._dcor as dcor_internals
+import dcor._fast_dcov_avl
 import numpy as np
 
 
@@ -40,7 +40,7 @@ class TestDistanceCorrelation(unittest.TestCase):
         y = np.array([1, 2, 3])
         c = np.array([4, 5, 6])
 
-        gamma = dcor_internals._dyad_update(y, c)
+        gamma = dcor._fast_dcov_avl._dyad_update(y, c)
         expected_gamma = [0., 4., 9.]
 
         np.testing.assert_allclose(gamma, expected_gamma)
@@ -51,12 +51,12 @@ class TestDistanceCorrelation(unittest.TestCase):
         y = [4, 5, 6]
         c = [7, 8, 9]
 
-        gamma = dcor_internals._partial_sum_2d(x, y, c)
+        gamma = dcor._fast_dcov_avl._partial_sum_2d(x, y, c)
         expected_gamma = [17., 16., 15.]
 
         np.testing.assert_allclose(gamma, expected_gamma)
 
-    def test_distance_correlation_naive(self):
+    def test_distance_correlation_multivariate(self):
         """Compare distance correlation with the energy package."""
         matrix1 = np.array(((1, 2, 3), (4, 5, 6), (7, 8, 9)))
         matrix2 = np.array(((7, 3, 6), (2, 1, 4), (3, 8, 1)))
@@ -79,32 +79,35 @@ class TestDistanceCorrelation(unittest.TestCase):
             matrix1, matrix3)
         self.assertAlmostEqual(correlation, 0.31623, places=5)
 
-    def test_distance_correlation_fast(self):
-        """Compare fast distance correlation with the energy package."""
+    def test_distance_correlation_comparison(self):
+        """Compare all implementations of the distance correlation."""
         arr1 = np.array(((1,), (2,), (3,), (4,), (5,), (6,)))
         arr2 = np.array(((1,), (7,), (5,), (5,), (6,), (2,)))
 
-        covariance = dcor_internals._u_distance_covariance_sqr_fast(
-            arr1, arr2)
-        self.assertAlmostEqual(covariance, -0.88889, places=5)
+        for method in dcor.DistanceCovarianceMethod:
+            with self.subTest(method=method):
+                covariance = dcor.u_distance_covariance_sqr(
+                    arr1, arr2, method=method)
+                self.assertAlmostEqual(covariance, -0.88889, places=5)
 
-        correlation = dcor_internals._u_distance_correlation_sqr_fast(
-            arr1, arr2)
-        self.assertAlmostEqual(correlation, -0.41613, places=5)
+                correlation = dcor.u_distance_correlation_sqr(
+                    arr1, arr2, method=method)
+                self.assertAlmostEqual(correlation, -0.41613, places=5)
 
-        covariance = dcor_internals._u_distance_covariance_sqr_fast(
-            arr1, arr1)
-        self.assertAlmostEqual(covariance, 1.5556, places=4)
+                covariance = dcor.u_distance_covariance_sqr(
+                    arr1, arr1,  method=method)
+                self.assertAlmostEqual(covariance, 1.5556, places=4)
 
-        correlation = dcor_internals._u_distance_correlation_sqr_fast(
-            arr1, arr1)
-        self.assertAlmostEqual(correlation, 1, places=5)
+                correlation = dcor.u_distance_correlation_sqr(
+                    arr1, arr1,  method=method)
+                self.assertAlmostEqual(correlation, 1, places=5)
 
-    def test_u_distance_covariance_fast_overflow(self):
+    def test_u_distance_covariance_avl_overflow(self):
         """Test potential overflow in fast distance correlation"""
         arr1 = np.concatenate((np.zeros(500, dtype=int),
                                np.ones(500, dtype=int)))
-        covariance = dcor_internals._u_distance_covariance_sqr_fast(arr1, arr1)
+        covariance = dcor.u_distance_covariance_sqr(arr1, arr1,
+                                                    method='avl')
         self.assertAlmostEqual(covariance, 0.25050, places=5)
 
     def _test_u_distance_correlation_vector_generic(self,
@@ -267,12 +270,15 @@ class TestDistanceCorrelation(unittest.TestCase):
                 arr1 = random_state.rand(i, 1)
                 arr2 = random_state.rand(i, 1)
 
-                stat = dcor_internals._distance_correlation_sqr_naive(
-                    arr1, arr2)
-                stat_fast = dcor_internals._distance_correlation_sqr_fast(
-                    arr1, arr2)
+                stat = dcor.distance_correlation_sqr(
+                    arr1, arr2, method='naive')
 
-                self.assertAlmostEqual(stat, stat_fast)
+                for method in dcor.DistanceCovarianceMethod:
+                    with self.subTest(method=method):
+                        stat2 = dcor.distance_correlation_sqr(
+                            arr1, arr2, method=method)
+
+                        self.assertAlmostEqual(stat, stat2)
 
     def test_u_statistic(self):
         """Test that the fast and naive algorithms for unbiased dcor match"""
@@ -284,12 +290,14 @@ class TestDistanceCorrelation(unittest.TestCase):
                 arr1 = random_state.rand(i, 1)
                 arr2 = random_state.rand(i, 1)
 
-                u_stat = dcor_internals._u_distance_correlation_sqr_naive(
-                    arr1, arr2)
-                u_stat_fast = dcor_internals._u_distance_correlation_sqr_fast(
-                    arr1, arr2)
+                u_stat = dcor.u_distance_correlation_sqr(
+                    arr1, arr2, method='naive')
+                for method in dcor.DistanceCovarianceMethod:
+                    with self.subTest(method=method):
+                        u_stat2 = dcor.u_distance_correlation_sqr(
+                            arr1, arr2, method='avl')
 
-                self.assertAlmostEqual(u_stat, u_stat_fast)
+                        self.assertAlmostEqual(u_stat, u_stat2)
 
 
 if __name__ == "__main__":
