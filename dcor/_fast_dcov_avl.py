@@ -59,6 +59,7 @@ def _dyad_update(y, c):  # pylint:disable=too-many-locals
     return gamma
 
 
+@_jit
 def _partial_sum_2d(x, y, c):  # pylint:disable=too-many-locals
     # This function has many locals so it can be compared
     # with the original algorithm.
@@ -69,10 +70,10 @@ def _partial_sum_2d(x, y, c):  # pylint:disable=too-many-locals
     n = x.shape[0]
 
     # Step 1: rearrange x, y and c so x is in ascending order
-    temp = range(n)
+    temp = np.arange(n)
 
     ix0 = np.argsort(x)
-    ix = np.zeros(n, dtype=int)
+    ix = np.zeros(n, dtype=np.int_)
     ix[ix0] = temp
 
     x = x[ix0]
@@ -81,7 +82,7 @@ def _partial_sum_2d(x, y, c):  # pylint:disable=too-many-locals
 
     # Step 2
     iy0 = np.argsort(y)
-    iy = np.zeros(n, dtype=int)
+    iy = np.zeros(n, dtype=np.int_)
     iy[iy0] = temp
 
     y = iy + 1
