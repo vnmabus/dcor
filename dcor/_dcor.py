@@ -255,20 +255,20 @@ class DistanceCovarianceMethod(Enum):
         dcor_sqr=_distance_correlation_sqr_naive,
         u_dcor_sqr=_u_distance_correlation_sqr_naive,
         stats_generic=_distance_sqr_stats_naive_generic)
-    """
+    r"""
     Use the usual estimator of the distance covariance, which is
     :math:`O(n^2)`
     """
     AVL = _DcovAlgorithmInternals(
         dcov_generic=_distance_covariance_sqr_avl_generic)
-    """
+    r"""
     Use the fast implementation from
     :cite:`b-fast_distance_correlation_avl` which is
     :math:`O(n\log n)`
     """
     MERGESORT = _DcovAlgorithmInternals(
         dcov_generic=_distance_covariance_sqr_mergesort_generic)
-    """
+    r"""
     Use the fast implementation from
     :cite:`b-fast_distance_correlation_mergesort` which is
     :math:`O(n\log n)`
