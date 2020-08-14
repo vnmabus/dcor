@@ -26,7 +26,7 @@ from ._dcor_internals import (double_centered, u_centered,  # noqa
                               u_projection,
                               u_complementary_projection)
 from ._energy import energy_distance  # noqa
-from ._pairwise import pairwise
+from ._pairwise import rowwise, pairwise
 from ._partial_dcor import (partial_distance_covariance,  # noqa
                             partial_distance_correlation)
 

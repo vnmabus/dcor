@@ -104,6 +104,46 @@ algorithm, as its used memory also grows quadratically.
         plt.legend()
         plt.show()
 
+
+Paralllel computation of distance covariance
+--------------------------------------------
+
+The following code explores some possible parallelizations of the distance
+covariance. It used a fixed number of samples but modifies the number of
+parallel computations.
+
+.. jupyter-execute::
+        
+        from multiprocessing import Pool
+        
+        n_samples = 1000
+        n_comps_list = [10, 50, 100]
+        
+        auto_map_times = np.zeros(len(n_samples_list))
+        auto_parallel_times = np.zeros(len(n_samples_list))
+        
+        for i, n_comps in enumerate(n_comps_list):
+        	x = np.random.normal(size=(n_comps, n_samples))
+        	y = np.random.normal(size=(n_comps, n_samples))
+        		
+        	def auto_map():
+        		return dcor.rowwise(dcor.distance_covariance, x, y)
+        		
+        	def auto_parallel():
+        		return dcor.rowwise(dcor.distance_covariance, x, y,
+        		                     map_function=Pool().map)
+        		
+        	auto_map_times[i] = timeit(auto_map, number=n_times)
+        	#auto_parallel_times[i] = timeit(auto_parallel, number=n_times)
+        
+        plt.title("Distance covariance performance comparison")
+        plt.xlabel("Number of computations of distance covariance")
+        plt.ylabel("Time (seconds)")
+        plt.plot(n_samples_list, auto_map_times, label="map")
+        plt.plot(n_samples_list, auto_parallel_times, label="map with pool of processes")
+        plt.legend()
+        plt.show()
+
 References
 ----------
 .. bibliography:: refs.bib
