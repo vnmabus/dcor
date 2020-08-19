@@ -2,9 +2,18 @@
 from __future__ import absolute_import, division, print_function
 from __future__ import unicode_literals
 
+import enum
+
 import numba
 
 import numpy as np
+
+
+class CompileMode(enum.Enum):
+    AUTO = enum.auto()
+    NO_COMPILE = enum.auto()
+    COMPILE_CPU = enum.auto()
+    COMPILE_GPU = enum.auto()
 
 
 def _jit(function):
@@ -19,7 +28,7 @@ def _jit(function):
     """
     import sys
 
-    compiled = numba.jit(function)
+    compiled = numba.jit(function, nopython=True)
 
     if hasattr(sys, '_called_from_test'):
         return function

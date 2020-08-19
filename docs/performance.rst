@@ -115,6 +115,7 @@ parallel computations.
 .. jupyter-execute::
         
         from multiprocessing import Pool
+        import dcor._fast_dcov_avl
         
         n_samples = 1000
         n_comps_list = [10, 50, 100]
@@ -128,6 +129,10 @@ parallel computations.
         		
         	def auto_map():
         		return dcor.rowwise(dcor.distance_covariance, x, y)
+        		
+        	def vectorized():
+        		return dcor.rowwise(dcor.distance_covariance, x, y,
+        		                     map_function=Pool().map)
         		
         	def auto_parallel():
         		return dcor.rowwise(dcor.distance_covariance, x, y,

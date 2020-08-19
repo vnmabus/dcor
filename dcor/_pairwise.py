@@ -61,7 +61,7 @@ def rowwise(function, x, y, **kwargs):
     ...                [21, 1]])
     ...     ]
     >>> dcor.rowwise(dcor.distance_correlation, a, b)
-    array([[0.98182263, 0.98320103]])
+    array([0.98182263, 0.98320103])
 
     A pool object can be used to improve performance for a large
     number of computations:
@@ -69,7 +69,7 @@ def rowwise(function, x, y, **kwargs):
     >>> import multiprocessing.pool
     >>> pool = multiprocessing.pool.ThreadPool()
     >>> dcor.rowwise(dcor.distance_correlation, a, b, map_function=pool.map)
-    array([[0.98182263, 0.98320103]])
+    array([0.98182263, 0.98320103])
 
     """
     return _rowwise_imp(function, x, y, **kwargs)
@@ -96,8 +96,6 @@ def _rowwise_imp(function, x, y, map_function=map, force_naive=False,
 
 
 def _rowwise_map_aux_func(args, function):
-    print(args[0].shape)
-    return 0
     return function(*args)
 
 
