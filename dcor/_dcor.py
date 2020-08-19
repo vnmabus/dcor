@@ -376,11 +376,11 @@ def u_distance_covariance_sqr(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.u_distance_covariance_sqr(a, a) # doctest: +ELLIPSIS
     42.6666666...
     >>> dcor.u_distance_covariance_sqr(a, b) # doctest: +ELLIPSIS
@@ -431,11 +431,11 @@ def distance_covariance(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_covariance(a, a) # doctest: +ELLIPSIS
     7.2111025...
     >>> dcor.distance_covariance(a, b)
@@ -493,11 +493,11 @@ def distance_stats_sqr(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_stats_sqr(a, a) # doctest: +NORMALIZE_WHITESPACE
     Stats(covariance_xy=52.0, correlation_xy=1.0, variance_x=52.0,
     variance_y=52.0)
@@ -561,11 +561,11 @@ def u_distance_stats_sqr(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.u_distance_stats_sqr(a, a) # doctest: +ELLIPSIS
     ...                     # doctest: +NORMALIZE_WHITESPACE
     Stats(covariance_xy=42.6666666..., correlation_xy=1.0,
@@ -632,11 +632,11 @@ def distance_stats(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_stats(a, a) # doctest: +NORMALIZE_WHITESPACE
     Stats(covariance_xy=7.2111025..., correlation_xy=1.0,
     variance_x=7.2111025..., variance_y=7.2111025...)
@@ -691,11 +691,11 @@ def distance_correlation_sqr(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_correlation_sqr(a, a)
     1.0
     >>> dcor.distance_correlation_sqr(a, b) # doctest: +ELLIPSIS
@@ -747,11 +747,11 @@ def u_distance_correlation_sqr(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.u_distance_correlation_sqr(a, a)
     1.0
     >>> dcor.u_distance_correlation_sqr(a, b)
@@ -803,11 +803,11 @@ def distance_correlation(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_correlation(a, a)
     1.0
     >>> dcor.distance_correlation(a, b) # doctest: +ELLIPSIS
@@ -859,11 +859,11 @@ def distance_correlation_af_inv_sqr(x, y,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 3, 2, 5],
-    ...               [5, 7, 6, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 15, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 3., 2., 5.],
+    ...               [5., 7., 6., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 15., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_correlation_af_inv_sqr(a, a)
     1.0
     >>> dcor.distance_correlation_af_inv_sqr(a, b) # doctest: +ELLIPSIS
@@ -916,11 +916,11 @@ def distance_correlation_af_inv(x, y,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 3, 2, 5],
-    ...               [5, 7, 6, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 15, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 3., 2., 5.],
+    ...               [5., 7., 6., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 15., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_correlation_af_inv(a, a)
     1.0
     >>> dcor.distance_correlation_af_inv(a, b) # doctest: +ELLIPSIS
