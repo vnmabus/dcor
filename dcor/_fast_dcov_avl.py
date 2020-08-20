@@ -1,6 +1,7 @@
 '''
 Functions to compute fast distance covariance using AVL.
 '''
+from dcor._utils import CompileMode
 import math
 import warnings
 
@@ -242,9 +243,8 @@ def _distance_covariance_sqr_avl_generic(
     iy = np.zeros(n, dtype=np.int64)
     iy[iy0] = temp
 
-    if compile_mode not in (CompileMode.AUTO, CompileMode.COMPILE_CPU,
-                            CompileMode.NO_COMPILE):
-        return NotImplementedError(
+    if compile_mode not in impls_dict:
+        raise NotImplementedError(
             f"Compile mode {compile_mode} not implemented.")
 
     for impl in impls_dict[compile_mode]:
@@ -268,13 +268,6 @@ def _distance_covariance_sqr_avl_generic(
                           f"implementations.")
 
 
-@numba.guvectorize([(float64[:], float64[:],
-                     int64[:], int64[:],
-                     float64[:], float64[:],
-                     boolean, float64[:])],
-                   '(n),(n),(n),(n),(n),(n),()->()', nopython=True,
-                   cache=True,
-                   target='parallel')
 def _rowwise_distance_covariance_sqr_avl_generic_internal(
         x, y, ix, iy, vx, vy, unbiased, res):
 
@@ -284,8 +277,38 @@ def _rowwise_distance_covariance_sqr_avl_generic_internal(
         vx=vx, vy=vy)
 
 
+def _generate_rowwise_internal(target):
+    return numba.guvectorize(
+        [(float64[:], float64[:],
+          int64[:], int64[:],
+          float64[:], float64[:],
+          boolean, float64[:])],
+        '(n),(n),(n),(n),(n),(n),()->()', nopython=True,
+        cache=True,
+        target=target)(
+        _rowwise_distance_covariance_sqr_avl_generic_internal)
+
+
+_rowwise_distance_covariance_sqr_avl_generic_internal_cpu = (
+    _generate_rowwise_internal(target='cpu')
+)
+_rowwise_distance_covariance_sqr_avl_generic_internal_parallel = (
+    _generate_rowwise_internal(target='parallel')
+)
+
+rowwise_impls_dict = {
+    CompileMode.AUTO:
+    _rowwise_distance_covariance_sqr_avl_generic_internal_parallel,
+    CompileMode.COMPILE_CPU:
+    _rowwise_distance_covariance_sqr_avl_generic_internal_cpu,
+    CompileMode.COMPILE_PARALLEL:
+    _rowwise_distance_covariance_sqr_avl_generic_internal_parallel,
+}
+
+
 def _rowwise_distance_covariance_sqr_avl_generic(
-        x, y, exponent=1, unbiased=False, **kwargs):
+        x, y, exponent=1, unbiased=False,
+        compile_mode=CompileMode.AUTO):
 
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
@@ -313,7 +336,12 @@ def _rowwise_distance_covariance_sqr_avl_generic(
     iy = np.zeros_like(y, dtype=np.int64)
     np.put_along_axis(iy, ix0, temp, axis=1)
 
-    _rowwise_distance_covariance_sqr_avl_generic_internal(
+    if compile_mode not in rowwise_impls_dict:
+        return NotImplemented
+
+    impl = rowwise_impls_dict[compile_mode]
+
+    impl(
         x, y,
         ix, iy,
         vx, vy,

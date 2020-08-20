@@ -2,12 +2,37 @@
 Functions to compute a pairwise dependency measure.
 """
 
-import functools
-
 import numpy as np
 
+from . import _dcor
+from ._fast_dcov_avl import _rowwise_distance_covariance_sqr_avl_generic
+from ._utils import RowwiseMode
 
-def rowwise(function, x, y, *, force_naive=False,
+
+def _generate_rowwise_distance_covariance_sqr(unbiased):
+    def rowwise_distance_covariance_sqr(
+            x, y, *,
+            method=_dcor.DistanceCovarianceMethod.AUTO,
+            **kwargs):
+
+        if (method in (_dcor.DistanceCovarianceMethod.AUTO,
+                       _dcor.DistanceCovarianceMethod.AVL)):
+            return _rowwise_distance_covariance_sqr_avl_generic(
+                x, y, unbiased=unbiased, **kwargs)
+        else:
+            return NotImplemented
+
+    return rowwise_distance_covariance_sqr
+
+
+_dcor.distance_covariance_sqr.rowwise_function = (
+    _generate_rowwise_distance_covariance_sqr(unbiased=False))
+
+_dcor.u_distance_covariance_sqr.rowwise_function = (
+    _generate_rowwise_distance_covariance_sqr(unbiased=True))
+
+
+def rowwise(function, x, y, *, rowwise_mode=False,
             **kwargs):
     """
     Computes a dependency measure between pairs of elements.
@@ -23,9 +48,8 @@ def rowwise(function, x, y, *, force_naive=False,
         Second list of random vectors. The columns of each vector correspond
         with the individual random variables while the rows are individual
         instances of the random vector.
-    force_naive: bool
-        Force the use of the naive implementation even when the function
-        offers an optimized alternative.
+    rowwise_mode: RowwiseMode
+        Mode of rowwise computations.
     kwargs: dictionary
         Additional options necessary.
 
@@ -67,11 +91,18 @@ def rowwise(function, x, y, *, force_naive=False,
     array([0.98182263, 0.98320103])
 
     """
-    rowwise_function = getattr(function, 'rowwise_function', None)
-    if rowwise_function and not force_naive:
-        result = rowwise_function(x, y, **kwargs)
-        if result is not NotImplemented:
-            return result
+
+    if rowwise_mode is not RowwiseMode.NAIVE:
+
+        rowwise_function = getattr(function, 'rowwise_function', None)
+        if rowwise_function:
+            result = rowwise_function(x, y, **kwargs)
+            if result is not NotImplemented:
+                return result
+
+    if rowwise_mode is RowwiseMode.OPTIMIZED:
+        raise NotImplementedError(
+            "There is not an optimized rowwise implementation")
 
     return np.array([function(x_elem, y_elem, *kwargs)
                      for x_elem, y_elem in zip(x, y)])

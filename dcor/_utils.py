@@ -40,6 +40,27 @@ class CompileMode(enum.Enum):
     """
 
 
+class RowwiseMode(enum.Enum):
+    """
+    Rowwise mode of the algorithm.
+    """
+
+    AUTO = enum.auto()
+    """
+    Try to use the fastest available method.
+    """
+
+    NAIVE = enum.auto()
+    """
+    Use naive (list comprehension/map) computation.
+    """
+
+    OPTIMIZED = enum.auto()
+    """
+    Use optimized version, or fail if there is none.
+    """
+
+
 def _sqrt(x):
     """
     Return square root of an ndarray.
