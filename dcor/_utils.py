@@ -10,30 +10,34 @@ import numpy as np
 
 
 class CompileMode(enum.Enum):
+    """
+    Compilation mode of the algorithm.
+    """
+
     AUTO = enum.auto()
+    """
+    Try to use the fastest available method.
+    """
+
     NO_COMPILE = enum.auto()
+    """
+    Use a pure Python implementation.
+    """
+
     COMPILE_CPU = enum.auto()
+    """
+    Compile for execution in one CPU.
+    """
+
+    COMPILE_PARALLEL = enum.auto()
+    """
+    Compile for execution in multicore CPUs.
+    """
+
     COMPILE_GPU = enum.auto()
-
-
-def _jit(function):
     """
-    Compile a function using a jit compiler.
-
-    The function is always compiled to check errors, but is only used outside
-    tests, so that code coverage analysis can be performed in jitted functions.
-
-    The tests set sys._called_from_test in conftest.py.
-
+    Compile for GPU execution.
     """
-    import sys
-
-    compiled = numba.jit(function, nopython=True)
-
-    if hasattr(sys, '_called_from_test'):
-        return function
-    else:  # pragma: no cover
-        return compiled
 
 
 def _sqrt(x):

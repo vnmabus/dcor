@@ -26,7 +26,7 @@ from ._dcor_internals import _distance_matrix, _u_distance_matrix
 from ._dcor_internals import mean_product, u_product
 from ._fast_dcov_avl import _distance_covariance_sqr_avl_generic
 from ._fast_dcov_mergesort import _distance_covariance_sqr_mergesort_generic
-from ._utils import _sqrt
+from ._utils import _sqrt, CompileMode
 
 
 class _DcovAlgorithmInternals():
@@ -117,26 +117,44 @@ Stats = collections.namedtuple('Stats', ['covariance_xy', 'correlation_xy',
                                          'variance_x', 'variance_y'])
 
 
-def _distance_covariance_sqr_naive(x, y, exponent=1):
+def _naive_check_compile_mode(compile_mode):
+    """
+    Checks that the compile mode is AUTO or NO_COMPILE and raises otherwise.
+    """
+
+    if compile_mode not in (CompileMode.AUTO, CompileMode.NO_COMPILE):
+        return NotImplementedError(
+            f"Compile mode {compile_mode} not implemented.")
+
+
+def _distance_covariance_sqr_naive(x, y, exponent=1,
+                                   compile_mode=CompileMode.AUTO):
     """
     Naive biased estimator for distance covariance.
 
     Computes the unbiased estimator for distance covariance between two
     matrices, using an :math:`O(N^2)` algorithm.
     """
+
+    _naive_check_compile_mode(compile_mode)
+
     a = _distance_matrix(x, exponent=exponent)
     b = _distance_matrix(y, exponent=exponent)
 
     return mean_product(a, b)
 
 
-def _u_distance_covariance_sqr_naive(x, y, exponent=1):
+def _u_distance_covariance_sqr_naive(x, y, exponent=1,
+                                     compile_mode=CompileMode.AUTO):
     """
     Naive unbiased estimator for distance covariance.
 
     Computes the unbiased estimator for distance covariance between two
     matrices, using an :math:`O(N^2)` algorithm.
     """
+
+    _naive_check_compile_mode(compile_mode)
+
     a = _u_distance_matrix(x, exponent=exponent)
     b = _u_distance_matrix(y, exponent=exponent)
 
@@ -144,8 +162,12 @@ def _u_distance_covariance_sqr_naive(x, y, exponent=1):
 
 
 def _distance_sqr_stats_naive_generic(x, y, matrix_centered, product,
-                                      exponent=1):
+                                      exponent=1,
+                                      compile_mode=CompileMode.AUTO):
     """Compute generic squared stats."""
+
+    _naive_check_compile_mode(compile_mode)
+
     a = matrix_centered(x, exponent=exponent)
     b = matrix_centered(y, exponent=exponent)
 
@@ -169,8 +191,12 @@ def _distance_sqr_stats_naive_generic(x, y, matrix_centered, product,
                  variance_y=variance_y_sqr)
 
 
-def _distance_correlation_sqr_naive(x, y, exponent=1):
+def _distance_correlation_sqr_naive(x, y, exponent=1,
+                                    compile_mode=CompileMode.AUTO):
     """Biased distance correlation estimator between two matrices."""
+
+    _naive_check_compile_mode(compile_mode)
+
     return _distance_sqr_stats_naive_generic(
         x, y,
         matrix_centered=_distance_matrix,
@@ -178,8 +204,12 @@ def _distance_correlation_sqr_naive(x, y, exponent=1):
         exponent=exponent).correlation_xy
 
 
-def _u_distance_correlation_sqr_naive(x, y, exponent=1):
+def _u_distance_correlation_sqr_naive(x, y, exponent=1,
+                                      compile_mode=CompileMode.AUTO):
     """Bias-corrected distance correlation estimator between two matrices."""
+
+    _naive_check_compile_mode(compile_mode)
+
     return _distance_sqr_stats_naive_generic(
         x, y,
         matrix_centered=_u_distance_matrix,
@@ -213,14 +243,15 @@ def _can_use_fast_algorithm(x, y, exponent=1):
             x.shape[0] > 3 and y.shape[0] > 3 and exponent == 1)
 
 
-def _distance_stats_sqr_generic(x, y, *, exponent=1, dcov_function):
+def _distance_stats_sqr_generic(x, y, *, exponent=1, dcov_function,
+                                compile_mode=CompileMode.AUTO):
     """Compute the distance stats using a dcov algorithm."""
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
 
-    covariance_xy_sqr = dcov_function(x, y)
-    variance_x_sqr = dcov_function(x, x)
-    variance_y_sqr = dcov_function(y, y)
+    covariance_xy_sqr = dcov_function(x, y, compile_mode=compile_mode)
+    variance_x_sqr = dcov_function(x, x, compile_mode=compile_mode)
+    variance_y_sqr = dcov_function(y, y, compile_mode=compile_mode)
     denominator_sqr_signed = variance_x_sqr * variance_y_sqr
     denominator_sqr = np.absolute(denominator_sqr_signed)
     denominator = _sqrt(denominator_sqr)
