@@ -253,7 +253,7 @@ def _distance_covariance_sqr_avl_generic(
                 raise e
 
             warnings.warn(f"Falling back to uncompiled AVL fast distance "
-                          f"covariance because of TypeError exeption "
+                          f"covariance because of TypeError exception "
                           f"raised: {e}. Rembember: only floating point "
                           f"values can be used in the compiled "
                           f"implementations.")
