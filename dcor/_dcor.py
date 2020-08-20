@@ -98,7 +98,8 @@ class _DcovAlgorithmInternals():
 class _DcovAlgorithmInternalsAuto():
     def _dispatch(self, x, y, *, method, exponent, **kwargs):
         if _can_use_fast_algorithm(x, y, exponent):
-            return getattr(DistanceCovarianceMethod.AVL.value, method)(x, y)
+            return getattr(DistanceCovarianceMethod.AVL.value, method)(
+                x, y, exponent=exponent, **kwargs)
         else:
             return getattr(
                 DistanceCovarianceMethod.NAIVE.value, method)(
