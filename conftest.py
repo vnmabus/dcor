@@ -1,5 +1,7 @@
 collect_ignore = ['setup.py']
 
+pytest_plugins = ("pytest_cov", "subtests")
+
 
 def pytest_configure(config):
     import sys

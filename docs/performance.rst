@@ -52,12 +52,6 @@ resulting graph.
         	def naive():
         		return dcor.distance_covariance(x, y, method='NAIVE')
         		
-        	if i == 0:
-        		# Execute avl and mergesort at least once, so that
-        		# Numba compilation times are not included in the comparison
-        		avl()
-        		mergesort()
-        		
         	avl_times[i] = timeit(avl, number=n_times)
         	mergesort_times[i] = timeit(mergesort, number=n_times)
         	naive_times[i] = timeit(naive, number=n_times)

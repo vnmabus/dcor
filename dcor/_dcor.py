@@ -96,13 +96,13 @@ class _DcovAlgorithmInternals():
 
 
 class _DcovAlgorithmInternalsAuto():
-    def _dispatch(self, x, y, *, method, **kwargs):
-        if _can_use_fast_algorithm(x, y, **kwargs):
+    def _dispatch(self, x, y, *, method, exponent, **kwargs):
+        if _can_use_fast_algorithm(x, y, exponent):
             return getattr(DistanceCovarianceMethod.AVL.value, method)(x, y)
         else:
             return getattr(
                 DistanceCovarianceMethod.NAIVE.value, method)(
-                    x, y, **kwargs)
+                    x, y, exponent=exponent, **kwargs)
 
     def __getattr__(self, method):
         if method[0] != '_':
@@ -318,7 +318,8 @@ def _to_algorithm(algorithm):
 
 
 def distance_covariance_sqr(x, y, *, exponent=1,
-                            method=DistanceCovarianceMethod.AUTO):
+                            method=DistanceCovarianceMethod.AUTO,
+                            compile_mode=CompileMode.AUTO):
     """
     Computes the usual (biased) estimator for the squared distance covariance
     between two random vectors.
@@ -337,6 +338,9 @@ def distance_covariance_sqr(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -369,11 +373,13 @@ def distance_covariance_sqr(x, y, *, exponent=1,
     """
     method = _to_algorithm(method)
 
-    return method.value.dcov_sqr(x, y, exponent=exponent)
+    return method.value.dcov_sqr(x, y, exponent=exponent,
+                                 compile_mode=compile_mode)
 
 
 def u_distance_covariance_sqr(x, y, *, exponent=1,
-                              method=DistanceCovarianceMethod.AUTO):
+                              method=DistanceCovarianceMethod.AUTO,
+                              compile_mode=CompileMode.AUTO):
     """
     Computes the unbiased estimator for the squared distance covariance
     between two random vectors.
@@ -392,6 +398,9 @@ def u_distance_covariance_sqr(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -424,11 +433,13 @@ def u_distance_covariance_sqr(x, y, *, exponent=1,
     """
     method = _to_algorithm(method)
 
-    return method.value.u_dcov_sqr(x, y, exponent=exponent)
+    return method.value.u_dcov_sqr(x, y, exponent=exponent,
+                                   compile_mode=compile_mode)
 
 
 def distance_covariance(x, y, *, exponent=1,
-                        method=DistanceCovarianceMethod.AUTO):
+                        method=DistanceCovarianceMethod.AUTO,
+                        compile_mode=CompileMode.AUTO):
     """
     Computes the usual (biased) estimator for the distance covariance
     between two random vectors.
@@ -447,6 +458,9 @@ def distance_covariance(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -478,11 +492,12 @@ def distance_covariance(x, y, *, exponent=1,
 
     """
     return _sqrt(distance_covariance_sqr(
-        x, y, exponent=exponent, method=method))
+        x, y, exponent=exponent, method=method, compile_mode=compile_mode))
 
 
 def distance_stats_sqr(x, y, *, exponent=1,
-                       method=DistanceCovarianceMethod.AUTO):
+                       method=DistanceCovarianceMethod.AUTO,
+                       compile_mode=CompileMode.AUTO):
     """
     Computes the usual (biased) estimators for the squared distance covariance
     and squared distance correlation between two random vectors, and the
@@ -502,6 +517,9 @@ def distance_stats_sqr(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -546,11 +564,13 @@ def distance_stats_sqr(x, y, *, exponent=1,
     """
     method = _to_algorithm(method)
 
-    return method.value.stats_sqr(x, y, exponent=exponent)
+    return method.value.stats_sqr(x, y, exponent=exponent,
+                                  compile_mode=compile_mode)
 
 
 def u_distance_stats_sqr(x, y, *, exponent=1,
-                         method=DistanceCovarianceMethod.AUTO):
+                         method=DistanceCovarianceMethod.AUTO,
+                         compile_mode=CompileMode.AUTO):
     """
     Computes the unbiased estimators for the squared distance covariance
     and squared distance correlation between two random vectors, and the
@@ -570,6 +590,9 @@ def u_distance_stats_sqr(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -617,11 +640,13 @@ def u_distance_stats_sqr(x, y, *, exponent=1,
     """
     method = _to_algorithm(method)
 
-    return method.value.u_stats_sqr(x, y, exponent=exponent)
+    return method.value.u_stats_sqr(x, y, exponent=exponent,
+                                    compile_mode=compile_mode)
 
 
 def distance_stats(x, y, *, exponent=1,
-                   method=DistanceCovarianceMethod.AUTO):
+                   method=DistanceCovarianceMethod.AUTO,
+                   compile_mode=CompileMode.AUTO):
     """
     Computes the usual (biased) estimators for the distance covariance
     and distance correlation between two random vectors, and the
@@ -641,6 +666,9 @@ def distance_stats(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -684,11 +712,12 @@ def distance_stats(x, y, *, exponent=1,
 
     """
     return Stats(*[_sqrt(s) for s in distance_stats_sqr(
-        x, y, exponent=exponent, method=method)])
+        x, y, exponent=exponent, method=method, compile_mode=compile_mode)])
 
 
 def distance_correlation_sqr(x, y, *, exponent=1,
-                             method=DistanceCovarianceMethod.AUTO):
+                             method=DistanceCovarianceMethod.AUTO,
+                             compile_mode=CompileMode.AUTO):
     """
     Computes the usual (biased) estimator for the squared distance correlation
     between two random vectors.
@@ -707,6 +736,9 @@ def distance_correlation_sqr(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -739,11 +771,13 @@ def distance_correlation_sqr(x, y, *, exponent=1,
     """
     method = _to_algorithm(method)
 
-    return method.value.dcor_sqr(x, y, exponent=exponent)
+    return method.value.dcor_sqr(x, y, exponent=exponent,
+                                 compile_mode=compile_mode)
 
 
 def u_distance_correlation_sqr(x, y, *, exponent=1,
-                               method=DistanceCovarianceMethod.AUTO):
+                               method=DistanceCovarianceMethod.AUTO,
+                               compile_mode=CompileMode.AUTO):
     """
     Computes the bias-corrected estimator for the squared distance correlation
     between two random vectors.
@@ -762,6 +796,9 @@ def u_distance_correlation_sqr(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -796,11 +833,13 @@ def u_distance_correlation_sqr(x, y, *, exponent=1,
     """
     method = _to_algorithm(method)
 
-    return method.value.u_dcor_sqr(x, y, exponent=exponent)
+    return method.value.u_dcor_sqr(x, y, exponent=exponent,
+                                   compile_mode=compile_mode)
 
 
 def distance_correlation(x, y, *, exponent=1,
-                         method=DistanceCovarianceMethod.AUTO):
+                         method=DistanceCovarianceMethod.AUTO,
+                         compile_mode=CompileMode.AUTO):
     """
     Computes the usual (biased) estimator for the distance correlation
     between two random vectors.
@@ -819,6 +858,9 @@ def distance_correlation(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -850,11 +892,13 @@ def distance_correlation(x, y, *, exponent=1,
 
     """
     return distance_stats(
-        x, y, exponent=exponent, method=method).correlation_xy
+        x, y, exponent=exponent, method=method,
+        compile_mode=compile_mode).correlation_xy
 
 
 def distance_correlation_af_inv_sqr(x, y,
-                                    method=DistanceCovarianceMethod.AUTO):
+                                    method=DistanceCovarianceMethod.AUTO,
+                                    compile_mode=CompileMode.AUTO):
     """
     Square of the affinely invariant distance correlation.
 
@@ -874,6 +918,9 @@ def distance_correlation_af_inv_sqr(x, y,
         variables while the rows are individual instances of the random vector.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -906,12 +953,14 @@ def distance_correlation_af_inv_sqr(x, y,
     x = _af_inv_scaled(x)
     y = _af_inv_scaled(y)
 
-    correlation = distance_correlation_sqr(x, y, method=method)
+    correlation = distance_correlation_sqr(x, y, method=method,
+                                           compile_mode=compile_mode)
     return 0 if np.isnan(correlation) else correlation
 
 
 def distance_correlation_af_inv(x, y,
-                                method=DistanceCovarianceMethod.AUTO):
+                                method=DistanceCovarianceMethod.AUTO,
+                                compile_mode=CompileMode.AUTO):
     """
     Affinely invariant distance correlation.
 
@@ -931,6 +980,9 @@ def distance_correlation_af_inv(x, y,
         variables while the rows are individual instances of the random vector.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -960,4 +1012,5 @@ def distance_correlation_af_inv(x, y,
     1.0
 
     """
-    return _sqrt(distance_correlation_af_inv_sqr(x, y, method=method))
+    return _sqrt(distance_correlation_af_inv_sqr(x, y, method=method,
+                                                 compile_mode=compile_mode))

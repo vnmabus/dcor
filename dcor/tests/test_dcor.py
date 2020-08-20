@@ -1,11 +1,11 @@
 """Tests of the distance covariance and correlation"""
 
+import dcor
+import dcor._fast_dcov_avl
 from decimal import Decimal
 from fractions import Fraction
 import unittest
 
-import dcor
-import dcor._fast_dcov_avl
 import numpy as np
 
 
@@ -81,26 +81,40 @@ class TestDistanceCorrelation(unittest.TestCase):
 
     def test_distance_correlation_comparison(self):
         """Compare all implementations of the distance correlation."""
-        arr1 = np.array(((1,), (2,), (3,), (4,), (5,), (6,)))
-        arr2 = np.array(((1,), (7,), (5,), (5,), (6,), (2,)))
+        arr1 = np.array(((1.,), (2.,), (3.,), (4.,), (5.,), (6.,)))
+        arr2 = np.array(((1.,), (7.,), (5.,), (5.,), (6.,), (2.,)))
 
         for method in dcor.DistanceCovarianceMethod:
             with self.subTest(method=method):
-                covariance = dcor.u_distance_covariance_sqr(
-                    arr1, arr2, method=method)
-                self.assertAlmostEqual(covariance, -0.88889, places=5)
 
-                correlation = dcor.u_distance_correlation_sqr(
-                    arr1, arr2, method=method)
-                self.assertAlmostEqual(correlation, -0.41613, places=5)
+                compile_modes = [dcor.CompileMode.AUTO,
+                                 dcor.CompileMode.NO_COMPILE]
 
-                covariance = dcor.u_distance_covariance_sqr(
-                    arr1, arr1,  method=method)
-                self.assertAlmostEqual(covariance, 1.5556, places=4)
+                if method is not dcor.DistanceCovarianceMethod.NAIVE:
+                    compile_modes += [dcor.CompileMode.COMPILE_CPU]
 
-                correlation = dcor.u_distance_correlation_sqr(
-                    arr1, arr1,  method=method)
-                self.assertAlmostEqual(correlation, 1, places=5)
+                for compile_mode in compile_modes:
+                    with self.subTest(compile_mode=compile_mode):
+
+                        covariance = dcor.u_distance_covariance_sqr(
+                            arr1, arr2, method=method,
+                            compile_mode=compile_mode)
+                        self.assertAlmostEqual(covariance, -0.88889, places=5)
+
+                        correlation = dcor.u_distance_correlation_sqr(
+                            arr1, arr2, method=method,
+                            compile_mode=compile_mode)
+                        self.assertAlmostEqual(correlation, -0.41613, places=5)
+
+                        covariance = dcor.u_distance_covariance_sqr(
+                            arr1, arr1,  method=method,
+                            compile_mode=compile_mode)
+                        self.assertAlmostEqual(covariance, 1.5556, places=4)
+
+                        correlation = dcor.u_distance_correlation_sqr(
+                            arr1, arr1,  method=method,
+                            compile_mode=compile_mode)
+                        self.assertAlmostEqual(correlation, 1, places=5)
 
     def test_u_distance_covariance_avl_overflow(self):
         """Test potential overflow in fast distance correlation"""
