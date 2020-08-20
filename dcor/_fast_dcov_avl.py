@@ -63,13 +63,17 @@ def _dyad_update(y, c):  # pylint:disable=too-many-locals
 
 
 _dyad_update_compiled = numba.njit(
-    float64[:](float64[:], float64[:]))(
+    float64[:](float64[:], float64[:]),
+    cache=True)(
         _dyad_update)
 
 
-def _generate_partial_sum_2d(dyad_update):
+def _generate_partial_sum_2d(compiled):
 
     def _partial_sum_2d(x, y, c):  # pylint:disable=too-many-locals
+
+        dyad_update = _dyad_update_compiled if compiled else _dyad_update
+
         # This function has many locals so it can be compared
         # with the original algorithm.
         x = np.asarray(x)
@@ -119,19 +123,23 @@ def _generate_partial_sum_2d(dyad_update):
     return _partial_sum_2d
 
 
-_partial_sum_2d = _generate_partial_sum_2d(_dyad_update)
+_partial_sum_2d = _generate_partial_sum_2d(compiled=False)
 _partial_sum_2d_compiled = numba.njit(
-    float64[:](float64[:], float64[:], float64[:]))(
-    _generate_partial_sum_2d(_dyad_update_compiled))
+    float64[:](float64[:], float64[:], float64[:]),
+    cache=True)(
+    _generate_partial_sum_2d(compiled=True))
 
 
-def _generate_distance_covariance_sqr_avl_impl(partial_sum_2d):
+def _generate_distance_covariance_sqr_avl_impl(compiled):
 
     def _distance_covariance_sqr_avl_impl(
             x, y, ix, iy, vx, vy, unbiased):  # pylint:disable=too-many-locals
         # This function has many locals so it can be compared
         # with the original algorithm.
         """Fast algorithm for the squared distance covariance."""
+
+        partial_sum_2d = (_partial_sum_2d_compiled if compiled
+                          else _partial_sum_2d)
 
         n = x.shape[0]
 
@@ -186,12 +194,13 @@ def _generate_distance_covariance_sqr_avl_impl(partial_sum_2d):
 
 
 _distance_covariance_sqr_avl_impl = _generate_distance_covariance_sqr_avl_impl(
-    _partial_sum_2d)
+    compiled=False)
 _distance_covariance_sqr_avl_impl_compiled = numba.njit(
     float64(float64[:], float64[:],
             int64[:], int64[:],
-            float64[:], float64[:], boolean))(
-    _generate_distance_covariance_sqr_avl_impl(_partial_sum_2d_compiled))
+            float64[:], float64[:], boolean),
+    cache=True)(
+    _generate_distance_covariance_sqr_avl_impl(compiled=True))
 
 
 impls_dict = {
@@ -264,6 +273,7 @@ def _distance_covariance_sqr_avl_generic(
                      float64[:], float64[:],
                      boolean, float64[:])],
                    '(n),(n),(n),(n),(n),(n),()->()', nopython=True,
+                   cache=True,
                    target='parallel')
 def _rowwise_distance_covariance_sqr_avl_generic_internal(
         x, y, ix, iy, vx, vy, unbiased, res):
@@ -302,8 +312,6 @@ def _rowwise_distance_covariance_sqr_avl_generic(
 
     iy = np.zeros_like(y, dtype=np.int64)
     np.put_along_axis(iy, ix0, temp, axis=1)
-
-    #unbiased = np.repeat(unbiased, x.shape[0])
 
     _rowwise_distance_covariance_sqr_avl_generic_internal(
         x, y,

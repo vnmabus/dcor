@@ -91,11 +91,16 @@ def _compute_weight_sums(y, weights):
 
 
 _compute_weight_sums_compiled = numba.njit(
-    float64[:, :](float64[:, :], float64[:, :]))(_compute_weight_sums)
+    float64[:, :](float64[:, :], float64[:, :]),
+    cache=True)(_compute_weight_sums)
 
 
-def _generate_compute_aijbij_term(compute_weight_sums):
+def _generate_compute_aijbij_term(compiled):
     def _compute_aijbij_term(x, y):
+
+        compute_weight_sums = (_compute_weight_sums_compiled
+                               if compiled else _compute_weight_sums)
+
         # x must be sorted
         n = len(x)
 
@@ -125,10 +130,11 @@ def _generate_compute_aijbij_term(compute_weight_sums):
     return _compute_aijbij_term
 
 
-_compute_aijbij_term = _generate_compute_aijbij_term(_compute_weight_sums)
+_compute_aijbij_term = _generate_compute_aijbij_term(compiled=False)
 _compute_aijbij_term_compiled = numba.njit(
-    float64(float64[:, :], float64[:, :]))(
-    _generate_compute_aijbij_term(_compute_weight_sums_compiled))
+    float64(float64[:, :], float64[:, :]),
+    cache=True)(
+    _generate_compute_aijbij_term(compiled=True))
 
 
 def _compute_row_sums(x):
@@ -147,13 +153,19 @@ def _compute_row_sums(x):
 
 
 _compute_row_sums_compiled = numba.njit(
-    float64[:](float64[:]))(_compute_row_sums)
+    float64[:](float64[:]),
+    cache=True)(_compute_row_sums)
 
 
 def _generate_distance_covariance_sqr_mergesort_generic_impl(
-        compute_aijbij_term, compute_row_sums):
+        compiled):
 
     def _distance_covariance_sqr_mergesort_generic_impl(x, y, unbiased):
+
+        compute_aijbij_term = (_compute_aijbij_term_compiled
+                               if compiled else _compute_aijbij_term)
+        compute_row_sums = (_compute_row_sums_compiled if compiled
+                            else _compute_row_sums)
 
         n = len(x)
 
@@ -192,11 +204,12 @@ def _generate_distance_covariance_sqr_mergesort_generic_impl(
 
 _distance_covariance_sqr_mergesort_generic_impl = (
     _generate_distance_covariance_sqr_mergesort_generic_impl(
-        _compute_aijbij_term, _compute_row_sums))
+        compiled=False))
 _distance_covariance_sqr_mergesort_generic_impl_compiled = numba.njit(
-    float64(float64[:, :], float64[:, :], boolean))(
+    float64(float64[:, :], float64[:, :], boolean),
+    cache=True)(
     _generate_distance_covariance_sqr_mergesort_generic_impl(
-        _compute_aijbij_term_compiled, _compute_row_sums_compiled))
+        compiled=True))
 
 impls_dict = {
     CompileMode.AUTO: (
