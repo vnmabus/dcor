@@ -71,7 +71,7 @@ if cuda.is_available():
 
 def _generate_partial_sum_2d(compiled):
 
-    def _partial_sum_2d(x, y, c):  # pylint:disable=too-many-locals
+    def _partial_sum_2d(x, y, c, argsort_y_reord, ix, iy):  # pylint:disable=too-many-locals
 
         if compiled == NO_COMPILE:
             dyad_update = _dyad_update
@@ -80,34 +80,10 @@ def _generate_partial_sum_2d(compiled):
         else:
             dyad_update = _dyad_update_compiled_gpu
 
-        # This function has many locals so it can be compared
-        # with the original algorithm.
-        x = np.asarray(x)
-        y = np.asarray(y)
-        c = np.asarray(c)
-
         n = x.shape[0]
 
-        # Step 1: rearrange x, y and c so x is in ascending order
-        temp = np.arange(n)
-
-        ix0 = np.argsort(x)
-        ix = np.zeros(n, dtype=np.int_)
-        ix[ix0] = temp
-
-        x = x[ix0]
-        y = y[ix0]
-        c = c[ix0]
-
-        # Step 2
-        iy0 = np.argsort(y)
-        iy = np.zeros(n, dtype=np.int_)
-        iy[iy0] = temp
-
-        y = iy + 1.
-
         # Step 3
-        sy = np.cumsum(c[iy0]) - c[iy0]
+        sy = np.cumsum(c[argsort_y_reord]) - c[argsort_y_reord]
 
         # Step 4
         sx = np.cumsum(c) - c
@@ -116,8 +92,6 @@ def _generate_partial_sum_2d(compiled):
         c_dot = np.sum(c)
 
         # Step 6
-        y = np.asarray(y)
-        c = np.asarray(c)
         gamma1 = np.zeros(n, dtype=c.dtype)
 
         # Step 1: get the smallest l such that n <= 2^l
@@ -144,7 +118,8 @@ def _generate_partial_sum_2d(compiled):
 
 _partial_sum_2d = _generate_partial_sum_2d(compiled=NO_COMPILE)
 _partial_sum_2d_compiled = numba.njit(
-    float64[:](float64[:], float64[:], float64[:]),
+    float64[:](float64[:], float64[:], float64[:],
+               int64[:], int64[:], int64[:]),
     cache=True)(
     _generate_partial_sum_2d(compiled=COMPILE))
 
@@ -157,7 +132,9 @@ if cuda.is_available():
 def _generate_distance_covariance_sqr_avl_impl(compiled):
 
     def _distance_covariance_sqr_avl_impl(
-            x, y, ix, iy, vx, vy, unbiased):  # pylint:disable=too-many-locals
+            x, y, ix, iy, vx, vy, unbiased,
+            y_reord,
+            x_times_y_reord):  # pylint:disable=too-many-locals
         # This function has many locals so it can be compared
         # with the original algorithm.
         """Fast algorithm for the squared distance covariance."""
@@ -196,11 +173,35 @@ def _generate_distance_covariance_sqr_avl_impl(compiled):
         a_dot_dot = 2 * np.sum(alpha_x * x) - 2 * np.sum(beta_x)
         b_dot_dot = 2 * np.sum(alpha_y * y) - 2 * np.sum(beta_y)
 
+        # Step 6.1: rearrange x, y and c so x is in ascending order
+        temp = np.arange(n)
+
+        x_reord = vx
+
+        argsort_y_reord = np.argsort(y_reord)
+
+        # Step 2
+        iy = np.zeros(n, dtype=np.int64)
+        iy[argsort_y_reord] = temp
+
+        new_y = iy + 1.
+
+        c = np.vstack((
+            np.ones(n, dtype=x.dtype),
+            x_reord,
+            y_reord,
+            x_times_y_reord
+        ))
+
         # Step 7
-        gamma_1 = partial_sum_2d(x, y, np.ones(n, dtype=x.dtype))
-        gamma_x = partial_sum_2d(x, y, x)
-        gamma_y = partial_sum_2d(x, y, y)
-        gamma_xy = partial_sum_2d(x, y, x * y)
+        gamma_1 = partial_sum_2d(
+            x_reord, new_y, c[0], argsort_y_reord, ix, iy)
+        gamma_x = partial_sum_2d(
+            x_reord, new_y, c[1], argsort_y_reord, ix, iy)
+        gamma_y = partial_sum_2d(
+            x_reord, new_y, c[2], argsort_y_reord, ix, iy)
+        gamma_xy = partial_sum_2d(
+            x_reord, new_y, c[3], argsort_y_reord, ix, iy)
 
         # Step 8
         aijbij = np.sum(x * y * gamma_1 + gamma_xy - x * gamma_y - y * gamma_x)
@@ -226,7 +227,8 @@ _distance_covariance_sqr_avl_impl = _generate_distance_covariance_sqr_avl_impl(
 _distance_covariance_sqr_avl_impl_compiled = numba.njit(
     float64(float64[:], float64[:],
             int64[:], int64[:],
-            float64[:], float64[:], boolean),
+            float64[:], float64[:],
+            boolean, float64[:], float64[:]),
     cache=True)(
     _generate_distance_covariance_sqr_avl_impl(compiled=COMPILE))
 
@@ -244,6 +246,43 @@ impls_dict = {
 }
 
 
+def _get_impl_args(x, y, *, exponent=1, unbiased=False):
+    """
+    Get the parameters that cannot be computed in the compiled version.
+    """
+
+    if exponent != 1:
+        raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
+
+    n = x.shape[-1]
+    assert n > 3
+    assert n == y.shape[-1]
+    temp = range(n)
+
+    # Step 1
+    argsort_x = np.argsort(x, axis=-1)
+    vx = np.take_along_axis(x, argsort_x, axis=-1)
+
+    ix = np.zeros_like(x, dtype=np.int64)
+    np.put_along_axis(ix, argsort_x, temp, axis=-1)
+
+    argsort_y = np.argsort(y, axis=-1)
+    vy = np.take_along_axis(y, argsort_y, axis=-1)
+
+    iy = np.zeros_like(y, dtype=np.int64)
+    np.put_along_axis(iy, argsort_y, temp, axis=-1)
+
+    y_reord = np.take_along_axis(y, argsort_x, axis=-1)
+    x_times_y_reord = np.take_along_axis(x * y, argsort_x, axis=-1)
+
+    return (x, y,
+            ix, iy,
+            vx, vy,
+            unbiased,
+            y_reord,
+            x_times_y_reord)
+
+
 def _distance_covariance_sqr_avl_generic(
         x, y, *, exponent=1, unbiased=False, compile_mode=CompileMode.AUTO):
     """Fast algorithm for the squared distance covariance."""
@@ -254,39 +293,28 @@ def _distance_covariance_sqr_avl_generic(
     x = np.asarray(x)
     y = np.asarray(y)
 
-    x = np.ravel(x)
-    y = np.ravel(y)
+    assert 1 <= x.ndim <= 2
+    if x.ndim == 2:
+        assert x.shape[1] == 1
+        x = x[:, 0]
 
-    n = x.shape[0]
-    assert n > 3
-    assert n == y.shape[0]
-    temp = range(n)
-
-    # Step 1
-    ix0 = np.argsort(x)
-    vx = x[ix0]
-
-    ix = np.zeros(n, dtype=np.int64)
-    ix[ix0] = temp
-
-    iy0 = np.argsort(y)
-    vy = y[iy0]
-
-    iy = np.zeros(n, dtype=np.int64)
-    iy[iy0] = temp
+    assert 1 <= y.ndim <= 2
+    if y.ndim == 2:
+        assert y.shape[1] == 1
+        y = y[:, 0]
 
     if compile_mode not in impls_dict:
         raise NotImplementedError(
             f"Compile mode {compile_mode} not implemented.")
 
+    args = _get_impl_args(x, y, exponent=exponent,
+                          unbiased=unbiased)
+
     for impl in impls_dict[compile_mode]:
 
         try:
 
-            return impl(x, y,
-                        ix, iy,
-                        vx, vy,
-                        unbiased)
+            return impl(*args)
 
         except TypeError as e:
 
@@ -301,19 +329,23 @@ def _distance_covariance_sqr_avl_generic(
 
 
 def _rowwise_distance_covariance_sqr_avl_generic_internal(
-        x, y, ix, iy, vx, vy, unbiased, res):
+        x, y, ix, iy, vx, vy, unbiased, y_reord,
+        x_times_y_reord, res):
 
     res[0] = _distance_covariance_sqr_avl_impl_compiled(
         x, y, unbiased=unbiased,
         ix=ix, iy=iy,
-        vx=vx, vy=vy)
+        vx=vx, vy=vy,
+        y_reord=y_reord,
+        x_times_y_reord=x_times_y_reord)
 
 
 if cuda.is_available():
     def _rowwise_distance_covariance_sqr_avl_generic_internal_gpu(
-            x, y, ix, iy, vx, vy, unbiased, res):
+            x, y, ix, iy, vx, vy, unbiased, y_reord,
+            x_times_y_reord, res):
 
-        res[0] = 0  # _partial_sum_2d_compiled_gpu(x, y, vx)
+        res[0] = 0  # _partial_sum_2d_compiled_gpu(x, y, vx, ix, ix, ix)
 
 #         res[0] = _distance_covariance_sqr_avl_impl_compiled_gpu(
 #             x, y, unbiased=unbiased,
@@ -331,8 +363,8 @@ def _generate_rowwise_internal(target):
         [(float64[:], float64[:],
           int64[:], int64[:],
           float64[:], float64[:],
-          boolean, float64[:])],
-        '(n),(n),(n),(n),(n),(n),()->()', nopython=True,
+          boolean, float64[:], float64[:], float64[:])],
+        '(n),(n),(n),(n),(n),(n),(),(n),(n)->()', nopython=True,
         cache=cache,
         target=target)(fun)
 
@@ -369,31 +401,20 @@ def _rowwise_distance_covariance_sqr_avl_generic(
         x, y, exponent=1, unbiased=False,
         compile_mode=CompileMode.AUTO):
 
-    if exponent != 1:
-        raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
-
     x = np.asarray(x)
     y = np.asarray(y)
 
+    assert 2 <= x.ndim <= 3
+    if x.ndim == 3:
+        assert x.shape[1] == 1
+        x = x[..., 0]
+
+    assert 2 <= y.ndim <= 3
+    if y.ndim == 3:
+        assert y.shape[1] == 1
+        y = y[..., 0]
+
     res = np.zeros(x.shape[0], dtype=x.dtype)
-
-    n = x.shape[1]
-    assert n > 3
-    assert n == y.shape[1]
-    temp = range(n)
-
-    # Step 1
-    ix0 = np.argsort(x, axis=1)
-    vx = np.take_along_axis(x, ix0, axis=1)
-
-    ix = np.zeros_like(x, dtype=np.int64)
-    np.put_along_axis(ix, ix0, temp, axis=1)
-
-    iy0 = np.argsort(y, axis=1)
-    vy = np.take_along_axis(y, iy0, axis=1)
-
-    iy = np.zeros_like(y, dtype=np.int64)
-    np.put_along_axis(iy, ix0, temp, axis=1)
 
     if compile_mode not in rowwise_impls_dict:
         return NotImplemented
@@ -401,9 +422,8 @@ def _rowwise_distance_covariance_sqr_avl_generic(
     impl = rowwise_impls_dict[compile_mode]
 
     impl(
-        x, y,
-        ix, iy,
-        vx, vy,
-        unbiased, res)
+        *_get_impl_args(x, y, exponent=exponent,
+                        unbiased=unbiased),
+        res)
 
     return res

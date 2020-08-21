@@ -63,11 +63,15 @@ class TestDistanceCorrelation(unittest.TestCase):
 
     def test_partial_sum_2d(self):  # pylint:disable=no-self-use
         """Compare partial sum results with the original code in the paper."""
-        x = [1, 2, 3]
-        y = [4, 5, 6]
-        c = [7, 8, 9]
+        x = np.array([1, 2, 3])
+        y = np.array([4, 5, 6])
+        c = np.array([7, 8, 9])
 
-        gamma = dcor._fast_dcov_avl._partial_sum_2d(x, y, c)
+        argsort_x = np.argsort(x)
+        argsort_y = np.argsort(y[argsort_x])
+
+        gamma = dcor._fast_dcov_avl._partial_sum_2d(
+            x, y, c, argsort_x, argsort_y)
         expected_gamma = [17., 16., 15.]
 
         np.testing.assert_allclose(gamma, expected_gamma)
