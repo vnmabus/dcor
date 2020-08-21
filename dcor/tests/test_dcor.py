@@ -110,6 +110,7 @@ class TestDistanceCorrelation(unittest.TestCase):
             with self.subTest(method=method):
 
                 compile_modes = [dcor.CompileMode.AUTO,
+                                 dcor.CompileMode.COMPILE_CPU,
                                  dcor.CompileMode.NO_COMPILE]
 
                 if method is not dcor.DistanceCovarianceMethod.NAIVE:
