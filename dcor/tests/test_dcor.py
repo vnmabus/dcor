@@ -4,6 +4,7 @@ import dcor
 import dcor._fast_dcov_avl
 from decimal import Decimal
 from fractions import Fraction
+import math
 import unittest
 
 import numpy as np
@@ -40,7 +41,22 @@ class TestDistanceCorrelation(unittest.TestCase):
         y = np.array([1, 2, 3])
         c = np.array([4, 5, 6])
 
-        gamma = dcor._fast_dcov_avl._dyad_update(y, c)
+        n = len(y)
+        gamma1 = np.zeros(n, dtype=c.dtype)
+
+        # Step 1: get the smallest l such that n <= 2^l
+        l_max = int(math.ceil(np.log2(n)))
+
+        # Step 2: assign s(l, k) = 0
+        s_len = 2 ** (l_max + 1)
+        s = np.zeros(s_len, dtype=c.dtype)
+
+        pos_sums = np.arange(l_max)
+        pos_sums[:] = 2 ** (l_max - pos_sums)
+        pos_sums = np.cumsum(pos_sums)
+
+        gamma = dcor._fast_dcov_avl._dyad_update(
+            y, c, gamma1, l_max, s, pos_sums)
         expected_gamma = [0., 4., 9.]
 
         np.testing.assert_allclose(gamma, expected_gamma)
