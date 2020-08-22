@@ -34,11 +34,6 @@ class CompileMode(enum.Enum):
     Compile for execution in multicore CPUs.
     """
 
-    COMPILE_GPU = enum.auto()
-    """
-    Compile for GPU execution.
-    """
-
 
 class RowwiseMode(enum.Enum):
     """
