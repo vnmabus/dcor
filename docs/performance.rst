@@ -102,9 +102,15 @@ algorithm, as its used memory also grows quadratically.
 Paralllel computation of distance covariance
 --------------------------------------------
 
-The following code explores some possible parallelizations of the distance
-covariance. It used a fixed number of samples but modifies the number of
-parallel computations.
+The following code shows the computation of the distance covariance between
+several random variables, using the :func:`dcor.rowwise` function. If the
+machine has several CPUs, the time spent using the parallel implementation
+woud be divided by the number of CPUs. If there is only one, there will
+be no difference.
+
+For now, optimized and parallel implementations are only available for the fast
+AVL method, which is used by default when the operation is between random
+variables, and not random vectors.
 
 .. jupyter-execute::
         
@@ -120,7 +126,6 @@ parallel computations.
 	naive_times = np.zeros(len(n_comps_list))
 	cpu_times = np.zeros(len(n_comps_list))
 	parallel_times = np.zeros(len(n_comps_list))
-	gpu_times = np.zeros(len(n_comps_list))
 	
 	for i, n_comps in enumerate(n_comps_list):
 	    x = np.random.normal(size=(n_comps, n_samples))
@@ -137,10 +142,6 @@ parallel computations.
 	    def parallel():
 	        return dcor.rowwise(dcor.distance_covariance_sqr, x, y,
 	                           compile_mode=dcor.CompileMode.COMPILE_PARALLEL)
-	    
-	    def gpu():
-	        return dcor.rowwise(dcor.distance_covariance_sqr, x, y,
-	                           compile_mode=dcor.CompileMode.COMPILE_GPU)
 	
 	    naive_times[i] = timeit(naive, number=n_times)
 	    cpu_times[i] = timeit(cpu, number=n_times)
@@ -153,7 +154,6 @@ parallel computations.
 	plt.plot(n_comps_list, naive_times, label="naive")
 	plt.plot(n_comps_list, cpu_times, label="cpu")
 	plt.plot(n_comps_list, parallel_times, label="parallel")
-	plt.plot(n_comps_list, gpu_times, label="gpu")
 	plt.legend()
 	plt.show()
 

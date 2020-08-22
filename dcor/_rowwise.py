@@ -11,9 +11,13 @@ from ._utils import RowwiseMode
 
 def _generate_rowwise_distance_covariance_sqr(unbiased):
     def rowwise_distance_covariance_sqr(
-            x, y, *,
+            x, y, exponent=1, *,
             method=_dcor.DistanceCovarianceMethod.AUTO,
             **kwargs):
+
+        if not _dcor._can_use_fast_algorithm(x[0], y[0],
+                                             exponent=exponent):
+            return NotImplemented
 
         if (method in (_dcor.DistanceCovarianceMethod.AUTO,
                        _dcor.DistanceCovarianceMethod.AVL)):
@@ -32,14 +36,73 @@ _dcor.u_distance_covariance_sqr.rowwise_function = (
     _generate_rowwise_distance_covariance_sqr(unbiased=True))
 
 
+def _rowwise_distance_covariance(*args, **kwargs):
+
+    res_covs = _dcor.distance_covariance_sqr.rowwise_function(*args, **kwargs)
+    if res_covs is NotImplemented:
+        return NotImplemented
+
+    return np.sqrt(res_covs)
+
+
+_dcor.distance_covariance.rowwise_function = _rowwise_distance_covariance
+
+
+def _generate_rowwise_distance_correlation_sqr(unbiased):
+    def rowwise_distance_correlation_sqr(x, y, **kwargs):
+
+        cov_fun = (_dcor.u_distance_covariance_sqr if unbiased
+                   else _dcor.distance_covariance_sqr)
+
+        n_comps = len(x)
+
+        concat_x = np.concatenate((x, x, y))
+        concat_y = np.concatenate((y, x, y))
+
+        res_covs = cov_fun.rowwise_function(concat_x, concat_y, **kwargs)
+        if res_covs is NotImplemented:
+            return NotImplemented
+
+        cov = res_covs[:n_comps]
+        x_std = np.sqrt(res_covs[n_comps:2 * n_comps])
+        y_std = np.sqrt(res_covs[2 * n_comps:])
+
+        return cov / x_std / y_std
+
+    return rowwise_distance_correlation_sqr
+
+
+_dcor.distance_correlation_sqr.rowwise_function = (
+    _generate_rowwise_distance_correlation_sqr(unbiased=False))
+
+_dcor.u_distance_correlation_sqr.rowwise_function = (
+    _generate_rowwise_distance_correlation_sqr(unbiased=True))
+
+
+def _rowwise_distance_correlation(*args, **kwargs):
+
+    res_corrs = _dcor.distance_correlation_sqr.rowwise_function(
+        *args, **kwargs)
+    if res_corrs is NotImplemented:
+        return NotImplemented
+
+    return np.sqrt(res_corrs)
+
+
+_dcor.distance_correlation.rowwise_function = _rowwise_distance_correlation
+
+
 def rowwise(function, x, y, *, rowwise_mode=False,
             **kwargs):
     """
     Computes a dependency measure between pairs of elements.
 
+    It will use an optimized implementation if one is available.
+
     Parameters
     ----------
-    function: Dependency measure function.
+    function: callable
+        Dependency measure function.
     x: iterable of array_like
         First list of random vectors. The columns of each vector correspond
         with the individual random variables while the rows are individual
@@ -84,12 +147,6 @@ def rowwise(function, x, y, *, rowwise_mode=False,
     >>> dcor.rowwise(dcor.distance_correlation, a, b)
     array([0.98182263, 0.98320103])
 
-    A pool object can be used to improve performance for a large
-    number of computations:
-
-    >>> dcor.rowwise(dcor.distance_correlation, a, b)
-    array([0.98182263, 0.98320103])
-
     """
 
     if rowwise_mode is not RowwiseMode.NAIVE:
@@ -104,5 +161,5 @@ def rowwise(function, x, y, *, rowwise_mode=False,
         raise NotImplementedError(
             "There is not an optimized rowwise implementation")
 
-    return np.array([function(x_elem, y_elem, *kwargs)
+    return np.array([function(x_elem, y_elem, **kwargs)
                      for x_elem, y_elem in zip(x, y)])

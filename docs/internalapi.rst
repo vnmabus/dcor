@@ -9,7 +9,7 @@ List of modules
    dcor._dcor_internals
    dcor._dcor
    dcor._energy
-   dcor._pairwise
+   dcor._rowwise
    dcor._partial_dcor
    dcor._utils
    dcor.distances
