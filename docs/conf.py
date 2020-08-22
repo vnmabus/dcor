@@ -111,7 +111,7 @@ html_theme = 'sphinx_rtd_theme'
 
 
 def setup(app):
-    app.add_stylesheet('css/wide.css')
+    app.add_css_file('css/wide.css')
 
 
 # Theme options are theme-specific and customize the look and feel of a theme

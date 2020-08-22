@@ -26,7 +26,7 @@ from ._dcor_internals import _distance_matrix, _u_distance_matrix
 from ._dcor_internals import mean_product, u_product
 from ._fast_dcov_avl import _distance_covariance_sqr_avl_generic
 from ._fast_dcov_mergesort import _distance_covariance_sqr_mergesort_generic
-from ._utils import _sqrt
+from ._utils import _sqrt, CompileMode
 
 
 class _DcovAlgorithmInternals():
@@ -96,13 +96,14 @@ class _DcovAlgorithmInternals():
 
 
 class _DcovAlgorithmInternalsAuto():
-    def _dispatch(self, x, y, *, method, **kwargs):
-        if _can_use_fast_algorithm(x, y, **kwargs):
-            return getattr(DistanceCovarianceMethod.AVL.value, method)(x, y)
+    def _dispatch(self, x, y, *, method, exponent, **kwargs):
+        if _can_use_fast_algorithm(x, y, exponent):
+            return getattr(DistanceCovarianceMethod.AVL.value, method)(
+                x, y, exponent=exponent, **kwargs)
         else:
             return getattr(
                 DistanceCovarianceMethod.NAIVE.value, method)(
-                    x, y, **kwargs)
+                    x, y, exponent=exponent, **kwargs)
 
     def __getattr__(self, method):
         if method[0] != '_':
@@ -117,26 +118,44 @@ Stats = collections.namedtuple('Stats', ['covariance_xy', 'correlation_xy',
                                          'variance_x', 'variance_y'])
 
 
-def _distance_covariance_sqr_naive(x, y, exponent=1):
+def _naive_check_compile_mode(compile_mode):
+    """
+    Checks that the compile mode is AUTO or NO_COMPILE and raises otherwise.
+    """
+
+    if compile_mode not in (CompileMode.AUTO, CompileMode.NO_COMPILE):
+        return NotImplementedError(
+            f"Compile mode {compile_mode} not implemented.")
+
+
+def _distance_covariance_sqr_naive(x, y, exponent=1,
+                                   compile_mode=CompileMode.AUTO):
     """
     Naive biased estimator for distance covariance.
 
     Computes the unbiased estimator for distance covariance between two
     matrices, using an :math:`O(N^2)` algorithm.
     """
+
+    _naive_check_compile_mode(compile_mode)
+
     a = _distance_matrix(x, exponent=exponent)
     b = _distance_matrix(y, exponent=exponent)
 
     return mean_product(a, b)
 
 
-def _u_distance_covariance_sqr_naive(x, y, exponent=1):
+def _u_distance_covariance_sqr_naive(x, y, exponent=1,
+                                     compile_mode=CompileMode.AUTO):
     """
     Naive unbiased estimator for distance covariance.
 
     Computes the unbiased estimator for distance covariance between two
     matrices, using an :math:`O(N^2)` algorithm.
     """
+
+    _naive_check_compile_mode(compile_mode)
+
     a = _u_distance_matrix(x, exponent=exponent)
     b = _u_distance_matrix(y, exponent=exponent)
 
@@ -144,8 +163,12 @@ def _u_distance_covariance_sqr_naive(x, y, exponent=1):
 
 
 def _distance_sqr_stats_naive_generic(x, y, matrix_centered, product,
-                                      exponent=1):
+                                      exponent=1,
+                                      compile_mode=CompileMode.AUTO):
     """Compute generic squared stats."""
+
+    _naive_check_compile_mode(compile_mode)
+
     a = matrix_centered(x, exponent=exponent)
     b = matrix_centered(y, exponent=exponent)
 
@@ -169,8 +192,12 @@ def _distance_sqr_stats_naive_generic(x, y, matrix_centered, product,
                  variance_y=variance_y_sqr)
 
 
-def _distance_correlation_sqr_naive(x, y, exponent=1):
+def _distance_correlation_sqr_naive(x, y, exponent=1,
+                                    compile_mode=CompileMode.AUTO):
     """Biased distance correlation estimator between two matrices."""
+
+    _naive_check_compile_mode(compile_mode)
+
     return _distance_sqr_stats_naive_generic(
         x, y,
         matrix_centered=_distance_matrix,
@@ -178,8 +205,12 @@ def _distance_correlation_sqr_naive(x, y, exponent=1):
         exponent=exponent).correlation_xy
 
 
-def _u_distance_correlation_sqr_naive(x, y, exponent=1):
+def _u_distance_correlation_sqr_naive(x, y, exponent=1,
+                                      compile_mode=CompileMode.AUTO):
     """Bias-corrected distance correlation estimator between two matrices."""
+
+    _naive_check_compile_mode(compile_mode)
+
     return _distance_sqr_stats_naive_generic(
         x, y,
         matrix_centered=_u_distance_matrix,
@@ -213,14 +244,15 @@ def _can_use_fast_algorithm(x, y, exponent=1):
             x.shape[0] > 3 and y.shape[0] > 3 and exponent == 1)
 
 
-def _distance_stats_sqr_generic(x, y, *, exponent=1, dcov_function):
+def _distance_stats_sqr_generic(x, y, *, exponent=1, dcov_function,
+                                compile_mode=CompileMode.AUTO):
     """Compute the distance stats using a dcov algorithm."""
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
 
-    covariance_xy_sqr = dcov_function(x, y)
-    variance_x_sqr = dcov_function(x, x)
-    variance_y_sqr = dcov_function(y, y)
+    covariance_xy_sqr = dcov_function(x, y, compile_mode=compile_mode)
+    variance_x_sqr = dcov_function(x, x, compile_mode=compile_mode)
+    variance_y_sqr = dcov_function(y, y, compile_mode=compile_mode)
     denominator_sqr_signed = variance_x_sqr * variance_y_sqr
     denominator_sqr = np.absolute(denominator_sqr_signed)
     denominator = _sqrt(denominator_sqr)
@@ -287,7 +319,8 @@ def _to_algorithm(algorithm):
 
 
 def distance_covariance_sqr(x, y, *, exponent=1,
-                            method=DistanceCovarianceMethod.AUTO):
+                            method=DistanceCovarianceMethod.AUTO,
+                            compile_mode=CompileMode.AUTO):
     """
     Computes the usual (biased) estimator for the squared distance covariance
     between two random vectors.
@@ -306,6 +339,9 @@ def distance_covariance_sqr(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -321,11 +357,11 @@ def distance_covariance_sqr(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_covariance_sqr(a, a)
     52.0
     >>> dcor.distance_covariance_sqr(a, b)
@@ -338,11 +374,13 @@ def distance_covariance_sqr(x, y, *, exponent=1,
     """
     method = _to_algorithm(method)
 
-    return method.value.dcov_sqr(x, y, exponent=exponent)
+    return method.value.dcov_sqr(x, y, exponent=exponent,
+                                 compile_mode=compile_mode)
 
 
 def u_distance_covariance_sqr(x, y, *, exponent=1,
-                              method=DistanceCovarianceMethod.AUTO):
+                              method=DistanceCovarianceMethod.AUTO,
+                              compile_mode=CompileMode.AUTO):
     """
     Computes the unbiased estimator for the squared distance covariance
     between two random vectors.
@@ -361,6 +399,9 @@ def u_distance_covariance_sqr(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -376,11 +417,11 @@ def u_distance_covariance_sqr(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.u_distance_covariance_sqr(a, a) # doctest: +ELLIPSIS
     42.6666666...
     >>> dcor.u_distance_covariance_sqr(a, b) # doctest: +ELLIPSIS
@@ -393,11 +434,13 @@ def u_distance_covariance_sqr(x, y, *, exponent=1,
     """
     method = _to_algorithm(method)
 
-    return method.value.u_dcov_sqr(x, y, exponent=exponent)
+    return method.value.u_dcov_sqr(x, y, exponent=exponent,
+                                   compile_mode=compile_mode)
 
 
 def distance_covariance(x, y, *, exponent=1,
-                        method=DistanceCovarianceMethod.AUTO):
+                        method=DistanceCovarianceMethod.AUTO,
+                        compile_mode=CompileMode.AUTO):
     """
     Computes the usual (biased) estimator for the distance covariance
     between two random vectors.
@@ -416,6 +459,9 @@ def distance_covariance(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -431,11 +477,11 @@ def distance_covariance(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_covariance(a, a) # doctest: +ELLIPSIS
     7.2111025...
     >>> dcor.distance_covariance(a, b)
@@ -447,11 +493,12 @@ def distance_covariance(x, y, *, exponent=1,
 
     """
     return _sqrt(distance_covariance_sqr(
-        x, y, exponent=exponent, method=method))
+        x, y, exponent=exponent, method=method, compile_mode=compile_mode))
 
 
 def distance_stats_sqr(x, y, *, exponent=1,
-                       method=DistanceCovarianceMethod.AUTO):
+                       method=DistanceCovarianceMethod.AUTO,
+                       compile_mode=CompileMode.AUTO):
     """
     Computes the usual (biased) estimators for the squared distance covariance
     and squared distance correlation between two random vectors, and the
@@ -471,6 +518,9 @@ def distance_stats_sqr(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -493,11 +543,11 @@ def distance_stats_sqr(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_stats_sqr(a, a) # doctest: +NORMALIZE_WHITESPACE
     Stats(covariance_xy=52.0, correlation_xy=1.0, variance_x=52.0,
     variance_y=52.0)
@@ -515,11 +565,13 @@ def distance_stats_sqr(x, y, *, exponent=1,
     """
     method = _to_algorithm(method)
 
-    return method.value.stats_sqr(x, y, exponent=exponent)
+    return method.value.stats_sqr(x, y, exponent=exponent,
+                                  compile_mode=compile_mode)
 
 
 def u_distance_stats_sqr(x, y, *, exponent=1,
-                         method=DistanceCovarianceMethod.AUTO):
+                         method=DistanceCovarianceMethod.AUTO,
+                         compile_mode=CompileMode.AUTO):
     """
     Computes the unbiased estimators for the squared distance covariance
     and squared distance correlation between two random vectors, and the
@@ -539,6 +591,9 @@ def u_distance_stats_sqr(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -561,11 +616,11 @@ def u_distance_stats_sqr(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.u_distance_stats_sqr(a, a) # doctest: +ELLIPSIS
     ...                     # doctest: +NORMALIZE_WHITESPACE
     Stats(covariance_xy=42.6666666..., correlation_xy=1.0,
@@ -586,11 +641,13 @@ def u_distance_stats_sqr(x, y, *, exponent=1,
     """
     method = _to_algorithm(method)
 
-    return method.value.u_stats_sqr(x, y, exponent=exponent)
+    return method.value.u_stats_sqr(x, y, exponent=exponent,
+                                    compile_mode=compile_mode)
 
 
 def distance_stats(x, y, *, exponent=1,
-                   method=DistanceCovarianceMethod.AUTO):
+                   method=DistanceCovarianceMethod.AUTO,
+                   compile_mode=CompileMode.AUTO):
     """
     Computes the usual (biased) estimators for the distance covariance
     and distance correlation between two random vectors, and the
@@ -610,6 +667,9 @@ def distance_stats(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -632,11 +692,11 @@ def distance_stats(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_stats(a, a) # doctest: +NORMALIZE_WHITESPACE
     Stats(covariance_xy=7.2111025..., correlation_xy=1.0,
     variance_x=7.2111025..., variance_y=7.2111025...)
@@ -653,11 +713,12 @@ def distance_stats(x, y, *, exponent=1,
 
     """
     return Stats(*[_sqrt(s) for s in distance_stats_sqr(
-        x, y, exponent=exponent, method=method)])
+        x, y, exponent=exponent, method=method, compile_mode=compile_mode)])
 
 
 def distance_correlation_sqr(x, y, *, exponent=1,
-                             method=DistanceCovarianceMethod.AUTO):
+                             method=DistanceCovarianceMethod.AUTO,
+                             compile_mode=CompileMode.AUTO):
     """
     Computes the usual (biased) estimator for the squared distance correlation
     between two random vectors.
@@ -676,6 +737,9 @@ def distance_correlation_sqr(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -691,11 +755,11 @@ def distance_correlation_sqr(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_correlation_sqr(a, a)
     1.0
     >>> dcor.distance_correlation_sqr(a, b) # doctest: +ELLIPSIS
@@ -708,11 +772,13 @@ def distance_correlation_sqr(x, y, *, exponent=1,
     """
     method = _to_algorithm(method)
 
-    return method.value.dcor_sqr(x, y, exponent=exponent)
+    return method.value.dcor_sqr(x, y, exponent=exponent,
+                                 compile_mode=compile_mode)
 
 
 def u_distance_correlation_sqr(x, y, *, exponent=1,
-                               method=DistanceCovarianceMethod.AUTO):
+                               method=DistanceCovarianceMethod.AUTO,
+                               compile_mode=CompileMode.AUTO):
     """
     Computes the bias-corrected estimator for the squared distance correlation
     between two random vectors.
@@ -731,6 +797,9 @@ def u_distance_correlation_sqr(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -747,11 +816,11 @@ def u_distance_correlation_sqr(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.u_distance_correlation_sqr(a, a)
     1.0
     >>> dcor.u_distance_correlation_sqr(a, b)
@@ -765,11 +834,13 @@ def u_distance_correlation_sqr(x, y, *, exponent=1,
     """
     method = _to_algorithm(method)
 
-    return method.value.u_dcor_sqr(x, y, exponent=exponent)
+    return method.value.u_dcor_sqr(x, y, exponent=exponent,
+                                   compile_mode=compile_mode)
 
 
 def distance_correlation(x, y, *, exponent=1,
-                         method=DistanceCovarianceMethod.AUTO):
+                         method=DistanceCovarianceMethod.AUTO,
+                         compile_mode=CompileMode.AUTO):
     """
     Computes the usual (biased) estimator for the distance correlation
     between two random vectors.
@@ -788,6 +859,9 @@ def distance_correlation(x, y, *, exponent=1,
         motion.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -803,11 +877,11 @@ def distance_correlation(x, y, *, exponent=1,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 2., 3., 4.],
+    ...               [5., 6., 7., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 14., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_correlation(a, a)
     1.0
     >>> dcor.distance_correlation(a, b) # doctest: +ELLIPSIS
@@ -819,11 +893,13 @@ def distance_correlation(x, y, *, exponent=1,
 
     """
     return distance_stats(
-        x, y, exponent=exponent, method=method).correlation_xy
+        x, y, exponent=exponent, method=method,
+        compile_mode=compile_mode).correlation_xy
 
 
 def distance_correlation_af_inv_sqr(x, y,
-                                    method=DistanceCovarianceMethod.AUTO):
+                                    method=DistanceCovarianceMethod.AUTO,
+                                    compile_mode=CompileMode.AUTO):
     """
     Square of the affinely invariant distance correlation.
 
@@ -843,6 +919,9 @@ def distance_correlation_af_inv_sqr(x, y,
         variables while the rows are individual instances of the random vector.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -859,11 +938,11 @@ def distance_correlation_af_inv_sqr(x, y,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 3, 2, 5],
-    ...               [5, 7, 6, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 15, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 3., 2., 5.],
+    ...               [5., 7., 6., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 15., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_correlation_af_inv_sqr(a, a)
     1.0
     >>> dcor.distance_correlation_af_inv_sqr(a, b) # doctest: +ELLIPSIS
@@ -875,12 +954,14 @@ def distance_correlation_af_inv_sqr(x, y,
     x = _af_inv_scaled(x)
     y = _af_inv_scaled(y)
 
-    correlation = distance_correlation_sqr(x, y, method=method)
+    correlation = distance_correlation_sqr(x, y, method=method,
+                                           compile_mode=compile_mode)
     return 0 if np.isnan(correlation) else correlation
 
 
 def distance_correlation_af_inv(x, y,
-                                method=DistanceCovarianceMethod.AUTO):
+                                method=DistanceCovarianceMethod.AUTO,
+                                compile_mode=CompileMode.AUTO):
     """
     Affinely invariant distance correlation.
 
@@ -900,6 +981,9 @@ def distance_correlation_af_inv(x, y,
         variables while the rows are individual instances of the random vector.
     method: DistanceCovarianceMethod
         Method to use internally to compute the distance covariance.
+    compile_mode: CompileMode
+        Compilation mode used. By default it tries to use the fastest available
+        type of compilation.
 
     Returns
     -------
@@ -916,11 +1000,11 @@ def distance_correlation_af_inv(x, y,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = np.array([[1, 3, 2, 5],
-    ...               [5, 7, 6, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 15, 15, 16]])
-    >>> b = np.array([[1], [0], [0], [1]])
+    >>> a = np.array([[1., 3., 2., 5.],
+    ...               [5., 7., 6., 8.],
+    ...               [9., 10., 11., 12.],
+    ...               [13., 15., 15., 16.]])
+    >>> b = np.array([[1.], [0.], [0.], [1.]])
     >>> dcor.distance_correlation_af_inv(a, a)
     1.0
     >>> dcor.distance_correlation_af_inv(a, b) # doctest: +ELLIPSIS
@@ -929,4 +1013,5 @@ def distance_correlation_af_inv(x, y,
     1.0
 
     """
-    return _sqrt(distance_correlation_af_inv_sqr(x, y, method=method))
+    return _sqrt(distance_correlation_af_inv_sqr(x, y, method=method,
+                                                 compile_mode=compile_mode))

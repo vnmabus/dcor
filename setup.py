@@ -90,6 +90,7 @@ setup(name='dcor',
                         'setuptools'],
       setup_requires=pytest_runner,
       tests_require=['pytest-cov',
+                     'pytest-subtests',
                      'numpy>=1.17'  # Requires matmul on objects
                      ],
       test_suite='dcor.tests',

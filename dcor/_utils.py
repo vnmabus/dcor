@@ -2,29 +2,58 @@
 from __future__ import absolute_import, division, print_function
 from __future__ import unicode_literals
 
+import enum
+
 import numba
 
 import numpy as np
 
 
-def _jit(function):
+class CompileMode(enum.Enum):
     """
-    Compile a function using a jit compiler.
-
-    The function is always compiled to check errors, but is only used outside
-    tests, so that code coverage analysis can be performed in jitted functions.
-
-    The tests set sys._called_from_test in conftest.py.
-
+    Compilation mode of the algorithm.
     """
-    import sys
 
-    compiled = numba.jit(function)
+    AUTO = enum.auto()
+    """
+    Try to use the fastest available method.
+    """
 
-    if hasattr(sys, '_called_from_test'):
-        return function
-    else:  # pragma: no cover
-        return compiled
+    NO_COMPILE = enum.auto()
+    """
+    Use a pure Python implementation.
+    """
+
+    COMPILE_CPU = enum.auto()
+    """
+    Compile for execution in one CPU.
+    """
+
+    COMPILE_PARALLEL = enum.auto()
+    """
+    Compile for execution in multicore CPUs.
+    """
+
+
+class RowwiseMode(enum.Enum):
+    """
+    Rowwise mode of the algorithm.
+    """
+
+    AUTO = enum.auto()
+    """
+    Try to use the fastest available method.
+    """
+
+    NAIVE = enum.auto()
+    """
+    Use naive (list comprehension/map) computation.
+    """
+
+    OPTIMIZED = enum.auto()
+    """
+    Use optimized version, or fail if there is none.
+    """
 
 
 def _sqrt(x):

@@ -52,12 +52,6 @@ resulting graph.
         	def naive():
         		return dcor.distance_covariance(x, y, method='NAIVE')
         		
-        	if i == 0:
-        		# Execute avl and mergesort at least once, so that
-        		# Numba compilation times are not included in the comparison
-        		avl()
-        		mergesort()
-        		
         	avl_times[i] = timeit(avl, number=n_times)
         	mergesort_times[i] = timeit(mergesort, number=n_times)
         	naive_times[i] = timeit(naive, number=n_times)
@@ -103,6 +97,65 @@ algorithm, as its used memory also grows quadratically.
         plt.plot(n_samples_list, mergesort_times, label="mergesort")
         plt.legend()
         plt.show()
+
+
+Paralllel computation of distance covariance
+--------------------------------------------
+
+The following code shows the computation of the distance covariance between
+several random variables, using the :func:`dcor.rowwise` function. If the
+machine has several CPUs, the time spent using the parallel implementation
+woud be divided by the number of CPUs. If there is only one, there will
+be no difference.
+
+For now, optimized and parallel implementations are only available for the fast
+AVL method, which is used by default when the operation is between random
+variables, and not random vectors.
+
+.. jupyter-execute::
+        
+	import dcor._fast_dcov_avl
+	import numpy as np
+	from timeit import timeit
+	import matplotlib.pyplot as plt
+	
+	n_times = 100
+	n_samples = 1000
+	n_comps_list = [10, 50, 100]
+	
+	naive_times = np.zeros(len(n_comps_list))
+	cpu_times = np.zeros(len(n_comps_list))
+	parallel_times = np.zeros(len(n_comps_list))
+	
+	for i, n_comps in enumerate(n_comps_list):
+	    x = np.random.normal(size=(n_comps, n_samples))
+	    y = np.random.normal(size=(n_comps, n_samples))
+	
+	    def naive():
+	        return dcor.rowwise(dcor.distance_covariance_sqr, x, y,
+	                            rowwise_mode=dcor.RowwiseMode.NAIVE)
+	
+	    def cpu():
+	        return dcor.rowwise(dcor.distance_covariance_sqr, x, y,
+	                           compile_mode=dcor.CompileMode.COMPILE_CPU)
+	    
+	    def parallel():
+	        return dcor.rowwise(dcor.distance_covariance_sqr, x, y,
+	                           compile_mode=dcor.CompileMode.COMPILE_PARALLEL)
+	
+	    naive_times[i] = timeit(naive, number=n_times)
+	    cpu_times[i] = timeit(cpu, number=n_times)
+	    parallel_times[i] = timeit(parallel, number=n_times)
+	    #gpu_times[i] = timeit(gpu, number=n_times)
+	
+	plt.title("Distance covariance performance comparison")
+	plt.xlabel("Number of computations of distance covariance")
+	plt.ylabel("Time (seconds)")
+	plt.plot(n_comps_list, naive_times, label="naive")
+	plt.plot(n_comps_list, cpu_times, label="cpu")
+	plt.plot(n_comps_list, parallel_times, label="parallel")
+	plt.legend()
+	plt.show()
 
 References
 ----------
