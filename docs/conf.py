@@ -50,7 +50,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.napoleon',
               'sphinx.ext.mathjax',
-              'sphinxcontrib.bibtex']
+              'sphinxcontrib.bibtex',
+              'jupyter_sphinx']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -110,7 +111,7 @@ html_theme = 'sphinx_rtd_theme'
 
 
 def setup(app):
-    app.add_stylesheet('css/wide.css')
+    app.add_css_file('css/wide.css')
 
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -197,7 +198,6 @@ texinfo_documents = [
 ]
 
 
-
 # -- Options for Epub output ----------------------------------------------
 
 # Bibliographic Dublin Core info.
@@ -217,5 +217,3 @@ epub_copyright = copyright
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
-
-

@@ -112,6 +112,18 @@ These functions are used for computing distance matrices.
    
    dcor.distances.pairwise_distances
    
+Compute the same measure between different random variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This function is used to compute a measure such as distance
+covariance/correlation between different random variables. It will
+use an optimized implementation (possibly parallelized in multicore
+machines) when it is available.
+
+.. autosummary::
+   :toctree: functions
+   
+   dcor.rowwise
+   
 List of classes
 ---------------
 A complete list of all classes provided by dcor.
