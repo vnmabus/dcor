@@ -67,7 +67,12 @@ def _generate_rowwise_distance_correlation_sqr(unbiased):
         x_std = np.sqrt(res_covs[n_comps:2 * n_comps])
         y_std = np.sqrt(res_covs[2 * n_comps:])
 
-        return cov / x_std / y_std
+        with np.errstate(divide='ignore', invalid='ignore'):
+            corr_sqr = cov / x_std / y_std
+
+        corr_sqr[np.isnan(corr_sqr)] = 0
+
+        return corr_sqr
 
     return rowwise_distance_correlation_sqr
 
