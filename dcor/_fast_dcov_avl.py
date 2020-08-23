@@ -6,11 +6,14 @@ import warnings
 
 from numba import float64, int64, boolean
 import numba
-from numba.types import Tuple
+from numba.types import Tuple, Array
 
 import numpy as np
 
 from ._utils import CompileMode
+
+
+input_array = Array(float64, 1, 'A', readonly=True)
 
 
 def _dyad_update(y, c, gamma, l_max, s,
@@ -168,7 +171,7 @@ def _generate_distance_covariance_sqr_avl_impl(compiled):
 _distance_covariance_sqr_avl_impl = _generate_distance_covariance_sqr_avl_impl(
     compiled=False)
 _distance_covariance_sqr_avl_impl_compiled = numba.njit(
-    float64(float64[:], float64[:],
+    float64(input_array, input_array,
             int64[:], int64[:],
             float64[:], float64[:],
             boolean, int64[:],
@@ -253,13 +256,13 @@ def _get_impl_args(x, y, unbiased=False):
 
 
 _get_impl_args_compiled = numba.njit(
-    Tuple((float64[:], float64[:],
+    Tuple((input_array, input_array,
            int64[:], int64[:],
            float64[:], float64[:],
            boolean, int64[:],
            float64[:, :], float64[:, :], float64[:, :], float64[:],
            int64, float64[:, :], int64[:],
-           float64[:, :]))(float64[:], float64[:], boolean),
+           float64[:, :]))(input_array, input_array, boolean),
     cache=True)(
         _get_impl_args)
 
@@ -328,7 +331,7 @@ def _generate_rowwise_internal(target):
         res[0] = _distance_covariance_sqr_avl_impl_compiled(*args)
 
     return numba.guvectorize(
-        [(float64[:], float64[:], boolean, float64[:])],
+        [(input_array, input_array, boolean, float64[:])],
         '(n),(n),()->()',
         nopython=True,
         cache=True,
