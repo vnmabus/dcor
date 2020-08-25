@@ -131,23 +131,42 @@ def rowwise(function, x, y, *, rowwise_mode=False,
     --------
     >>> import numpy as np
     >>> import dcor
-    >>> a = [np.array([[1, 1],
-    ...                [2, 4],
-    ...                [3, 8],
-    ...                [4, 16]]),
-    ...      np.array([[9, 10],
-    ...                [11, 12],
-    ...                [13, 14],
-    ...                [15, 16]])
+
+    The following example shows two computations of distance covariance
+    between random variables. This has an optimized implementation using
+    multiple cores if available.
+
+    >>> a = [np.array([1., 2., 3., 4., 5. ,6.]),
+    ...      np.array([7., 8., 9., 10., 11., 12.])
     ...     ]
-    >>> b = [np.array([[0, 1],
-    ...                [3, 1],
-    ...                [6, 2],
-    ...                [9, 3]]),
-    ...      np.array([[5, 1],
-    ...                [8, 1],
-    ...                [13, 1],
-    ...                [21, 1]])
+    >>> b = [np.array([1., 4., 9., 16., 25., 36.]),
+    ...      np.array([1., 3., 6., 8., 10., 12.])
+    ...     ]
+    >>> dcor.rowwise(dcor.distance_covariance, a, b)
+    array([3.45652005, 1.95789002])
+
+    The following example shows two computations of distance correlation
+    between random vectors of length 2. Currently there is no optimized
+    implementation for the random vector case, so it will be equivalent to
+    calling map.
+
+    >>> a = [np.array([[1., 1.],
+    ...                [2., 4.],
+    ...                [3., 8.],
+    ...                [4., 16.]]),
+    ...      np.array([[9., 10.],
+    ...                [11., 12.],
+    ...                [13., 14.],
+    ...                [15., 16.]])
+    ...     ]
+    >>> b = [np.array([[0., 1.],
+    ...                [3., 1.],
+    ...                [6., 2.],
+    ...                [9., 3.]]),
+    ...      np.array([[5., 1.],
+    ...                [8., 1.],
+    ...                [13., 1.],
+    ...                [21., 1.]])
     ...     ]
     >>> dcor.rowwise(dcor.distance_correlation, a, b)
     array([0.98182263, 0.98320103])
