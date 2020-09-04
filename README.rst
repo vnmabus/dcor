@@ -1,7 +1,7 @@
 dcor
 ====
 
-|build-status| |docs| |coverage| |pypi|
+|build-status| |docs| |coverage| |pypi| |conda|
 
 dcor: distance correlation and related E-statistics in Python.
 
@@ -91,3 +91,8 @@ References
     :alt: Pypi version
     :scale: 100%
     :target: https://pypi.python.org/pypi/dcor/
+    
+.. |conda| image:: https://anaconda.org/conda-forge/dcor/badges/installer/conda.svg   
+    :alt: Available in Conda
+    :scale: 100%
+    :target: https://conda.anaconda.org/conda-forge
