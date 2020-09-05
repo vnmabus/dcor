@@ -1,7 +1,7 @@
 dcor
 ====
 
-|build-status| |docs| |coverage| |landscape| |pypi|
+|build-status| |docs| |coverage| |pypi| |conda|
 
 dcor: distance correlation and related E-statistics in Python.
 
@@ -35,11 +35,15 @@ dcor is on PyPi and can be installed using :code:`pip`:
 
    pip install dcor
    
-It is also available for :code:`conda`:
+It is also available for :code:`conda` using the :code:`conda-forge` channel:
 
 .. code::
 
-   conda install -c vnmabus dcor
+   conda install -c conda-forge dcor
+   
+Previous versions of the package were in the :code:`vnmabus` channel. This
+channel will not be updated with new releases, and users are recommended to
+use the :code:`conda-forge` channel.
 
 Requirements
 ------------
@@ -68,10 +72,10 @@ References
            Statistics, 35(6):2769–2794, 12 2007.
            doi:10.1214/009053607000000505.
 
-.. |build-status| image:: https://api.travis-ci.org/vnmabus/dcor.svg?branch=master
+.. |build-status| image:: https://api.travis-ci.com/vnmabus/dcor.svg?branch=master
     :alt: build status
     :scale: 100%
-    :target: https://travis-ci.org/vnmabus/dcor
+    :target: https://travis-ci.com/vnmabus/dcor
 
 .. |docs| image:: https://readthedocs.org/projects/dcor/badge/?version=latest
     :alt: Documentation Status
@@ -83,11 +87,12 @@ References
     :scale: 100%
     :target: https://codecov.io/gh/vnmabus/dcor/branch/develop
     
-.. |landscape| image:: https://landscape.io/github/vnmabus/dcor/develop/landscape.svg?style=flat
-   :target: https://landscape.io/github/vnmabus/dcor/develop
-   :alt: Code Health
-    
 .. |pypi| image:: https://badge.fury.io/py/dcor.svg
     :alt: Pypi version
     :scale: 100%
     :target: https://pypi.python.org/pypi/dcor/
+    
+.. |conda| image:: https://anaconda.org/conda-forge/dcor/badges/installer/conda.svg   
+    :alt: Available in Conda
+    :scale: 100%
+    :target: https://conda.anaconda.org/conda-forge

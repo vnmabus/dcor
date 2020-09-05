@@ -6,7 +6,7 @@ import numpy as np
 
 from . import _dcor
 from ._fast_dcov_avl import _rowwise_distance_covariance_sqr_avl_generic
-from ._utils import RowwiseMode
+from ._utils import _sqrt, RowwiseMode
 
 
 def _generate_rowwise_distance_covariance_sqr(unbiased):
@@ -42,7 +42,7 @@ def _rowwise_distance_covariance(*args, **kwargs):
     if res_covs is NotImplemented:
         return NotImplemented
 
-    return np.sqrt(res_covs)
+    return _sqrt(res_covs)
 
 
 _dcor.distance_covariance.rowwise_function = _rowwise_distance_covariance
@@ -64,8 +64,8 @@ def _generate_rowwise_distance_correlation_sqr(unbiased):
             return NotImplemented
 
         cov = res_covs[:n_comps]
-        x_std = np.sqrt(res_covs[n_comps:2 * n_comps])
-        y_std = np.sqrt(res_covs[2 * n_comps:])
+        x_std = _sqrt(res_covs[n_comps:2 * n_comps])
+        y_std = _sqrt(res_covs[2 * n_comps:])
 
         with np.errstate(divide='ignore', invalid='ignore'):
             corr_sqr = cov / x_std / y_std
@@ -91,7 +91,7 @@ def _rowwise_distance_correlation(*args, **kwargs):
     if res_corrs is NotImplemented:
         return NotImplemented
 
-    return np.sqrt(res_corrs)
+    return _sqrt(res_corrs)
 
 
 _dcor.distance_correlation.rowwise_function = _rowwise_distance_correlation
