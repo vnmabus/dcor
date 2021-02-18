@@ -22,7 +22,7 @@ def _check_valid_energy_exponent(exponent):
 
 
 def _energy_distance_from_distance_matrices(
-        distance_xx, distance_yy, distance_xy, average=np.mean):
+        distance_xx, distance_yy, distance_xy, average=None):
     """
     Compute energy distance with precalculated distance matrices.
 
@@ -32,6 +32,9 @@ def _energy_distance_from_distance_matrices(
         A function that will be used to calculate an average of distances. This defaults to np.mean.
 
     """
+    if average is None:
+        average = np.mean
+
     return 2 * average(distance_xy) - average(distance_xx) - average(distance_yy)
 
 
