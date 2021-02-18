@@ -22,11 +22,11 @@ def _energy_test_statistic_coefficient(n, m):
 
 
 def _energy_test_statistic_from_distance_matrices(
-        distance_xx, distance_yy, distance_xy, n, m):
+        distance_xx, distance_yy, distance_xy, n, m, average=None):
     """Test statistic with precomputed distance matrices."""
     energy_distance = _energy._energy_distance_from_distance_matrices(
         distance_xx=distance_xx, distance_yy=distance_yy,
-        distance_xy=distance_xy
+        distance_xy=distance_xy, average=average
     )
 
     return _energy_test_statistic_coefficient(n, m) * energy_distance
@@ -92,7 +92,7 @@ def energy_test_statistic(x, y, **kwargs):
 
 
 def _energy_test_statistic_multivariate_from_distance_matrix(
-        distance, indexes, sizes):
+        distance, indexes, sizes, average=None):
     """Statistic for several random vectors given the distance matrix."""
     energy = 0.0
 
@@ -110,7 +110,7 @@ def _energy_test_statistic_multivariate_from_distance_matrix(
 
             pairwise_energy = _energy_test_statistic_from_distance_matrices(
                 distance_xx=distance_xx, distance_yy=distance_yy,
-                distance_xy=distance_xy, n=n, m=m)
+                distance_xy=distance_xy, n=n, m=m, average=average)
 
             energy += pairwise_energy
 
@@ -118,7 +118,7 @@ def _energy_test_statistic_multivariate_from_distance_matrix(
 
 
 def _energy_test_imp(samples, num_resamples=0,
-                     exponent=1, random_state=None):
+                     exponent=1, random_state=None, average=None):
     """
     Real implementation of :func:`energy_test`.
 
@@ -153,7 +153,8 @@ def _energy_test_imp(samples, num_resamples=0,
         return _energy_test_statistic_multivariate_from_distance_matrix(
             distance=distance_matrix,
             indexes=sample_indexes,
-            sizes=sample_sizes)
+            sizes=sample_sizes,
+            average=average)
 
     return _hypothesis._permutation_test_with_sym_matrix(
         sample_distances,

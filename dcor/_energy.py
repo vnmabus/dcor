@@ -22,13 +22,20 @@ def _check_valid_energy_exponent(exponent):
 
 
 def _energy_distance_from_distance_matrices(
-        distance_xx, distance_yy, distance_xy):
-    """Compute energy distance with precalculated distance matrices."""
-    return (2 * np.mean(distance_xy) - np.mean(distance_xx) -
-            np.mean(distance_yy))
+        distance_xx, distance_yy, distance_xy, average=np.mean):
+    """
+    Compute energy distance with precalculated distance matrices.
+
+    Parameters
+    ----------
+    average: Callable[[ArrayLike], float]
+        A function that will be used to calculate an average of distances. This defaults to np.mean.
+
+    """
+    return 2 * average(distance_xy) - average(distance_xx) - average(distance_yy)
 
 
-def _energy_distance_imp(x, y, exponent=1):
+def _energy_distance_imp(x, y, average=None, exponent=1):
     """
     Real implementation of :func:`energy_distance`.
 
@@ -47,7 +54,8 @@ def _energy_distance_imp(x, y, exponent=1):
 
     return _energy_distance_from_distance_matrices(distance_xx=distance_xx,
                                                    distance_yy=distance_yy,
-                                                   distance_xy=distance_xy)
+                                                   distance_xy=distance_xy,
+                                                   average=average)
 
 
 def energy_distance(x, y, **kwargs):
