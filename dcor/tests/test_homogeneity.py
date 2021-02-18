@@ -120,7 +120,7 @@ class TestEnergyTest(unittest.TestCase):
 
         self.assertLess(result.p_value, significance)
 
-    def test_different_distributions_median(self):
+    def test_different_means_median(self):
         """
         Test that the test works on different distributions, using the median average.
 
