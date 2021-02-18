@@ -79,6 +79,8 @@ def energy_distance(x, y, **kwargs):
         variables while the rows are individual instances of the random vector.
     exponent: float
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+    average: Callable[[ArrayLike], float]
+        A function that will be used to calculate an average of distances. This defaults to np.mean.
 
     Returns
     -------

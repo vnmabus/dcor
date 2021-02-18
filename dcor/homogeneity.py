@@ -51,6 +51,8 @@ def energy_test_statistic(x, y, **kwargs):
         variables while the rows are individual instances of the random vector.
     exponent: float
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+    average: Callable[[ArrayLike], float]
+        A function that will be used to calculate an average of distances. This defaults to np.mean.
 
     Returns
     -------
@@ -186,6 +188,8 @@ def energy_test(*args, **kwargs):
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
     random_state: {None, int, array_like, numpy.random.RandomState}
         Random state to generate the permutations.
+    average: Callable[[ArrayLike], float]
+        A function that will be used to calculate an average of distances. This defaults to np.mean.
 
     Returns
     -------
