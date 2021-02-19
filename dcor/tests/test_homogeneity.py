@@ -159,3 +159,22 @@ class TestEnergyTest(unittest.TestCase):
 
         # Check that we detected the heterogeneity
         self.assertLess(median_result.p_value, significance)
+
+    def test_different_distributions_median(self):
+        """
+        Test that the test works on different distributions using the median.
+        """
+        num_samples = 100
+
+        random_state = np.random.RandomState(0)
+
+        a = random_state.standard_normal(size=(num_samples, 1))
+        b = random_state.exponential(size=(num_samples, 1))
+
+        significance = 0.01
+        num_resamples = int(3 / significance + 1)
+
+        result = dcor.homogeneity.energy_test(
+            a, b, num_resamples=num_resamples, random_state=random_state)
+
+        self.assertLess(result.p_value, significance)
