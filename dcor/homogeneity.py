@@ -167,7 +167,7 @@ def _energy_test_imp(samples, num_resamples=0,
 
 def energy_test(*args, **kwargs):
     """
-    energy_test(*args, num_resamples=0, exponent=1, random_state=None)
+    energy_test(*args, num_resamples=0, exponent=1, random_state=None, average=None)
 
     Test of homogeneity based on the energy distance.
 
