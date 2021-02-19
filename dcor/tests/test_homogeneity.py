@@ -138,8 +138,21 @@ class TestEnergyTest(unittest.TestCase):
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
-        median_result = dcor.homogeneity.energy_test(a, b, num_resamples=num_resamples, random_state=random_state, average=np.median)
-        mean_result = dcor.homogeneity.energy_test(a, b, num_resamples=num_resamples, random_state=random_state, average=np.mean)
+        median_result = dcor.homogeneity.energy_test(
+            a,
+            b,
+            num_resamples=num_resamples,
+            random_state=random_state,
+            average=np.median
+        )
+
+        mean_result = dcor.homogeneity.energy_test(
+            a,
+            b,
+            num_resamples=num_resamples,
+            random_state=random_state,
+            average=np.mean
+        )
 
         # Check that we are actually using a different average
         self.assertNotAlmostEqual(mean_result.statistic, median_result.statistic)
