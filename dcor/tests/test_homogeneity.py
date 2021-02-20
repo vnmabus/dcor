@@ -165,7 +165,7 @@ class TestEnergyTest(unittest.TestCase):
 
         random_state = np.random.RandomState(0)
 
-        a = random_state.standard_normal(loc=1, size=(num_samples, 1))
+        a = random_state.normal(loc=1, size=(num_samples, 1))
         b = random_state.exponential(scale=1, size=(num_samples, 1))
 
         significance = 0.01
