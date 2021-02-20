@@ -152,7 +152,10 @@ class TestEnergyTest(unittest.TestCase):
         )
 
         # Check that we are actually using a different average
-        self.assertNotAlmostEqual(mean_result.statistic, median_result.statistic)
+        self.assertNotAlmostEqual(
+            mean_result.statistic,
+            median_result.statistic
+        )
 
         # Check that we detected the heterogeneity
         self.assertLess(median_result.p_value, significance)
@@ -172,6 +175,11 @@ class TestEnergyTest(unittest.TestCase):
         num_resamples = int(3 / significance + 1)
 
         result = dcor.homogeneity.energy_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a,
+            b,
+            average=np.median,
+            num_resamples=num_resamples,
+            random_state=random_state
+        )
 
         self.assertLess(result.p_value, significance)

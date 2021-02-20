@@ -29,13 +29,18 @@ def _energy_distance_from_distance_matrices(
     Parameters
     ----------
     average: Callable[[ArrayLike], float]
-        A function that will be used to calculate an average of distances. This defaults to np.mean.
+        A function that will be used to calculate an average of distances.
+        This defaults to np.mean.
 
     """
     if average is None:
         average = np.mean
 
-    return 2 * average(distance_xy) - average(distance_xx) - average(distance_yy)
+    return (
+        2 * average(distance_xy) -
+        average(distance_xx) -
+        average(distance_yy)
+    )
 
 
 def _energy_distance_imp(x, y, average=None, exponent=1):
@@ -80,7 +85,8 @@ def energy_distance(x, y, **kwargs):
     exponent: float
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
     average: Callable[[ArrayLike], float]
-        A function that will be used to calculate an average of distances. This defaults to np.mean.
+        A function that will be used to calculate an average of distances.
+        This defaults to np.mean.
 
     Returns
     -------

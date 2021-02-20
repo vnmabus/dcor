@@ -52,7 +52,8 @@ def energy_test_statistic(x, y, **kwargs):
     exponent: float
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
     average: Callable[[ArrayLike], float]
-        A function that will be used to calculate an average of distances. This defaults to np.mean.
+        A function that will be used to calculate an average of distances.
+        This defaults to np.mean.
 
     Returns
     -------
@@ -167,7 +168,13 @@ def _energy_test_imp(samples, num_resamples=0,
 
 def energy_test(*args, **kwargs):
     """
-    energy_test(*args, num_resamples=0, exponent=1, random_state=None, average=None)
+    energy_test(
+        *args,
+        num_resamples=0,
+        exponent=1,
+        random_state=None,
+        average=None
+    )
 
     Test of homogeneity based on the energy distance.
 
@@ -189,7 +196,8 @@ def energy_test(*args, **kwargs):
     random_state: {None, int, array_like, numpy.random.RandomState}
         Random state to generate the permutations.
     average: Callable[[ArrayLike], float]
-        A function that will be used to calculate an average of distances. This defaults to np.mean.
+        A function that will be used to calculate an average of distances.
+        This defaults to np.mean.
 
     Returns
     -------
