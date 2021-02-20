@@ -63,7 +63,7 @@ def _energy_distance_imp(x, y, average=None, exponent=1):
 
 def energy_distance(x, y, **kwargs):
     """
-    energy_distance(x, y, *, exponent=1)
+    energy_distance(x, y, *, exponent=1, average=None)
 
     Computes the estimator for the energy distance of the
     random vectors corresponding to :math:`x` and :math:`y`.

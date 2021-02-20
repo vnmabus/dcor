@@ -34,7 +34,7 @@ def _energy_test_statistic_from_distance_matrices(
 
 def energy_test_statistic(x, y, **kwargs):
     """
-    energy_test_statistic(x, y, *, exponent=1)
+    energy_test_statistic(x, y, *, exponent=1, average=None)
 
     Homogeneity statistic.
 
