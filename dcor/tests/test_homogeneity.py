@@ -122,11 +122,8 @@ class TestEnergyTest(unittest.TestCase):
 
     def test_different_means_median(self):
         """
-        Test that the test works on different distributions, using the median average.
-
-        As the distributions are not the same, the test should reject
-        the null hypothesis.
-
+        Test that the test works on the same distribution with different means,
+        using the median average.
         """
         num_samples = 100
 
