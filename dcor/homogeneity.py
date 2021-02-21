@@ -22,11 +22,11 @@ def _energy_test_statistic_coefficient(n, m):
 
 
 def _energy_test_statistic_from_distance_matrices(
-        distance_xx, distance_yy, distance_xy, n, m):
+        distance_xx, distance_yy, distance_xy, n, m, average=None):
     """Test statistic with precomputed distance matrices."""
     energy_distance = _energy._energy_distance_from_distance_matrices(
         distance_xx=distance_xx, distance_yy=distance_yy,
-        distance_xy=distance_xy
+        distance_xy=distance_xy, average=average
     )
 
     return _energy_test_statistic_coefficient(n, m) * energy_distance
@@ -34,7 +34,7 @@ def _energy_test_statistic_from_distance_matrices(
 
 def energy_test_statistic(x, y, **kwargs):
     """
-    energy_test_statistic(x, y, *, exponent=1)
+    energy_test_statistic(x, y, *, exponent=1, average=None)
 
     Homogeneity statistic.
 
@@ -51,6 +51,9 @@ def energy_test_statistic(x, y, **kwargs):
         variables while the rows are individual instances of the random vector.
     exponent: float
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
+    average: Callable[[ArrayLike], float]
+        A function that will be used to calculate an average of distances.
+        This defaults to np.mean.
 
     Returns
     -------
@@ -92,7 +95,7 @@ def energy_test_statistic(x, y, **kwargs):
 
 
 def _energy_test_statistic_multivariate_from_distance_matrix(
-        distance, indexes, sizes):
+        distance, indexes, sizes, average=None):
     """Statistic for several random vectors given the distance matrix."""
     energy = 0.0
 
@@ -110,7 +113,7 @@ def _energy_test_statistic_multivariate_from_distance_matrix(
 
             pairwise_energy = _energy_test_statistic_from_distance_matrices(
                 distance_xx=distance_xx, distance_yy=distance_yy,
-                distance_xy=distance_xy, n=n, m=m)
+                distance_xy=distance_xy, n=n, m=m, average=average)
 
             energy += pairwise_energy
 
@@ -118,7 +121,7 @@ def _energy_test_statistic_multivariate_from_distance_matrix(
 
 
 def _energy_test_imp(samples, num_resamples=0,
-                     exponent=1, random_state=None):
+                     exponent=1, random_state=None, average=None):
     """
     Real implementation of :func:`energy_test`.
 
@@ -153,7 +156,8 @@ def _energy_test_imp(samples, num_resamples=0,
         return _energy_test_statistic_multivariate_from_distance_matrix(
             distance=distance_matrix,
             indexes=sample_indexes,
-            sizes=sample_sizes)
+            sizes=sample_sizes,
+            average=average)
 
     return _hypothesis._permutation_test_with_sym_matrix(
         sample_distances,
@@ -164,7 +168,8 @@ def _energy_test_imp(samples, num_resamples=0,
 
 def energy_test(*args, **kwargs):
     """
-    energy_test(*args, num_resamples=0, exponent=1, random_state=None)
+    energy_test(*args, num_resamples=0, exponent=1, random_state=None, \
+        average=None)
 
     Test of homogeneity based on the energy distance.
 
@@ -185,6 +190,9 @@ def energy_test(*args, **kwargs):
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
     random_state: {None, int, array_like, numpy.random.RandomState}
         Random state to generate the permutations.
+    average: Callable[[ArrayLike], float]
+        A function that will be used to calculate an average of distances.
+        This defaults to np.mean.
 
     Returns
     -------
