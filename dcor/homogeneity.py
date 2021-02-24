@@ -6,12 +6,9 @@ the samples generated from two random vectors have the same
 distribution.
 """
 
-from __future__ import absolute_import, division, print_function
-
 import numpy as _np
 
-from . import _energy
-from . import _hypothesis
+from . import _energy, _hypothesis
 from . import distances as _distances
 from ._utils import _transform_to_2d
 
@@ -32,10 +29,8 @@ def _energy_test_statistic_from_distance_matrices(
     return _energy_test_statistic_coefficient(n, m) * energy_distance
 
 
-def energy_test_statistic(x, y, **kwargs):
+def energy_test_statistic(x, y, *, exponent=1, average=None):
     """
-    energy_test_statistic(x, y, *, exponent=1, average=None)
-
     Homogeneity statistic.
 
     Computes the statistic for homogeneity based on the energy distance, for
@@ -91,7 +86,12 @@ def energy_test_statistic(x, y, **kwargs):
 
     coefficient = _energy_test_statistic_coefficient(n, m)
 
-    return coefficient * _energy.energy_distance(x, y, **kwargs)
+    return coefficient * _energy.energy_distance(
+        x,
+        y,
+        exponent=exponent,
+        average=average,
+    )
 
 
 def _energy_test_statistic_multivariate_from_distance_matrix(
@@ -120,57 +120,14 @@ def _energy_test_statistic_multivariate_from_distance_matrix(
     return energy
 
 
-def _energy_test_imp(samples, num_resamples=0,
-                     exponent=1, random_state=None, average=None):
+def energy_test(
+    *args,
+    num_resamples=0,
+    exponent=1,
+    random_state=None,
+    average=None,
+):
     """
-    Real implementation of :func:`energy_test`.
-
-    This function is used to make parameters ``num_resamples``, ``exponent``
-    and ``random_state`` keyword-only in Python 2.
-
-    """
-    # k
-    num_samples = len(samples)
-
-    _energy._check_valid_energy_exponent(exponent)
-
-    # alpha
-    # significance_level = 1.0 / (num_resamples + 1)
-
-    # {n_1, ..., n_k}
-    sample_sizes = [a.shape[0] for a in samples]
-
-    # {W_1, ..., W_n}
-    pooled_samples = _np.concatenate(samples)
-
-    # {m_0, ..., m_(k-1)}
-    sample_indexes = _np.zeros(num_samples, dtype=int)
-    sample_indexes[1:] = _np.cumsum(sample_sizes)[:-1]
-
-    # Compute the distance matrix once
-    sample_distances = _distances.pairwise_distances(pooled_samples,
-                                                     exponent=exponent)
-
-    # Use the energy statistic with appropiate values
-    def statistic_function(distance_matrix):
-        return _energy_test_statistic_multivariate_from_distance_matrix(
-            distance=distance_matrix,
-            indexes=sample_indexes,
-            sizes=sample_sizes,
-            average=average)
-
-    return _hypothesis._permutation_test_with_sym_matrix(
-        sample_distances,
-        statistic_function=statistic_function,
-        num_resamples=num_resamples,
-        random_state=random_state)
-
-
-def energy_test(*args, **kwargs):
-    """
-    energy_test(*args, num_resamples=0, exponent=1, random_state=None, \
-        average=None)
-
     Test of homogeneity based on the energy distance.
 
     Compute the test of homogeneity based on the energy distance, for
@@ -240,4 +197,38 @@ def energy_test(*args, **kwargs):
 
     samples = [_transform_to_2d(a) for a in args]
 
-    return _energy_test_imp(samples, **kwargs)
+    # k
+    num_samples = len(samples)
+
+    _energy._check_valid_energy_exponent(exponent)
+
+    # alpha
+    # significance_level = 1.0 / (num_resamples + 1)
+
+    # {n_1, ..., n_k}
+    sample_sizes = [a.shape[0] for a in samples]
+
+    # {W_1, ..., W_n}
+    pooled_samples = _np.concatenate(samples)
+
+    # {m_0, ..., m_(k-1)}
+    sample_indexes = _np.zeros(num_samples, dtype=int)
+    sample_indexes[1:] = _np.cumsum(sample_sizes)[:-1]
+
+    # Compute the distance matrix once
+    sample_distances = _distances.pairwise_distances(pooled_samples,
+                                                     exponent=exponent)
+
+    # Use the energy statistic with appropiate values
+    def statistic_function(distance_matrix):
+        return _energy_test_statistic_multivariate_from_distance_matrix(
+            distance=distance_matrix,
+            indexes=sample_indexes,
+            sizes=sample_sizes,
+            average=average)
+
+    return _hypothesis._permutation_test_with_sym_matrix(
+        sample_distances,
+        statistic_function=statistic_function,
+        num_resamples=num_resamples,
+        random_state=random_state)

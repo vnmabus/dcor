@@ -6,11 +6,10 @@ sets of points. The Scipy implementation is used when the conversion to
 a double precision floating point number will not cause loss of precision.
 """
 
-from __future__ import absolute_import, division, print_function
-
-from dcor._utils import _transform_to_2d
 import numpy as _np
 import scipy.spatial as _spatial
+
+from dcor._utils import _transform_to_2d
 
 from ._utils import _can_be_double
 
@@ -89,10 +88,8 @@ def _cdist(x, y, exponent=1):
         return _cdist_naive(x, y, exponent)
 
 
-def pairwise_distances(x, y=None, **kwargs):
+def pairwise_distances(x, y=None, *, exponent=1):
     r"""
-    pairwise_distances(x, y=None, *, exponent=1)
-
     Pairwise distance between points.
 
     Return the pairwise distance between points in two sets, or
@@ -143,7 +140,7 @@ def pairwise_distances(x, y=None, **kwargs):
     x = _transform_to_2d(x)
 
     if y is None or y is x:
-        return _pdist(x, **kwargs)
+        return _pdist(x, exponent=exponent)
     else:
         y = _transform_to_2d(y)
-        return _cdist(x, y, **kwargs)
+        return _cdist(x, y, exponent=exponent)

@@ -4,9 +4,6 @@ Internal functions for distance covariance and correlation.
 The functions in this module are used for performing computations related with
 distance covariance and correlation.
 """
-from __future__ import absolute_import, division, print_function
-from __future__ import unicode_literals
-
 import warnings
 
 import numpy as np
@@ -53,36 +50,8 @@ def _float_copy_to_out(out, origin):
     return out
 
 
-def _double_centered_imp(a, out=None):
-    """
-    Real implementation of :func:`double_centered`.
-
-    This function is used to make parameter ``out`` keyword-only in
-    Python 2.
-
-    """
-    out = _float_copy_to_out(out, a)
-
-    dim = np.size(a, 0)
-
-    mu = np.sum(a) / (dim * dim)
-    sum_cols = np.sum(a, 0, keepdims=True)
-    sum_rows = np.sum(a, 1, keepdims=True)
-    mu_cols = sum_cols / dim
-    mu_rows = sum_rows / dim
-
-    # Do one operation at a time, to improve broadcasting memory usage.
-    out -= mu_rows
-    out -= mu_cols
-    out += mu
-
-    return out
-
-
-def double_centered(a, **kwargs):
+def double_centered(a, *, out=None):
     r"""
-    double_centered(a, *, out=None)
-
     Return a copy of the matrix :math:`a` which is double centered.
 
     A matrix is double centered if both the sum of its columns and the sum of
@@ -140,42 +109,26 @@ def double_centered(a, **kwargs):
            [-0.22222222,  0.11111111,  0.11111111]])
 
     """
-    return _double_centered_imp(a, **kwargs)
-
-
-def _u_centered_imp(a, out=None):
-    """
-    Real implementation of :func:`u_centered`.
-
-    This function is used to make parameter ``out`` keyword-only in
-    Python 2.
-
-    """
     out = _float_copy_to_out(out, a)
 
     dim = np.size(a, 0)
 
-    u_mu = np.sum(a) / ((dim - 1) * (dim - 2))
+    mu = np.sum(a) / (dim * dim)
     sum_cols = np.sum(a, 0, keepdims=True)
     sum_rows = np.sum(a, 1, keepdims=True)
-    u_mu_cols = np.ones((dim, 1)).dot(sum_cols / (dim - 2))
-    u_mu_rows = (sum_rows / (dim - 2)).dot(np.ones((1, dim)))
+    mu_cols = sum_cols / dim
+    mu_rows = sum_rows / dim
 
     # Do one operation at a time, to improve broadcasting memory usage.
-    out -= u_mu_rows
-    out -= u_mu_cols
-    out += u_mu
-
-    # The diagonal is zero
-    out[np.eye(dim, dtype=bool)] = 0
+    out -= mu_rows
+    out -= mu_cols
+    out += mu
 
     return out
 
 
-def u_centered(a, **kwargs):
+def u_centered(a, *, out=None):
     r"""
-    u_centered(a, *, out=None)
-
     Return a copy of the matrix :math:`a` which is :math:`U`-centered.
 
     If the element of the i-th row and j-th column of the original
@@ -241,7 +194,25 @@ def u_centered(a, **kwargs):
            [nan,  0.]])
 
     """
-    return _u_centered_imp(a, **kwargs)
+    out = _float_copy_to_out(out, a)
+
+    dim = np.size(a, 0)
+
+    u_mu = np.sum(a) / ((dim - 1) * (dim - 2))
+    sum_cols = np.sum(a, 0, keepdims=True)
+    sum_rows = np.sum(a, 1, keepdims=True)
+    u_mu_cols = np.ones((dim, 1)).dot(sum_cols / (dim - 2))
+    u_mu_rows = (sum_rows / (dim - 2)).dot(np.ones((1, dim)))
+
+    # Do one operation at a time, to improve broadcasting memory usage.
+    out -= u_mu_rows
+    out -= u_mu_cols
+    out += u_mu
+
+    # The diagonal is zero
+    out[np.eye(dim, dtype=bool)] = 0
+
+    return out
 
 
 def mean_product(a, b):
