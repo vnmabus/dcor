@@ -1,8 +1,5 @@
 """Energy distance functions"""
 
-from __future__ import absolute_import, division, print_function
-from __future__ import unicode_literals
-
 import warnings
 
 import numpy as np
@@ -43,32 +40,9 @@ def _energy_distance_from_distance_matrices(
     )
 
 
-def _energy_distance_imp(x, y, average=None, exponent=1):
+def energy_distance(x, y, *, average=None, exponent=1):
     """
-    Real implementation of :func:`energy_distance`.
-
-    This function is used to make parameter ``exponent`` keyword-only in
-    Python 2.
-
-    """
-    x = _transform_to_2d(x)
-    y = _transform_to_2d(y)
-
-    _check_valid_energy_exponent(exponent)
-
-    distance_xx = distances.pairwise_distances(x, exponent=exponent)
-    distance_yy = distances.pairwise_distances(y, exponent=exponent)
-    distance_xy = distances.pairwise_distances(x, y, exponent=exponent)
-
-    return _energy_distance_from_distance_matrices(distance_xx=distance_xx,
-                                                   distance_yy=distance_yy,
-                                                   distance_xy=distance_xy,
-                                                   average=average)
-
-
-def energy_distance(x, y, **kwargs):
-    """
-    energy_distance(x, y, *, exponent=1, average=None)
+    Estimator for energy distance.
 
     Computes the estimator for the energy distance of the
     random vectors corresponding to :math:`x` and :math:`y`.
@@ -123,4 +97,18 @@ def energy_distance(x, y, **kwargs):
     0.0
 
     """
-    return _energy_distance_imp(x, y, **kwargs)
+    x = _transform_to_2d(x)
+    y = _transform_to_2d(y)
+
+    _check_valid_energy_exponent(exponent)
+
+    distance_xx = distances.pairwise_distances(x, exponent=exponent)
+    distance_yy = distances.pairwise_distances(y, exponent=exponent)
+    distance_xy = distances.pairwise_distances(x, y, exponent=exponent)
+
+    return _energy_distance_from_distance_matrices(
+        distance_xx=distance_xx,
+        distance_yy=distance_yy,
+        distance_xy=distance_xy,
+        average=average,
+    )

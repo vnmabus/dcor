@@ -221,3 +221,5 @@ epub_copyright = copyright
 epub_exclude_files = ['search.html']
 
 bibtex_bibfiles = ['refs.bib']
+
+autodoc_typehints = "description"
