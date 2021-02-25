@@ -1,14 +1,15 @@
 """Energy distance functions"""
 
 import warnings
+from typing import Callable, Optional
 
 import numpy as np
 
 from . import distances
-from ._utils import _transform_to_2d
+from ._utils import NumberLikeT, _transform_to_2d
 
 
-def _check_valid_energy_exponent(exponent):
+def _check_valid_energy_exponent(exponent: float) -> None:
     if not 0 < exponent < 2:
         warning_msg = ('The energy distance is not guaranteed to be '
                        'a valid metric if the exponent value is '
@@ -19,24 +20,22 @@ def _check_valid_energy_exponent(exponent):
 
 
 def _energy_distance_from_distance_matrices(
-        distance_xx, distance_yy, distance_xy, average=None):
+    distance_xx: np.ndarray,
+    distance_yy: np.ndarray,
+    distance_xy: np.ndarray,
+    average: Optional[Callable[[np.ndarray], NumberLikeT]] = None,
+) -> NumberLikeT:
     """
     Compute energy distance with precalculated distance matrices.
-
-    Parameters
-    ----------
-    average: Callable[[ArrayLike], float]
-        A function that will be used to calculate an average of distances.
-        This defaults to np.mean.
 
     """
     if average is None:
         average = np.mean
 
     return (
-        2 * average(distance_xy) -
-        average(distance_xx) -
-        average(distance_yy)
+        2 * average(distance_xy)
+        - average(distance_xx)
+        - average(distance_yy)
     )
 
 

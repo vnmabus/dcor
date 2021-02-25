@@ -1,9 +1,34 @@
 """Utility functions"""
 
-import enum
+from __future__ import annotations
 
-import numba
+import enum
+from typing import TypeVar, Union
+
 import numpy as np
+from typing_extensions import Protocol
+
+try:
+    from numpy.typing import ArrayLike
+except ImportError:
+    ArrayLike = np.ndarray  # type: ignore
+
+NumberLikeT = TypeVar("NumberLikeT", bound="NumberLike")
+
+
+class NumberLike(Protocol):
+
+    def __add__(self: NumberLikeT, other: NumberLikeT) -> NumberLikeT:
+        pass
+
+    def __sub__(self: NumberLikeT, other: NumberLikeT) -> NumberLikeT:
+        pass
+
+    def __mul__(
+        self: NumberLikeT,
+        other: Union[float, NumberLikeT],
+    ) -> NumberLikeT:
+        pass
 
 
 class CompileMode(enum.Enum):
@@ -53,7 +78,7 @@ class RowwiseMode(enum.Enum):
     """
 
 
-def _sqrt(x):
+def _sqrt(x: np.ndarray) -> np.ndarray:
     """
     Return square root of an ndarray.
 
@@ -76,7 +101,7 @@ def _sqrt(x):
         return x ** exponent
 
 
-def _transform_to_2d(t):
+def _transform_to_2d(t: ArrayLike) -> np.ndarray:
     """Convert vectors to column matrices, to always have a 2d shape."""
     t = np.asarray(t)
 
@@ -89,7 +114,7 @@ def _transform_to_2d(t):
     return t
 
 
-def _can_be_double(x):
+def _can_be_double(x: np.ndarray) -> bool:
     """
     Return if the array can be safely converted to double.
 
@@ -104,7 +129,9 @@ def _can_be_double(x):
              np.can_cast(x, float)))
 
 
-def _random_state_init(random_state):
+def _random_state_init(
+    random_state: Union[None, int, ArrayLike, np.random.RandomState],
+) -> np.random.RandomState:
     """
     Initialize a RandomState object.
 

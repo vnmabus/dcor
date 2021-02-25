@@ -223,3 +223,6 @@ epub_exclude_files = ['search.html']
 bibtex_bibfiles = ['refs.bib']
 
 autodoc_typehints = "description"
+autodoc_type_aliases = {
+    "ArrayLike": "np.typing.ArrayLike"
+}
