@@ -19,7 +19,7 @@ def _check_valid_energy_exponent(exponent):
 
 
 def _energy_distance_from_distance_matrices(
-        distance_xx, distance_yy, distance_xy, average=None):
+        distance_xx, distance_yy, distance_xy, average=None, stat_type='v'):
     """
     Compute energy distance with precalculated distance matrices.
 
@@ -28,19 +28,29 @@ def _energy_distance_from_distance_matrices(
     average: Callable[[ArrayLike], float]
         A function that will be used to calculate an average of distances.
         This defaults to np.mean.
-
+    stat_type: Literal['u', 'v']
+        If 'u', calculate energy distance using
+        Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
+        V-statistics
     """
     if average is None:
         average = np.mean
 
-    return (
-        2 * average(distance_xy) -
-        average(distance_xx) -
-        average(distance_yy)
-    )
+    if stat_type == 'u':
+        return (
+                2 * average(distance_xy) -
+                average(np.triu(distance_xx)) -
+                average(np.triu(distance_yy))
+        )
+    else:
+        return (
+            2 * average(distance_xy) -
+            average(distance_xx) -
+            average(distance_yy)
+        )
 
 
-def energy_distance(x, y, *, average=None, exponent=1):
+def energy_distance(x, y, *, average=None, exponent=1, stat_type='v'):
     """
     Estimator for energy distance.
 
@@ -61,6 +71,10 @@ def energy_distance(x, y, *, average=None, exponent=1):
     average: Callable[[ArrayLike], float]
         A function that will be used to calculate an average of distances.
         This defaults to np.mean.
+    stat_type: Literal['u', 'v']
+        If 'u', calculate energy distance using
+        Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
+        V-statistics
 
     Returns
     -------
@@ -111,4 +125,5 @@ def energy_distance(x, y, *, average=None, exponent=1):
         distance_yy=distance_yy,
         distance_xy=distance_xy,
         average=average,
+        stat_type=stat_type
     )

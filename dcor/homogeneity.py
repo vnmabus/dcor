@@ -19,17 +19,18 @@ def _energy_test_statistic_coefficient(n, m):
 
 
 def _energy_test_statistic_from_distance_matrices(
-        distance_xx, distance_yy, distance_xy, n, m, average=None):
+        distance_xx, distance_yy, distance_xy, n, m, average=None,
+        stat_type='v'):
     """Test statistic with precomputed distance matrices."""
     energy_distance = _energy._energy_distance_from_distance_matrices(
         distance_xx=distance_xx, distance_yy=distance_yy,
-        distance_xy=distance_xy, average=average
+        distance_xy=distance_xy, average=average, stat_type=stat_type
     )
 
     return _energy_test_statistic_coefficient(n, m) * energy_distance
 
 
-def energy_test_statistic(x, y, *, exponent=1, average=None):
+def energy_test_statistic(x, y, *, exponent=1, average=None, stat_type='v'):
     """
     Homogeneity statistic.
 
@@ -49,6 +50,10 @@ def energy_test_statistic(x, y, *, exponent=1, average=None):
     average: Callable[[ArrayLike], float]
         A function that will be used to calculate an average of distances.
         This defaults to np.mean.
+    stat_type: Literal['u', 'v']
+        If 'u', calculate energy distance using
+        Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
+        V-statistics
 
     Returns
     -------
@@ -91,11 +96,12 @@ def energy_test_statistic(x, y, *, exponent=1, average=None):
         y,
         exponent=exponent,
         average=average,
+        stat_type=stat_type
     )
 
 
 def _energy_test_statistic_multivariate_from_distance_matrix(
-        distance, indexes, sizes, average=None):
+        distance, indexes, sizes, average=None, stat_type='v'):
     """Statistic for several random vectors given the distance matrix."""
     energy = 0.0
 
@@ -113,7 +119,9 @@ def _energy_test_statistic_multivariate_from_distance_matrix(
 
             pairwise_energy = _energy_test_statistic_from_distance_matrices(
                 distance_xx=distance_xx, distance_yy=distance_yy,
-                distance_xy=distance_xy, n=n, m=m, average=average)
+                distance_xy=distance_xy, n=n, m=m, average=average,
+                stat_type=stat_type
+                )
 
             energy += pairwise_energy
 
@@ -126,6 +134,7 @@ def energy_test(
     exponent=1,
     random_state=None,
     average=None,
+    stat_type='v'
 ):
     """
     Test of homogeneity based on the energy distance.
@@ -150,6 +159,10 @@ def energy_test(
     average: Callable[[ArrayLike], float]
         A function that will be used to calculate an average of distances.
         This defaults to np.mean.
+    stat_type: Literal['u', 'v']
+        If 'u', calculate energy distance using
+        Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
+        V-statistics
 
     Returns
     -------
@@ -225,7 +238,9 @@ def energy_test(
             distance=distance_matrix,
             indexes=sample_indexes,
             sizes=sample_sizes,
-            average=average)
+            average=average,
+            stat_type=stat_type
+            )
 
     return _hypothesis._permutation_test_with_sym_matrix(
         sample_distances,
