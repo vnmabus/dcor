@@ -4,9 +4,14 @@ import warnings
 
 import numpy as np
 
+import enum
+
 from . import distances
 from ._utils import _transform_to_2d
 
+class EstimationStatistic(enum.Enum):
+    USTATISTIC = 'u'
+    VSTATISTIC = 'v'
 
 def _check_valid_energy_exponent(exponent):
     if not 0 < exponent < 2:
@@ -19,7 +24,8 @@ def _check_valid_energy_exponent(exponent):
 
 
 def _energy_distance_from_distance_matrices(
-        distance_xx, distance_yy, distance_xy, average=None, stat_type='v'):
+        distance_xx, distance_yy, distance_xy, average=None,
+        stat_type=EstimationStatistic.VSTATISTIC):
     """
     Compute energy distance with precalculated distance matrices.
 
@@ -28,29 +34,34 @@ def _energy_distance_from_distance_matrices(
     average: Callable[[ArrayLike], float]
         A function that will be used to calculate an average of distances.
         This defaults to np.mean.
-    stat_type: Literal['u', 'v']
-        If 'u', calculate energy distance using
+    stat_type: Union[str, EstimationStatistic]
+        If EstimationStatistic.USTATISTIC, calculate energy distance using
         Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
-        V-statistics
+        V-statistics.
+        If this is provided as a string, it will first be converted to
+        an EstimationStatistic enum instance.
     """
+    if isinstance(stat_type, str):
+        stat_type = EstimationStatistic(stat_type)
+
     if average is None:
         average = np.mean
 
-    if stat_type == 'u':
-        return (
-                2 * average(distance_xy) -
-                average(np.triu(distance_xx)) -
-                average(np.triu(distance_yy))
-        )
-    else:
-        return (
-            2 * average(distance_xy) -
-            average(distance_xx) -
-            average(distance_yy)
-        )
+    if stat_type == EstimationStatistic.USTATISTIC:
+        # If using u-statistics, we exclude the central diagonal of 0s for the
+        # within-sample distances
+        distance_xx = distance_xx[np.triu_indices_from(distance_xx, k=1)]
+        distance_yy = distance_yy[np.triu_indices_from(distance_yy, k=1)]
+
+    return (
+        2 * average(distance_xy) -
+        average(distance_xx) -
+        average(distance_yy)
+    )
 
 
-def energy_distance(x, y, *, average=None, exponent=1, stat_type='v'):
+def energy_distance(x, y, *, average=None, exponent=1,
+                    stat_type=EstimationStatistic.VSTATISTIC):
     """
     Estimator for energy distance.
 
@@ -71,10 +82,12 @@ def energy_distance(x, y, *, average=None, exponent=1, stat_type='v'):
     average: Callable[[ArrayLike], float]
         A function that will be used to calculate an average of distances.
         This defaults to np.mean.
-    stat_type: Literal['u', 'v']
-        If 'u', calculate energy distance using
+    stat_type: Union[str, EstimationStatistic]
+        If EstimationStatistic.USTATISTIC, calculate energy distance using
         Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
-        V-statistics
+        V-statistics.
+        If this is provided as a string, it will first be converted to
+        an EstimationStatistic enum instance.
 
     Returns
     -------
