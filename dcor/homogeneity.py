@@ -20,7 +20,7 @@ def _energy_test_statistic_coefficient(n, m):
 
 def _energy_test_statistic_from_distance_matrices(
         distance_xx, distance_yy, distance_xy, n, m, average=None,
-        stat_type=_energy.EstimationStatistic.VSTATISTIC):
+        stat_type=_energy.EstimationStatistic.V_STATISTIC):
     """Test statistic with precomputed distance matrices."""
     energy_distance = _energy._energy_distance_from_distance_matrices(
         distance_xx=distance_xx, distance_yy=distance_yy,
@@ -51,7 +51,7 @@ def energy_test_statistic(x, y, *, exponent=1, average=None, stat_type='v'):
         A function that will be used to calculate an average of distances.
         This defaults to np.mean.
     stat_type: Union[str, EstimationStatistic]
-        If EstimationStatistic.USTATISTIC, calculate energy distance using
+        If EstimationStatistic.U_STATISTIC, calculate energy distance using
         Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
         V-statistics.
         If this is provided as a string, it will first be converted to
@@ -136,7 +136,7 @@ def energy_test(
     exponent=1,
     random_state=None,
     average=None,
-    stat_type=_energy.EstimationStatistic.VSTATISTIC
+    stat_type=_energy.EstimationStatistic.V_STATISTIC
 ):
     """
     Test of homogeneity based on the energy distance.
@@ -162,7 +162,7 @@ def energy_test(
         A function that will be used to calculate an average of distances.
         This defaults to np.mean.
     stat_type: Union[str, EstimationStatistic]
-        If EstimationStatistic.USTATISTIC, calculate energy distance using
+        If EstimationStatistic.U_STATISTIC, calculate energy distance using
         Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
         V-statistics.
         If this is provided as a string, it will first be converted to

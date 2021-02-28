@@ -1,6 +1,6 @@
 import numpy as np
-from dcor._energy import _energy_distance_from_distance_matrices,\
-    EstimationStatistic
+from dcor._energy import _energy_distance_from_distance_matrices
+from dcor import EstimationStatistic
 import unittest
 
 
@@ -30,7 +30,7 @@ class TestEnergyTest(unittest.TestCase):
             distance_xx=distance_within,
             distance_yy=distance_within,
             distance_xy=distance_between,
-            stat_type=EstimationStatistic.USTATISTIC
+            stat_type=EstimationStatistic.U_STATISTIC
         )
         v_dist = _energy_distance_from_distance_matrices(
             distance_xx=distance_within,

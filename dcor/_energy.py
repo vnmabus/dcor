@@ -4,14 +4,34 @@ import warnings
 
 import numpy as np
 
-import enum
+from enum import Enum, auto
 
 from . import distances
 from ._utils import _transform_to_2d
 
-class EstimationStatistic(enum.Enum):
-    USTATISTIC = 'u'
-    VSTATISTIC = 'v'
+
+class EstimationStatistic(Enum):
+    """
+    A type of estimation statistic used for calculating energy distance.
+    """
+    @classmethod
+    def from_string(cls, item):
+        """
+        Allows EstimationStatistic.from_string('u'), EstimationStatistic.from_string('V'),
+        EstimationStatistic.from_string('V_STATISTIC'), EstimationStatistic.from_string('u_statistic') etc
+        """
+        upper = item.upper()
+        if upper == 'U':
+            return cls.U_STATISTIC
+        elif upper == 'V':
+            return cls.V_STATISTIC
+        else:
+            return cls[item]
+
+    #: Hoeffding's unbiased U-statistics (does not include the distance from each point to itself)
+    U_STATISTIC = auto()
+    #: von Mises's biased V-statistics (does include the distance from each point to itself)
+    V_STATISTIC = auto()
 
 def _check_valid_energy_exponent(exponent):
     if not 0 < exponent < 2:
@@ -25,7 +45,7 @@ def _check_valid_energy_exponent(exponent):
 
 def _energy_distance_from_distance_matrices(
         distance_xx, distance_yy, distance_xy, average=None,
-        stat_type=EstimationStatistic.VSTATISTIC):
+        stat_type=EstimationStatistic.V_STATISTIC):
     """
     Compute energy distance with precalculated distance matrices.
 
@@ -35,19 +55,19 @@ def _energy_distance_from_distance_matrices(
         A function that will be used to calculate an average of distances.
         This defaults to np.mean.
     stat_type: Union[str, EstimationStatistic]
-        If EstimationStatistic.USTATISTIC, calculate energy distance using
+        If EstimationStatistic.U_STATISTIC, calculate energy distance using
         Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
         V-statistics.
         If this is provided as a string, it will first be converted to
         an EstimationStatistic enum instance.
     """
     if isinstance(stat_type, str):
-        stat_type = EstimationStatistic(stat_type)
+        stat_type = EstimationStatistic.from_string(stat_type)
 
     if average is None:
         average = np.mean
 
-    if stat_type == EstimationStatistic.USTATISTIC:
+    if stat_type == EstimationStatistic.U_STATISTIC:
         # If using u-statistics, we exclude the central diagonal of 0s for the
         # within-sample distances
         distance_xx = distance_xx[np.triu_indices_from(distance_xx, k=1)]
@@ -61,7 +81,7 @@ def _energy_distance_from_distance_matrices(
 
 
 def energy_distance(x, y, *, average=None, exponent=1,
-                    stat_type=EstimationStatistic.VSTATISTIC):
+                    stat_type=EstimationStatistic.V_STATISTIC):
     """
     Estimator for energy distance.
 
@@ -83,7 +103,7 @@ def energy_distance(x, y, *, average=None, exponent=1,
         A function that will be used to calculate an average of distances.
         This defaults to np.mean.
     stat_type: Union[str, EstimationStatistic]
-        If EstimationStatistic.USTATISTIC, calculate energy distance using
+        If EstimationStatistic.U_STATISTIC, calculate energy distance using
         Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
         V-statistics.
         If this is provided as a string, it will first be converted to
