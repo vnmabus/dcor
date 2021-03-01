@@ -207,7 +207,8 @@ class TestEnergyTest(unittest.TestCase):
         kwargs = dict(
             args=[
                 sys.executable,
-                str(here / 'speed_permutation.py')
+                str(here / 'speed_permutation.py'),
+                '5000'
             ],
             capture_output=True,
             check=True,

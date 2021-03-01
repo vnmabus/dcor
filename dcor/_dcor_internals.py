@@ -7,6 +7,7 @@ distance covariance and correlation.
 import warnings
 
 import numpy as np
+from numba import njit
 
 from . import distances
 from ._utils import _transform_to_2d
@@ -215,6 +216,7 @@ def u_centered(a, *, out=None):
     return out
 
 
+@njit()
 def mean_product(a, b):
     r"""
     Average of the elements for an element-wise product of two matrices.

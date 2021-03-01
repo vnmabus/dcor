@@ -6,6 +6,7 @@ the samples generated from two random vectors are independent.
 """
 import numpy as np
 import scipy.stats
+from numba import njit
 
 from . import _dcor_internals, _hypothesis
 from ._dcor import u_distance_correlation_sqr
@@ -17,7 +18,8 @@ def distance_covariance_test(
     y,
     *,
     num_resamples=0,
-    exponent=1
+    exponent=1,
+    random_state=None
 ):
     """
     Test of distance covariance independence.
@@ -42,6 +44,8 @@ def distance_covariance_test(
         motion.
     num_resamples: int
         Number of permutations resamples to take in the permutation test.
+    random_state: int
+        Random state to generate the permutations.
 
     Returns
     -------
@@ -98,6 +102,7 @@ def distance_covariance_test(
         exponent=exponent)
 
     # Use the dcov statistic
+    @njit()
     def statistic_function(distance_matrix):
         return u_x.shape[0] * _dcor_internals.mean_product(
             distance_matrix, u_y)
@@ -105,7 +110,9 @@ def distance_covariance_test(
     return _hypothesis._permutation_test_with_sym_matrix(
         u_x,
         statistic_function=statistic_function,
-        num_resamples=num_resamples)
+        num_resamples=num_resamples,
+        random_state=random_state
+    )
 
 
 def partial_distance_covariance_test(

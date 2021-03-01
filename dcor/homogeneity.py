@@ -10,9 +10,9 @@ import numpy as _np
 
 from numba import njit
 
-from . import _energy, _hypothesis
-from . import distances as _distances
-from ._utils import _transform_to_2d
+from dcor import _energy, _hypothesis
+from dcor import distances as _distances
+from dcor._utils import _transform_to_2d
 
 
 @njit()
@@ -149,7 +149,8 @@ def energy_test(
     num_resamples=0,
     exponent=1,
     average='mean',
-    stat_type=_energy.EstimationStatistic.V_STATISTIC
+    stat_type=_energy.EstimationStatistic.V_STATISTIC,
+    random_state=None
 ):
     """
     Test of homogeneity based on the energy distance.
@@ -178,6 +179,8 @@ def energy_test(
         V-statistics.
         If this is provided as a string, it will first be converted to
         an EstimationStatistic enum instance.
+    random_state: int
+        Integer used for seeding the random number generator
 
     Returns
     -------
@@ -190,32 +193,29 @@ def energy_test(
 
     Examples
     --------
-    >>> import numpy as np
-    >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1, 0, 0, 1],
-    ...               [0, 1, 1, 1],
-    ...               [1, 1, 1, 1]])
-    >>> c = np.array([[1000, 0, 0, 1000],
-    ...               [0, 1000, 1000, 1000],
-    ...               [1000, 1000, 1000, 1000]])
-    >>> dcor.homogeneity.energy_test(a, a)
+import numpy as np
+import dcor
+a = np.array([[1, 2, 3, 4],
+              [5, 6, 7, 8],
+              [9, 10, 11, 12],
+              [13, 14, 15, 16]])
+b = np.array([[1, 0, 0, 1],
+              [0, 1, 1, 1],
+              [1, 1, 1, 1]])
+c = np.array([[1000, 0, 0, 1000],
+              [0, 1000, 1000, 1000],
+              [1000, 1000, 1000, 1000]])
+    dcor.homogeneity.energy_test(a, a)
     HypothesisTest(p_value=1.0, statistic=0.0)
     >>> dcor.homogeneity.energy_test(a, b) # doctest: +ELLIPSIS
     HypothesisTest(p_value=1.0, statistic=35.2766732...)
     >>> dcor.homogeneity.energy_test(b, b)
     HypothesisTest(p_value=1.0, statistic=0.0)
-    >>> np.random.seed(0)
-    >>> dcor.homogeneity.energy_test(a, b, num_resamples=5)
+    >>> dcor.homogeneity.energy_test(a, b, num_resamples=5, random_state=0)
     HypothesisTest(p_value=0.1666666..., statistic=35.2766732...)
-    >>> np.random.seed(6)
-    >>> dcor.homogeneity.energy_test(a, b, num_resamples=5)
+    >>> dcor.homogeneity.energy_test(a, b, num_resamples=5, random_state=6)
     HypothesisTest(p_value=0.3333333..., statistic=35.2766732...)
-    >>> np.random.seed(0)
-    >>> dcor.homogeneity.energy_test(a, c, num_resamples=7)
+    >>> dcor.homogeneity.energy_test(a, c, num_resamples=7, random_state=0)
     HypothesisTest(p_value=0.125, statistic=4233.8935035...)
 
     A different exponent for the Euclidean distance in the range
@@ -265,5 +265,6 @@ def energy_test(
     return _hypothesis._permutation_test_with_sym_matrix(
         sample_distances,
         statistic_function=statistic_function,
-        num_resamples=num_resamples
+        num_resamples=num_resamples,
+        random_state=random_state
     )

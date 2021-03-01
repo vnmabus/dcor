@@ -22,7 +22,7 @@ def _numba_permute(matrix):
 
 @njit()
 def _permutation_test_with_sym_matrix(matrix, statistic_function,
-                                      num_resamples):
+                                      num_resamples, random_state=None):
     """
     Execute a permutation test in a symmetric matrix.
 
@@ -34,12 +34,17 @@ def _permutation_test_with_sym_matrix(matrix, statistic_function,
         Function that computes the desired statistic from the matrix.
     num_resamples: int
         Number of permutations resamples to take in the permutation test.
+    random_state: int
+        Integer used for seeding the random number generator
 
     Returns
     -------
     HypothesisTest
         Results of the hypothesis test.
     """
+    if random_state:
+        np.random.seed(random_state)
+
     statistic = statistic_function(matrix)
 
     bootstrap_statistics = np.ones(num_resamples, np.float_)
