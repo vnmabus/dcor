@@ -79,11 +79,11 @@ def distance_covariance_test(
     ... num_resamples=5, random_state=0)
     HypothesisTest(p_value=0.5, statistic=11.7532305...)
     >>> dcor.independence.distance_covariance_test(a, b,
-    ... num_resamples=5, random_state=13)
+    ... num_resamples=5, random_state=8)
     HypothesisTest(p_value=0.3333333..., statistic=11.7532305...)
     >>> dcor.independence.distance_covariance_test(a, a,
-    ... num_resamples=7, random_state=0)
-    HypothesisTest(p_value=0.125, statistic=208.0)
+    ... num_resamples=7, random_state=2)
+    HypothesisTest(p_value=1.6666666..., statistic=208.0)
 
     """
     x = _transform_to_2d(x)
@@ -195,8 +195,6 @@ def partial_distance_covariance_test(
     HypothesisTest(p_value=1.0, statistic=-7.5701764...e-12)
 
     """
-    random_state = _random_state_init(random_state)
-
     # Compute U-centered matrices
     u_x = _dcor_internals._u_distance_matrix(x, exponent=exponent)
     u_y = _dcor_internals._u_distance_matrix(y, exponent=exponent)
