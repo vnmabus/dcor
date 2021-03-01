@@ -625,7 +625,7 @@ def u_distance_stats_sqr(x, y, *, exponent=1,
     variance_x=42.6666666..., variance_y=42.6666666...)
     >>> dcor.u_distance_stats_sqr(a, b) # doctest: +ELLIPSIS
     ...                     # doctest: +NORMALIZE_WHITESPACE
-    Stats(covariance_xy=-2.6666666..., correlation_xy=-0.5,
+    Stats(covariance_xy=-2.6666666..., correlation_xy=-0.4999999...,
     variance_x=42.6666666..., variance_y=0.6666666...)
     >>> dcor.u_distance_stats_sqr(b, b) # doctest: +ELLIPSIS
     ...                     # doctest: +NORMALIZE_WHITESPACE
@@ -822,7 +822,7 @@ def u_distance_correlation_sqr(x, y, *, exponent=1,
     >>> dcor.u_distance_correlation_sqr(a, a)
     1.0
     >>> dcor.u_distance_correlation_sqr(a, b)
-    -0.5
+    -0.4999999
     >>> dcor.u_distance_correlation_sqr(b, b)
     1.0
     >>> dcor.u_distance_correlation_sqr(a, b, exponent=0.5)

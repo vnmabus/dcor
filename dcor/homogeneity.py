@@ -10,9 +10,9 @@ import numpy as _np
 
 from numba import njit
 
-from dcor import _energy, _hypothesis
-from dcor import distances as _distances
-from dcor._utils import _transform_to_2d
+from . import _energy, _hypothesis
+from . import distances as _distances
+from ._utils import _transform_to_2d
 
 
 @njit()
