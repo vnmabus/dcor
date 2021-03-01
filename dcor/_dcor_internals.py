@@ -264,6 +264,7 @@ def mean_product(a, b):
     return np.mean(a * b)
 
 
+@njit()
 def u_product(a, b):
     r"""
     Inner product in the Hilbert space of :math:`U`-centered distance matrices.
@@ -335,8 +336,7 @@ def u_product(a, b):
     inf
 
     """
-    n = np.size(a, 0)
-
+    n = a.shape[0]
     return np.sum(a * b) / (n * (n - 3))
 
 
