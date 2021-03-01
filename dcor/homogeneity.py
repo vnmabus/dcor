@@ -193,19 +193,20 @@ def energy_test(
 
     Examples
     --------
-import numpy as np
-import dcor
-a = np.array([[1, 2, 3, 4],
-              [5, 6, 7, 8],
-              [9, 10, 11, 12],
-              [13, 14, 15, 16]])
-b = np.array([[1, 0, 0, 1],
-              [0, 1, 1, 1],
-              [1, 1, 1, 1]])
-c = np.array([[1000, 0, 0, 1000],
-              [0, 1000, 1000, 1000],
-              [1000, 1000, 1000, 1000]])
-    dcor.homogeneity.energy_test(a, a)
+    >>> import numpy as np
+    >>> import numpy as np
+    >>> import dcor
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12],
+    ...               [13, 14, 15, 16]])
+    >>> b = np.array([[1, 0, 0, 1],
+    ...               [0, 1, 1, 1],
+    ...               [1, 1, 1, 1]])
+    >>> c = np.array([[1000, 0, 0, 1000],
+    ...               [0, 1000, 1000, 1000],
+    ...               [1000, 1000, 1000, 1000]])
+    >>> dcor.homogeneity.energy_test(a, a)
     HypothesisTest(p_value=1.0, statistic=0.0)
     >>> dcor.homogeneity.energy_test(a, b) # doctest: +ELLIPSIS
     HypothesisTest(p_value=1.0, statistic=35.2766732...)

@@ -42,7 +42,7 @@ def _permutation_test_with_sym_matrix(matrix, statistic_function,
     HypothesisTest
         Results of the hypothesis test.
     """
-    if random_state:
+    if random_state is not None:
         np.random.seed(random_state)
 
     statistic = statistic_function(matrix)
