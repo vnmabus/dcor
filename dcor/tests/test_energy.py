@@ -36,7 +36,7 @@ class TestEnergyTest(unittest.TestCase):
             distance_xx=distance_within,
             distance_yy=distance_within,
             distance_xy=distance_between,
-            stat_type='v'
+            stat_type=EstimationStatistic.V_STATISTIC
         )
 
         # V-statistics count the 0 terms on the diagonal, so the impact of the

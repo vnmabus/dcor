@@ -1,10 +1,10 @@
 """Energy distance functions"""
 
 import warnings
+from enum import Enum, auto
 
 import numpy as np
-
-from enum import Enum, auto
+from numba import njit
 
 from . import distances
 from ._utils import _transform_to_2d
@@ -17,8 +17,10 @@ class EstimationStatistic(Enum):
     @classmethod
     def from_string(cls, item):
         """
-        Allows EstimationStatistic.from_string('u'), EstimationStatistic.from_string('V'),
-        EstimationStatistic.from_string('V_STATISTIC'), EstimationStatistic.from_string('u_statistic') etc
+        Allows EstimationStatistic.from_string('u'),
+        EstimationStatistic.from_string('V'),
+        EstimationStatistic.from_string('V_STATISTIC'),
+        EstimationStatistic.from_string('u_statistic') etc
         """
         upper = item.upper()
         if upper == 'U':
@@ -28,10 +30,13 @@ class EstimationStatistic(Enum):
         else:
             return cls[item]
 
-    #: Hoeffding's unbiased U-statistics (does not include the distance from each point to itself)
+    #: Hoeffding's unbiased U-statistics
+    #: (does not include the distance from each point to itself)
     U_STATISTIC = auto()
-    #: von Mises's biased V-statistics (does include the distance from each point to itself)
+    #: von Mises's biased V-statistics
+    #: (does include the distance from each point to itself)
     V_STATISTIC = auto()
+
 
 def _check_valid_energy_exponent(exponent):
     if not 0 < exponent < 2:
@@ -43,44 +48,47 @@ def _check_valid_energy_exponent(exponent):
         warnings.warn(warning_msg)
 
 
+@njit()
 def _energy_distance_from_distance_matrices(
-        distance_xx, distance_yy, distance_xy, average=None,
+        distance_xx, distance_yy, distance_xy, average='mean',
         stat_type=EstimationStatistic.V_STATISTIC):
     """
     Compute energy distance with precalculated distance matrices.
 
     Parameters
     ----------
-    average: Callable[[ArrayLike], float]
-        A function that will be used to calculate an average of distances.
-        This defaults to np.mean.
-    stat_type: Union[str, EstimationStatistic]
+    average: str
+        Specify the type of average used to calculate an average of distances.
+        Either "mean" or "median". Defaults to "mean"
+    stat_type: EstimationStatistic
         If EstimationStatistic.U_STATISTIC, calculate energy distance using
         Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
         V-statistics.
-        If this is provided as a string, it will first be converted to
-        an EstimationStatistic enum instance.
     """
-    if isinstance(stat_type, str):
-        stat_type = EstimationStatistic.from_string(stat_type)
-
-    if average is None:
-        average = np.mean
-
     if stat_type == EstimationStatistic.U_STATISTIC:
-        # If using u-statistics, we exclude the central diagonal of 0s for the
-        # within-sample distances
-        distance_xx = distance_xx[np.triu_indices_from(distance_xx, k=1)]
-        distance_yy = distance_yy[np.triu_indices_from(distance_yy, k=1)]
+        # If using u-statistics, we correct the sample size to not factor in
+        # the 0 terms on the diagonal
+        xx_coeff = distance_xx.shape[0] / (distance_xx.shape[0] - 1)
+        yy_coeff = distance_xx.shape[0] / (distance_xx.shape[0] - 1)
+    else:
+        xx_coeff = 1
+        yy_coeff = 1
 
-    return (
-        2 * average(distance_xy) -
-        average(distance_xx) -
-        average(distance_yy)
-    )
+    if average == 'median':
+        return (
+            2 * np.median(distance_xy) -
+            xx_coeff * np.median(distance_xx) -
+            yy_coeff * np.median(distance_yy)
+        )
+    else:
+        return (
+            2 * np.mean(distance_xy) -
+            xx_coeff * np.mean(distance_xx) -
+            yy_coeff * np.mean(distance_yy)
+        )
 
 
-def energy_distance(x, y, *, average=None, exponent=1,
+def energy_distance(x, y, *, average='mean', exponent=1,
                     stat_type=EstimationStatistic.V_STATISTIC):
     """
     Estimator for energy distance.
@@ -99,9 +107,9 @@ def energy_distance(x, y, *, average=None, exponent=1,
         variables while the rows are individual instances of the random vector.
     exponent: float
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
-    average: Callable[[ArrayLike], float]
-        A function that will be used to calculate an average of distances.
-        This defaults to np.mean.
+    average: str
+        Specify the type of average used to calculate an average of distances.
+        Either "mean" or "median". Defaults to "mean"
     stat_type: Union[str, EstimationStatistic]
         If EstimationStatistic.U_STATISTIC, calculate energy distance using
         Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
@@ -144,6 +152,9 @@ def energy_distance(x, y, *, average=None, exponent=1,
     0.0
 
     """
+    if isinstance(stat_type, str):
+        stat_type = EstimationStatistic.from_string(stat_type)
+
     x = _transform_to_2d(x)
     y = _transform_to_2d(y)
 

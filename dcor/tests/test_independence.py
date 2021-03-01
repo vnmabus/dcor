@@ -2,8 +2,9 @@
 
 import unittest
 
-import dcor
 import numpy as np
+
+import dcor
 
 
 class TestDcovTest(unittest.TestCase):
@@ -22,20 +23,20 @@ class TestDcovTest(unittest.TestCase):
         mean = np.zeros(vector_size)
         cov = np.eye(vector_size)
 
-        random_state = np.random.RandomState(0)
+        np.random.seed(0)
 
-        a = random_state.multivariate_normal(mean=mean,
-                                             cov=cov,
-                                             size=num_samples)
-        b = random_state.multivariate_normal(mean=mean,
-                                             cov=cov,
-                                             size=num_samples)
+        a = np.random.multivariate_normal(mean=mean,
+                                          cov=cov,
+                                          size=num_samples)
+        b = np.random.multivariate_normal(mean=mean,
+                                          cov=cov,
+                                          size=num_samples)
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
         result = dcor.independence.distance_covariance_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a, b, num_resamples=num_resamples)
 
         self.assertGreater(result.p_value, significance)
 
@@ -52,18 +53,18 @@ class TestDcovTest(unittest.TestCase):
         mean = np.zeros(vector_size)
         cov = np.eye(vector_size)
 
-        random_state = np.random.RandomState(0)
+        np.random.seed(0)
 
-        a = random_state.multivariate_normal(mean=mean,
-                                             cov=cov,
-                                             size=num_samples)
+        a = np.random.multivariate_normal(mean=mean,
+                                          cov=cov,
+                                          size=num_samples)
         b = a
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
         result = dcor.independence.distance_covariance_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a, b, num_resamples=num_resamples)
 
         self.assertLess(result.p_value, significance)
 
@@ -81,18 +82,18 @@ class TestDcovTest(unittest.TestCase):
         mean = np.zeros(vector_size)
         cov = np.eye(vector_size)
 
-        random_state = np.random.RandomState(0)
+        np.random.seed(0)
 
-        a = random_state.multivariate_normal(mean=mean,
-                                             cov=cov,
-                                             size=num_samples)
+        a = np.random.multivariate_normal(mean=mean,
+                                          cov=cov,
+                                          size=num_samples)
         b = np.sin(a) + 3 * a ** 2
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
         result = dcor.independence.distance_covariance_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a, b, num_resamples=num_resamples)
 
         self.assertLess(result.p_value, significance)
 
@@ -109,19 +110,22 @@ class TestDcovTest(unittest.TestCase):
         mean = np.zeros(vector_size)
         cov = np.eye(vector_size)
 
-        random_state = np.random.RandomState(0)
+        np.random.seed(0)
 
-        a = random_state.multivariate_normal(mean=mean,
-                                             cov=cov,
-                                             size=num_samples)
-        b = random_state.multivariate_normal(mean=mean,
-                                             cov=cov,
-                                             size=num_samples) + np.sin(a)
+        a = np.random.multivariate_normal(mean=mean,
+                                          cov=cov,
+                                          size=num_samples)
+        b = np.random.multivariate_normal(mean=mean,
+                                          cov=cov,
+                                          size=num_samples) + np.sin(a)
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
         result = dcor.independence.distance_covariance_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a,
+            b,
+            num_resamples=num_resamples
+        )
 
         self.assertLess(result.p_value, significance)

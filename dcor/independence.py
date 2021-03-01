@@ -17,8 +17,7 @@ def distance_covariance_test(
     y,
     *,
     num_resamples=0,
-    exponent=1,
-    random_state=None,
+    exponent=1
 ):
     """
     Test of distance covariance independence.
@@ -43,8 +42,6 @@ def distance_covariance_test(
         motion.
     num_resamples: int
         Number of permutations resamples to take in the permutation test.
-    random_state: {None, int, array_like, numpy.random.RandomState}
-        Random state to generate the permutations.
 
     Returns
     -------
@@ -90,8 +87,6 @@ def distance_covariance_test(
 
     _dcor_internals._check_same_n_elements(x, y)
 
-    random_state = _random_state_init(random_state)
-
     # Compute U-centered matrices
     u_x = _dcor_internals._distance_matrix_generic(
         x,
@@ -110,8 +105,7 @@ def distance_covariance_test(
     return _hypothesis._permutation_test_with_sym_matrix(
         u_x,
         statistic_function=statistic_function,
-        num_resamples=num_resamples,
-        random_state=random_state)
+        num_resamples=num_resamples)
 
 
 def partial_distance_covariance_test(

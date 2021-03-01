@@ -1,9 +1,15 @@
 """Tests of the homogeneity module"""
 
+import time
 import unittest
+import subprocess
+import sys
+from pathlib import Path
+import os
+
+import numpy as np
 
 import dcor
-import numpy as np
 
 
 class TestEnergyTest(unittest.TestCase):
@@ -22,20 +28,27 @@ class TestEnergyTest(unittest.TestCase):
         mean = np.zeros(vector_size)
         cov = np.eye(vector_size)
 
-        random_state = np.random.RandomState(0)
+        np.random.seed(0)
 
-        a = random_state.multivariate_normal(mean=mean,
-                                             cov=cov,
-                                             size=num_samples)
-        b = random_state.multivariate_normal(mean=mean,
-                                             cov=cov,
-                                             size=num_samples)
+        a = np.random.multivariate_normal(
+            mean=mean,
+            cov=cov,
+            size=num_samples
+        )
+        b = np.random.multivariate_normal(
+            mean=mean,
+            cov=cov,
+            size=num_samples
+        )
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
         result = dcor.homogeneity.energy_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a,
+            b,
+            num_resamples=num_resamples
+        )
 
         self.assertGreater(result.p_value, significance)
 
@@ -53,18 +66,18 @@ class TestEnergyTest(unittest.TestCase):
         mean_1 = np.ones(vector_size)
         cov = np.eye(vector_size)
 
-        random_state = np.random.RandomState(0)
+        np.random.seed(0)
 
-        a = random_state.multivariate_normal(mean=mean_0, cov=cov,
-                                             size=num_samples)
-        b = random_state.multivariate_normal(mean=mean_1, cov=cov,
-                                             size=num_samples)
+        a = np.random.multivariate_normal(mean=mean_0, cov=cov,
+                                          size=num_samples)
+        b = np.random.multivariate_normal(mean=mean_1, cov=cov,
+                                          size=num_samples)
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
         result = dcor.homogeneity.energy_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a, b, num_resamples=num_resamples)
 
         self.assertLess(result.p_value, significance)
 
@@ -82,18 +95,18 @@ class TestEnergyTest(unittest.TestCase):
         cov_0 = np.eye(vector_size)
         cov_1 = 3 * np.eye(vector_size)
 
-        random_state = np.random.RandomState(0)
+        np.random.seed(0)
 
-        a = random_state.multivariate_normal(mean=mean, cov=cov_0,
-                                             size=num_samples)
-        b = random_state.multivariate_normal(mean=mean, cov=cov_1,
-                                             size=num_samples)
+        a = np.random.multivariate_normal(mean=mean, cov=cov_0,
+                                          size=num_samples)
+        b = np.random.multivariate_normal(mean=mean, cov=cov_1,
+                                          size=num_samples)
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
         result = dcor.homogeneity.energy_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a, b, num_resamples=num_resamples)
 
         self.assertLess(result.p_value, significance)
 
@@ -107,16 +120,19 @@ class TestEnergyTest(unittest.TestCase):
         """
         num_samples = 100
 
-        random_state = np.random.RandomState(0)
+        np.random.seed(0)
 
-        a = random_state.standard_normal(size=(num_samples, 1))
-        b = random_state.standard_t(df=1, size=(num_samples, 1))
+        a = np.random.standard_normal(size=(num_samples, 1))
+        b = np.random.standard_t(df=1, size=(num_samples, 1))
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
         result = dcor.homogeneity.energy_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a,
+            b,
+            num_resamples=num_resamples
+        )
 
         self.assertLess(result.p_value, significance)
 
@@ -127,10 +143,10 @@ class TestEnergyTest(unittest.TestCase):
         """
         num_samples = 100
 
-        random_state = np.random.RandomState(0)
+        np.random.seed(0)
 
-        a = random_state.normal(loc=0, size=(num_samples, 1))
-        b = random_state.normal(loc=1, size=(num_samples, 1))
+        a = np.random.normal(loc=0, size=(num_samples, 1))
+        b = np.random.normal(loc=1, size=(num_samples, 1))
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
@@ -139,16 +155,14 @@ class TestEnergyTest(unittest.TestCase):
             a,
             b,
             num_resamples=num_resamples,
-            random_state=random_state,
-            average=np.median
+            average='median'
         )
 
         mean_result = dcor.homogeneity.energy_test(
             a,
             b,
             num_resamples=num_resamples,
-            random_state=random_state,
-            average=np.mean
+            average='mean'
         )
 
         # Check that we are actually using a different average
@@ -166,10 +180,10 @@ class TestEnergyTest(unittest.TestCase):
         """
         num_samples = 100
 
-        random_state = np.random.RandomState(0)
+        np.random.seed(0)
 
-        a = random_state.normal(loc=1, size=(num_samples, 1))
-        b = random_state.exponential(scale=1, size=(num_samples, 1))
+        a = np.random.normal(loc=1, size=(num_samples, 1))
+        b = np.random.exponential(scale=1, size=(num_samples, 1))
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
@@ -177,9 +191,46 @@ class TestEnergyTest(unittest.TestCase):
         result = dcor.homogeneity.energy_test(
             a,
             b,
-            average=np.median,
-            num_resamples=num_resamples,
-            random_state=random_state
+            average='median',
+            num_resamples=num_resamples
         )
 
         self.assertLess(result.p_value, significance)
+
+    def test_speed_permutation(self):
+        """
+        Run the permutation with and without numba, and check that numba is
+        indeed providing a speedup
+        """
+        start = time.time()
+        here = Path(__file__).parent
+        kwargs = dict(
+            args=[
+                sys.executable,
+                str(here / 'speed_permutation.py')
+            ],
+            capture_output=True,
+            check=True,
+            cwd=here
+        )
+        numba_result = subprocess.run(**kwargs)
+        mid = time.time()
+        no_numba_result = subprocess.run(
+            **kwargs,
+            env={
+                'NUMBA_DISABLE_JIT': '1',
+                **os.environ
+            }
+        )
+        end = time.time()
+
+        self.assertEqual(
+            numba_result.stdout,
+            no_numba_result.stdout,
+            msg='Numba JIT produced a different result to plain Python'
+        )
+        self.assertLess(
+            10 * (mid - start),
+            end - mid,
+            msg='Numba JIT is not at least 10 times faster than plain Python'
+        )

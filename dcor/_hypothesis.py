@@ -1,15 +1,28 @@
 import collections
 
 import numpy as np
-
-from ._utils import _random_state_init
+from numba import njit, prange
 
 HypothesisTest = collections.namedtuple('HypothesisTest', ['p_value',
                                         'statistic'])
 
 
+@njit()
+def _numba_permute(matrix):
+    """
+    Calculates a permutation of a matrix, in a numba-compatible manner
+    """
+    permuted_matrix = np.zeros_like(matrix)
+    perm = np.random.permutation(matrix.shape[0])
+    for out_i, in_i in enumerate(perm):
+        for out_j, in_j in enumerate(perm):
+            permuted_matrix[out_i, out_j] = matrix[in_i, in_j]
+    return permuted_matrix
+
+
+@njit()
 def _permutation_test_with_sym_matrix(matrix, statistic_function,
-                                      num_resamples, random_state):
+                                      num_resamples):
     """
     Execute a permutation test in a symmetric matrix.
 
@@ -21,27 +34,18 @@ def _permutation_test_with_sym_matrix(matrix, statistic_function,
         Function that computes the desired statistic from the matrix.
     num_resamples: int
         Number of permutations resamples to take in the permutation test.
-    random_state: {None, int, array_like, numpy.random.RandomState}
-        Random state to generate the permutations.
 
     Returns
     -------
     HypothesisTest
         Results of the hypothesis test.
     """
-    matrix = np.asarray(matrix)
-    random_state = _random_state_init(random_state)
-
     statistic = statistic_function(matrix)
 
-    bootstrap_statistics = np.ones(num_resamples, dtype=statistic.dtype)
+    bootstrap_statistics = np.ones(num_resamples, np.float_)
 
-    for bootstrap in range(num_resamples):
-        permuted_index = random_state.permutation(matrix.shape[0])
-
-        permuted_matrix = matrix[
-            np.ix_(permuted_index, permuted_index)]
-
+    for bootstrap in prange(num_resamples):
+        permuted_matrix = _numba_permute(matrix)
         bootstrap_statistics[bootstrap] = statistic_function(permuted_matrix)
 
     extreme_results = bootstrap_statistics > statistic

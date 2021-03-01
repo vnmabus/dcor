@@ -8,18 +8,22 @@ distribution.
 
 import numpy as _np
 
+from numba import njit
+
 from . import _energy, _hypothesis
 from . import distances as _distances
 from ._utils import _transform_to_2d
 
 
+@njit()
 def _energy_test_statistic_coefficient(n, m):
     """Coefficient of the test statistic."""
     return n * m / (n + m)
 
 
+@njit()
 def _energy_test_statistic_from_distance_matrices(
-        distance_xx, distance_yy, distance_xy, n, m, average=None,
+        distance_xx, distance_yy, distance_xy, n, m, average='mean',
         stat_type=_energy.EstimationStatistic.V_STATISTIC):
     """Test statistic with precomputed distance matrices."""
     energy_distance = _energy._energy_distance_from_distance_matrices(
@@ -30,7 +34,7 @@ def _energy_test_statistic_from_distance_matrices(
     return _energy_test_statistic_coefficient(n, m) * energy_distance
 
 
-def energy_test_statistic(x, y, *, exponent=1, average=None, stat_type='v'):
+def energy_test_statistic(x, y, *, exponent=1, average='mean', stat_type='v'):
     """
     Homogeneity statistic.
 
@@ -47,9 +51,9 @@ def energy_test_statistic(x, y, *, exponent=1, average=None, stat_type='v'):
         variables while the rows are individual instances of the random vector.
     exponent: float
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
-    average: Callable[[ArrayLike], float]
-        A function that will be used to calculate an average of distances.
-        This defaults to np.mean.
+    average: str
+        Specify the type of average used to calculate an average of distances.
+        Either "mean" or "median". Defaults to "mean"
     stat_type: Union[str, EstimationStatistic]
         If EstimationStatistic.U_STATISTIC, calculate energy distance using
         Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
@@ -85,6 +89,9 @@ def energy_test_statistic(x, y, *, exponent=1, average=None, stat_type='v'):
     0.0
 
     """
+    if isinstance(stat_type, str):
+        stat_type = _energy.EstimationStatistic.from_string(stat_type)
+
     x = _transform_to_2d(x)
     y = _transform_to_2d(y)
 
@@ -102,22 +109,29 @@ def energy_test_statistic(x, y, *, exponent=1, average=None, stat_type='v'):
     )
 
 
+@njit()
 def _energy_test_statistic_multivariate_from_distance_matrix(
-        distance, indexes, sizes, average=None, stat_type='v'):
+        distance, indexes, sizes, average='mean', stat_type='v'):
     """Statistic for several random vectors given the distance matrix."""
     energy = 0.0
 
     for i, _ in enumerate(indexes):
         for j in range(i + 1, len(indexes)):
-            range_i = range(indexes[i], indexes[i] + sizes[i])
-            range_j = range(indexes[j], indexes[j] + sizes[j])
-
             n = sizes[i]
             m = sizes[j]
 
-            distance_xx = distance[_np.ix_(range_i, range_i)]
-            distance_yy = distance[_np.ix_(range_j, range_j)]
-            distance_xy = distance[_np.ix_(range_i, range_j)]
+            distance_xx = distance[
+                indexes[i]:indexes[i] + n,
+                indexes[i]:indexes[i] + n
+            ]
+            distance_yy = distance[
+                indexes[j]:indexes[j] + m,
+                indexes[j]:indexes[j] + m
+            ]
+            distance_xy = distance[
+                indexes[i]:indexes[i] + n,
+                indexes[j]:indexes[j] + m
+            ]
 
             pairwise_energy = _energy_test_statistic_from_distance_matrices(
                 distance_xx=distance_xx, distance_yy=distance_yy,
@@ -134,8 +148,7 @@ def energy_test(
     *args,
     num_resamples=0,
     exponent=1,
-    random_state=None,
-    average=None,
+    average='mean',
     stat_type=_energy.EstimationStatistic.V_STATISTIC
 ):
     """
@@ -156,11 +169,9 @@ def energy_test(
         Number of permutations resamples to take in the permutation test.
     exponent: float
         Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
-    random_state: {None, int, array_like, numpy.random.RandomState}
-        Random state to generate the permutations.
-    average: Callable[[ArrayLike], float]
-        A function that will be used to calculate an average of distances.
-        This defaults to np.mean.
+    average: str
+        Specify the type of average used to calculate an average of distances.
+        Either "mean" or "median". Defaults to "mean"
     stat_type: Union[str, EstimationStatistic]
         If EstimationStatistic.U_STATISTIC, calculate energy distance using
         Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
@@ -197,11 +208,14 @@ def energy_test(
     HypothesisTest(p_value=1.0, statistic=35.2766732...)
     >>> dcor.homogeneity.energy_test(b, b)
     HypothesisTest(p_value=1.0, statistic=0.0)
-    >>> dcor.homogeneity.energy_test(a, b, num_resamples=5, random_state=0)
+    >>> np.random.seed(0)
+    >>> dcor.homogeneity.energy_test(a, b, num_resamples=5)
     HypothesisTest(p_value=0.1666666..., statistic=35.2766732...)
-    >>> dcor.homogeneity.energy_test(a, b, num_resamples=5, random_state=6)
+    >>> np.random.seed(6)
+    >>> dcor.homogeneity.energy_test(a, b, num_resamples=5)
     HypothesisTest(p_value=0.3333333..., statistic=35.2766732...)
-    >>> dcor.homogeneity.energy_test(a, c, num_resamples=7, random_state=0)
+    >>> np.random.seed(0)
+    >>> dcor.homogeneity.energy_test(a, c, num_resamples=7)
     HypothesisTest(p_value=0.125, statistic=4233.8935035...)
 
     A different exponent for the Euclidean distance in the range
@@ -209,8 +223,9 @@ def energy_test(
 
     >>> dcor.homogeneity.energy_test(a, b, exponent=1.5) # doctest: +ELLIPSIS
     HypothesisTest(p_value=1.0, statistic=171.0623923...)
-
     """
+    if isinstance(stat_type, str):
+        stat_type = _energy.EstimationStatistic.from_string(stat_type)
 
     samples = [_transform_to_2d(a) for a in args]
 
@@ -223,7 +238,7 @@ def energy_test(
     # significance_level = 1.0 / (num_resamples + 1)
 
     # {n_1, ..., n_k}
-    sample_sizes = [a.shape[0] for a in samples]
+    sample_sizes = tuple(a.shape[0] for a in samples)
 
     # {W_1, ..., W_n}
     pooled_samples = _np.concatenate(samples)
@@ -236,7 +251,8 @@ def energy_test(
     sample_distances = _distances.pairwise_distances(pooled_samples,
                                                      exponent=exponent)
 
-    # Use the energy statistic with appropiate values
+    # Use the energy statistic with appropriate values
+    @njit()
     def statistic_function(distance_matrix):
         return _energy_test_statistic_multivariate_from_distance_matrix(
             distance=distance_matrix,
@@ -244,10 +260,10 @@ def energy_test(
             sizes=sample_sizes,
             average=average,
             stat_type=stat_type
-            )
+        )
 
     return _hypothesis._permutation_test_with_sym_matrix(
         sample_distances,
         statistic_function=statistic_function,
-        num_resamples=num_resamples,
-        random_state=random_state)
+        num_resamples=num_resamples
+    )
