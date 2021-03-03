@@ -30,14 +30,30 @@ class TestEnergyTest(unittest.TestCase):
             distance_xx=distance_within,
             distance_yy=distance_within,
             distance_xy=distance_between,
-            stat_type=EstimationStatistic.U_STATISTIC
+            estimation_stat=EstimationStatistic.U_STATISTIC
+        )
+        u_dist_2 = _energy_distance_from_distance_matrices(
+            distance_xx=distance_within,
+            distance_yy=distance_within,
+            distance_xy=distance_between,
+            estimation_stat='U_STATISTIC'
+        )
+        u_dist_3 = _energy_distance_from_distance_matrices(
+            distance_xx=distance_within,
+            distance_yy=distance_within,
+            distance_xy=distance_between,
+            estimation_stat='u_statistic'
         )
         v_dist = _energy_distance_from_distance_matrices(
             distance_xx=distance_within,
             distance_yy=distance_within,
             distance_xy=distance_between,
-            stat_type='v'
+            estimation_stat='v'
         )
+
+        # The first 3 invocations should be identical
+        self.assertEqual(u_dist, u_dist_2)
+        self.assertEqual(u_dist, u_dist_3)
 
         # V-statistics count the 0 terms on the diagonal, so the impact of the
         # within-sample distance will be smaller, making the overall distance
