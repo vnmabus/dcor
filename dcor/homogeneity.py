@@ -11,6 +11,7 @@ import numpy as _np
 from . import _energy, _hypothesis
 from . import distances as _distances
 from ._utils import _transform_to_2d
+from ._energy import EstimationStatistic
 
 
 def _energy_test_statistic_coefficient(n, m):
@@ -19,17 +20,26 @@ def _energy_test_statistic_coefficient(n, m):
 
 
 def _energy_test_statistic_from_distance_matrices(
-        distance_xx, distance_yy, distance_xy, n, m, average=None):
+        distance_xx, distance_yy, distance_xy, n, m, average=None,
+        estimation_stat=_energy.EstimationStatistic.V_STATISTIC):
     """Test statistic with precomputed distance matrices."""
     energy_distance = _energy._energy_distance_from_distance_matrices(
         distance_xx=distance_xx, distance_yy=distance_yy,
-        distance_xy=distance_xy, average=average
+        distance_xy=distance_xy, average=average,
+        estimation_stat=estimation_stat
     )
 
     return _energy_test_statistic_coefficient(n, m) * energy_distance
 
 
-def energy_test_statistic(x, y, *, exponent=1, average=None):
+def energy_test_statistic(
+        x,
+        y,
+        *,
+        exponent=1,
+        average=None,
+        estimation_stat=EstimationStatistic.V_STATISTIC
+):
     """
     Homogeneity statistic.
 
@@ -49,6 +59,12 @@ def energy_test_statistic(x, y, *, exponent=1, average=None):
     average: Callable[[ArrayLike], float]
         A function that will be used to calculate an average of distances.
         This defaults to np.mean.
+    estimation_stat: Union[str, EstimationStatistic]
+        If EstimationStatistic.U_STATISTIC, calculate energy distance using
+        Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
+        V-statistics.
+        If this is provided as a string, it will first be converted to
+        an EstimationStatistic enum instance.
 
     Returns
     -------
@@ -91,11 +107,12 @@ def energy_test_statistic(x, y, *, exponent=1, average=None):
         y,
         exponent=exponent,
         average=average,
+        estimation_stat=estimation_stat
     )
 
 
 def _energy_test_statistic_multivariate_from_distance_matrix(
-        distance, indexes, sizes, average=None):
+        distance, indexes, sizes, average=None, estimation_stat='v'):
     """Statistic for several random vectors given the distance matrix."""
     energy = 0.0
 
@@ -113,7 +130,9 @@ def _energy_test_statistic_multivariate_from_distance_matrix(
 
             pairwise_energy = _energy_test_statistic_from_distance_matrices(
                 distance_xx=distance_xx, distance_yy=distance_yy,
-                distance_xy=distance_xy, n=n, m=m, average=average)
+                distance_xy=distance_xy, n=n, m=m, average=average,
+                estimation_stat=estimation_stat
+                )
 
             energy += pairwise_energy
 
@@ -126,6 +145,7 @@ def energy_test(
     exponent=1,
     random_state=None,
     average=None,
+    estimation_stat=_energy.EstimationStatistic.V_STATISTIC
 ):
     """
     Test of homogeneity based on the energy distance.
@@ -150,6 +170,12 @@ def energy_test(
     average: Callable[[ArrayLike], float]
         A function that will be used to calculate an average of distances.
         This defaults to np.mean.
+    estimation_stat: Union[str, EstimationStatistic]
+        If EstimationStatistic.U_STATISTIC, calculate energy distance using
+        Hoeffding's unbiased U-statistics. Otherwise, use von Mises's biased
+        V-statistics.
+        If this is provided as a string, it will first be converted to
+        an EstimationStatistic enum instance.
 
     Returns
     -------
@@ -225,7 +251,9 @@ def energy_test(
             distance=distance_matrix,
             indexes=sample_indexes,
             sizes=sample_sizes,
-            average=average)
+            average=average,
+            estimation_stat=estimation_stat
+            )
 
     return _hypothesis._permutation_test_with_sym_matrix(
         sample_distances,
