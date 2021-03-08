@@ -119,3 +119,67 @@ class TestEnergyTest(unittest.TestCase):
             a, b, num_resamples=num_resamples, random_state=random_state)
 
         self.assertLess(result.p_value, significance)
+
+    def test_different_means_median(self):
+        """
+        Test that the test works on the same distribution with different means,
+        using the median average.
+        """
+        num_samples = 100
+
+        random_state = np.random.RandomState(0)
+
+        a = random_state.normal(loc=0, size=(num_samples, 1))
+        b = random_state.normal(loc=1, size=(num_samples, 1))
+
+        significance = 0.01
+        num_resamples = int(3 / significance + 1)
+
+        median_result = dcor.homogeneity.energy_test(
+            a,
+            b,
+            num_resamples=num_resamples,
+            random_state=random_state,
+            average=np.median
+        )
+
+        mean_result = dcor.homogeneity.energy_test(
+            a,
+            b,
+            num_resamples=num_resamples,
+            random_state=random_state,
+            average=np.mean
+        )
+
+        # Check that we are actually using a different average
+        self.assertNotAlmostEqual(
+            mean_result.statistic,
+            median_result.statistic
+        )
+
+        # Check that we detected the heterogeneity
+        self.assertLess(median_result.p_value, significance)
+
+    def test_different_distributions_median(self):
+        """
+        Test that the test works on different distributions using the median.
+        """
+        num_samples = 100
+
+        random_state = np.random.RandomState(0)
+
+        a = random_state.normal(loc=1, size=(num_samples, 1))
+        b = random_state.exponential(scale=1, size=(num_samples, 1))
+
+        significance = 0.01
+        num_resamples = int(3 / significance + 1)
+
+        result = dcor.homogeneity.energy_test(
+            a,
+            b,
+            average=np.median,
+            num_resamples=num_resamples,
+            random_state=random_state
+        )
+
+        self.assertLess(result.p_value, significance)

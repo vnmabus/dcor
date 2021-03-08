@@ -33,7 +33,7 @@ correlation :math:`\mathcal{R}(X, Y)`, or :math:`\text{dCor}(X, Y)`, is defined 
 
 .. math::
    \mathcal{R}^2(X, Y) = \begin{cases}
-   \frac{\mathcal{V}^2(X, Y)}{\mathcal{V}^2(X, X)\mathcal{V}^2(Y, Y)} &\text{ if
+   \frac{\mathcal{V}^2(X, Y)}{\sqrt{\mathcal{V}^2(X, X)\mathcal{V}^2(Y, Y)}} &\text{ if
    $\mathcal{V}^2(X, X)\mathcal{V}^2(Y, Y) > 0$} \\
    0 &\text{ if $\mathcal{V}^2(X, X)\mathcal{V}^2(Y, Y) = 0$.}
    \end{cases}
@@ -92,7 +92,7 @@ can be obtained as the standardized sample covariance
 
 .. math::
    \mathcal{R}_n^2(x, y) = \begin{cases}
-   \frac{\mathcal{V}_n^2(x, y)}{\mathcal{V}_n^2(x, x)\mathcal{V}_n^2(y, y)},
+   \frac{\mathcal{V}_n^2(x, y)}{\sqrt{\mathcal{V}_n^2(x, x)\mathcal{V}_n^2(y, y)}},
    &\text{ if $\mathcal{V}_n^2(x, x)\mathcal{V}_n^2(y, y) > 0$}, \\
    0, &\text{ if $\mathcal{V}_n^2(x, x)\mathcal{V}_n^2(y, y) = 0$.}
    \end{cases}

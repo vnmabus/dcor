@@ -1,12 +1,9 @@
 """Functions for computing partial distance covariance and correlation"""
 
-from __future__ import absolute_import, division, print_function
-from __future__ import unicode_literals
-
 import numpy as np
 
-from ._dcor_internals import _u_distance_matrix, u_complementary_projection
-from ._dcor_internals import u_product
+from ._dcor_internals import (_u_distance_matrix, u_complementary_projection,
+                              u_product)
 from ._utils import _sqrt
 
 

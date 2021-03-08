@@ -13,20 +13,18 @@ References
 
 """
 
-from __future__ import absolute_import, division, print_function
-from __future__ import unicode_literals
-
 import collections
-from dcor._dcor_internals import _af_inv_scaled
 from enum import Enum
 
 import numpy as np
 
-from ._dcor_internals import _distance_matrix, _u_distance_matrix
-from ._dcor_internals import mean_product, u_product
+from dcor._dcor_internals import _af_inv_scaled
+
+from ._dcor_internals import (_distance_matrix, _u_distance_matrix,
+                              mean_product, u_product)
 from ._fast_dcov_avl import _distance_covariance_sqr_avl_generic
 from ._fast_dcov_mergesort import _distance_covariance_sqr_mergesort_generic
-from ._utils import _sqrt, CompileMode
+from ._utils import CompileMode, _sqrt
 
 
 class _DcovAlgorithmInternals():

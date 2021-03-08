@@ -22,7 +22,9 @@
 # sys.path.insert(0, '/home/carlos/git/dcor/dcor')
 
 import sys
+
 import pkg_resources
+
 try:
     release = pkg_resources.get_distribution('dcor').version
 except pkg_resources.DistributionNotFound:
@@ -217,3 +219,7 @@ epub_copyright = copyright
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
+
+bibtex_bibfiles = ['refs.bib']
+
+autodoc_typehints = "description"

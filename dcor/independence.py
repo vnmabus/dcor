@@ -4,65 +4,23 @@ Functions for testing independence of several distributions.
 The functions in this module provide methods for testing if
 the samples generated from two random vectors are independent.
 """
-
-from __future__ import absolute_import, division, print_function
-
-from . import _dcor_internals
-from . import _hypothesis
-from ._utils import _random_state_init, _transform_to_2d
-from ._dcor import u_distance_correlation_sqr
 import numpy as np
 import scipy.stats
 
+from . import _dcor_internals, _hypothesis
+from ._dcor import u_distance_correlation_sqr
+from ._utils import _random_state_init, _transform_to_2d
 
-def _distance_covariance_test_imp(x, y,
-                                  _centering,
-                                  _product,
-                                  exponent=1,
-                                  num_resamples=0,
-                                  random_state=None
-                                  ):
+
+def distance_covariance_test(
+    x,
+    y,
+    *,
+    num_resamples=0,
+    exponent=1,
+    random_state=None,
+):
     """
-    Real implementation of :func:`distance_covariance_test`.
-
-    This function is used to make parameters ``num_resamples``, ``exponent``
-    and ``random_state`` keyword-only in Python 2.
-
-    """
-    x = _transform_to_2d(x)
-    y = _transform_to_2d(y)
-
-    _dcor_internals._check_same_n_elements(x, y)
-
-    random_state = _random_state_init(random_state)
-
-    # Compute U-centered matrices
-    u_x = _dcor_internals._distance_matrix_generic(
-        x,
-        centering=_centering,
-        exponent=exponent)
-    u_y = _dcor_internals._distance_matrix_generic(
-        y,
-        centering=_centering,
-        exponent=exponent)
-
-    # Use the dcov statistic
-    def statistic_function(distance_matrix):
-        return u_x.shape[0] * _product(
-            distance_matrix, u_y)
-
-    return _hypothesis._permutation_test_with_sym_matrix(
-        u_x,
-        statistic_function=statistic_function,
-        num_resamples=num_resamples,
-        random_state=random_state)
-
-
-def distance_covariance_test(x, y, **kwargs):
-    """
-    distance_covariance_test(x, y, *, num_resamples=0, exponent=1, \
-    random_state=None)
-
     Test of distance covariance independence.
 
     Compute the test of independence based on the distance
@@ -127,52 +85,45 @@ def distance_covariance_test(x, y, **kwargs):
     HypothesisTest(p_value=0.125, statistic=208.0)
 
     """
-    return _distance_covariance_test_imp(
-        x, y,
-        _centering=_dcor_internals.double_centered,
-        _product=_dcor_internals.mean_product,
-        ** kwargs)
+    x = _transform_to_2d(x)
+    y = _transform_to_2d(y)
 
+    _dcor_internals._check_same_n_elements(x, y)
 
-def _partial_distance_covariance_test_imp(x, y, z, num_resamples=0,
-                                          random_state=None):
-    """
-    Real implementation of :func:`partial_distance_covariance_test`.
-
-    This function is used to make parameters ``num_resamples``
-    and ``random_state`` keyword-only in Python 2.
-
-    """
     random_state = _random_state_init(random_state)
 
     # Compute U-centered matrices
-    u_x = _dcor_internals._u_distance_matrix(x)
-    u_y = _dcor_internals._u_distance_matrix(y)
-    u_z = _dcor_internals._u_distance_matrix(z)
+    u_x = _dcor_internals._distance_matrix_generic(
+        x,
+        centering=_dcor_internals.double_centered,
+        exponent=exponent)
+    u_y = _dcor_internals._distance_matrix_generic(
+        y,
+        centering=_dcor_internals.double_centered,
+        exponent=exponent)
 
-    # Compute projections
-    proj = _dcor_internals.u_complementary_projection(u_z)
-
-    p_xz = proj(u_x)
-    p_yz = proj(u_y)
-
-    # Use the pdcor statistic
+    # Use the dcov statistic
     def statistic_function(distance_matrix):
-        return u_x.shape[0] * _dcor_internals.u_product(
-            distance_matrix, p_yz)
+        return u_x.shape[0] * _dcor_internals.mean_product(
+            distance_matrix, u_y)
 
     return _hypothesis._permutation_test_with_sym_matrix(
-        p_xz,
+        u_x,
         statistic_function=statistic_function,
         num_resamples=num_resamples,
         random_state=random_state)
 
 
-def partial_distance_covariance_test(x, y, z, **kwargs):
+def partial_distance_covariance_test(
+    x,
+    y,
+    z,
+    *,
+    num_resamples=0,
+    exponent=1,
+    random_state=None,
+):
     """
-    partial_distance_covariance_test(x, y, z, num_resamples=0, exponent=1,
-    random_state=None)
-
     Test of partial distance covariance independence.
 
     Compute the test of independence based on the partial distance
@@ -243,7 +194,29 @@ def partial_distance_covariance_test(x, y, z, **kwargs):
     HypothesisTest(p_value=1.0, statistic=-7.5701764...e-12)
 
     """
-    return _partial_distance_covariance_test_imp(x, y, z, **kwargs)
+    random_state = _random_state_init(random_state)
+
+    # Compute U-centered matrices
+    u_x = _dcor_internals._u_distance_matrix(x, exponent=exponent)
+    u_y = _dcor_internals._u_distance_matrix(y, exponent=exponent)
+    u_z = _dcor_internals._u_distance_matrix(z, exponent=exponent)
+
+    # Compute projections
+    proj = _dcor_internals.u_complementary_projection(u_z)
+
+    p_xz = proj(u_x)
+    p_yz = proj(u_y)
+
+    # Use the pdcor statistic
+    def statistic_function(distance_matrix):
+        return u_x.shape[0] * _dcor_internals.u_product(
+            distance_matrix, p_yz)
+
+    return _hypothesis._permutation_test_with_sym_matrix(
+        p_xz,
+        statistic_function=statistic_function,
+        num_resamples=num_resamples,
+        random_state=random_state)
 
 
 def distance_correlation_t_statistic(x, y):
@@ -295,7 +268,7 @@ def distance_correlation_t_statistic(x, y):
     bcdcor = u_distance_correlation_sqr(x, y)
 
     n = x.shape[0]
-    v = n * (n-3) / 2
+    v = n * (n - 3) / 2
 
     return np.sqrt(v - 1) * bcdcor / np.sqrt(1 - bcdcor**2)
 
@@ -352,7 +325,7 @@ def distance_correlation_t_test(x, y):
     t_test = distance_correlation_t_statistic(x, y)
 
     n = x.shape[0]
-    v = n * (n-3) / 2
+    v = n * (n - 3) / 2
     df = v - 1
 
     p_value = 1 - scipy.stats.t.cdf(t_test, df=df)
