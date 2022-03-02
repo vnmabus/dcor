@@ -1,7 +1,7 @@
 import collections
 
 import numpy as np
-
+from joblib import Parallel, delayed
 from ._utils import _random_state_init
 
 HypothesisTest = collections.namedtuple('HypothesisTest', ['p_value',
@@ -9,7 +9,7 @@ HypothesisTest = collections.namedtuple('HypothesisTest', ['p_value',
 
 
 def _permutation_test_with_sym_matrix(matrix, statistic_function,
-                                      num_resamples, random_state):
+                                      num_resamples, random_state,n_jobs=1):
     """
     Execute a permutation test in a symmetric matrix.
 
@@ -34,15 +34,16 @@ def _permutation_test_with_sym_matrix(matrix, statistic_function,
 
     statistic = statistic_function(matrix)
 
-    bootstrap_statistics = np.ones(num_resamples, dtype=statistic.dtype)
+    def bootstrapPerms(mat):
+        permuted_index = random_state.permutation(mat.shape[0])
 
-    for bootstrap in range(num_resamples):
-        permuted_index = random_state.permutation(matrix.shape[0])
-
-        permuted_matrix = matrix[
+        permuted_matrix = mat[
             np.ix_(permuted_index, permuted_index)]
 
-        bootstrap_statistics[bootstrap] = statistic_function(permuted_matrix)
+        return statistic_function(permuted_matrix)
+
+    bootstrap_statistics = Parallel(n_jobs=n_jobs)(delayed(bootstrapPerms)(matrix) for bootstrap in range(num_resamples))
+    bootstrap_statistics = np.array(bootstrap_statistics, dtype=statistic.dtype)
 
     extreme_results = bootstrap_statistics > statistic
     p_value = (np.sum(extreme_results) + 1.0) / (num_resamples + 1)

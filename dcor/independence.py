@@ -19,6 +19,7 @@ def distance_covariance_test(
     num_resamples=0,
     exponent=1,
     random_state=None,
+    n_jobs=1,
 ):
     """
     Test of distance covariance independence.
@@ -111,7 +112,8 @@ def distance_covariance_test(
         u_x,
         statistic_function=statistic_function,
         num_resamples=num_resamples,
-        random_state=random_state)
+        random_state=random_state,
+        n_jobs=n_jobs)
 
 
 def partial_distance_covariance_test(
@@ -122,6 +124,7 @@ def partial_distance_covariance_test(
     num_resamples=0,
     exponent=1,
     random_state=None,
+    n_jobs=1,
 ):
     """
     Test of partial distance covariance independence.
@@ -216,7 +219,8 @@ def partial_distance_covariance_test(
         p_xz,
         statistic_function=statistic_function,
         num_resamples=num_resamples,
-        random_state=random_state)
+        random_state=random_state,
+        n_jobs=n_jobs)
 
 
 def distance_correlation_t_statistic(x, y):
