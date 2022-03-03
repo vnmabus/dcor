@@ -45,7 +45,7 @@ References
 import os
 import sys
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
 pytest_runner = ['pytest-runner'] if needs_pytest else []
@@ -67,7 +67,7 @@ setup(name='dcor',
       platforms=['any'],
       license='MIT',
       packages=find_packages(),
-      python_requires='>=3.6, <4',
+      python_requires='>=3.7, <4',
       classifiers=[
           'Development Status :: 4 - Beta',
           'Intended Audience :: Developers',
