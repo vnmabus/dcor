@@ -122,7 +122,7 @@ def _transform_to_2d(t: T) -> T:
     return t
 
 
-def _can_be_double(x: np.typing.NDArray[Any]) -> bool:
+def _can_be_numpy_double(x: ArrayType) -> bool:
     """
     Return if the array can be safely converted to double.
 
@@ -131,6 +131,9 @@ def _can_be_double(x: np.typing.NDArray[Any]) -> bool:
     converted to double (if the roundtrip conversion works).
 
     """
+    if get_namespace(x) != np:
+        return False
+
     return (
         (
             np.issubdtype(x.dtype, np.floating)
