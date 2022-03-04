@@ -9,8 +9,6 @@ from __future__ import annotations
 import warnings
 from typing import TYPE_CHECKING, Callable, TypeVar
 
-import numpy as np
-
 from . import distances
 from ._utils import ArrayType, _transform_to_2d, get_namespace
 
@@ -21,12 +19,22 @@ if TYPE_CHECKING:
         from typing import Protocol
     except ImportError:
         from typing_extensions import Protocol
+else:
+    Protocol = object
 
-    class Centering(Protocol):
-        """Callback protocol for centering method."""
 
-        def __call__(self, __a: T, *, out: T | None) -> T:
-            ...
+class Centering(Protocol):
+    """Callback protocol for centering method."""
+
+    def __call__(self, __a: T, *, out: T | None) -> T:
+        ...
+
+
+class MatrixCentered(Protocol):
+    """Callback protocol for centering method."""
+
+    def __call__(self, __a: T, *, exponent: float) -> T:
+        ...
 
 
 def _check_valid_dcov_exponent(exponent: float) -> None:
@@ -548,7 +556,7 @@ def _distance_matrix_generic(
     return a
 
 
-def _distance_matrix(x: T, exponent: float = 1) -> T:
+def _distance_matrix(x: T, *, exponent: float = 1) -> T:
     """Compute the double centered distance matrix given a matrix."""
     return _distance_matrix_generic(
         x,
@@ -557,7 +565,7 @@ def _distance_matrix(x: T, exponent: float = 1) -> T:
     )
 
 
-def _u_distance_matrix(x: T, exponent: float = 1) -> T:
+def _u_distance_matrix(x: T, *, exponent: float = 1) -> T:
     """Compute the :math:`U`-centered distance matrices given a matrix."""
     return _distance_matrix_generic(
         x,
@@ -573,7 +581,7 @@ def _mat_sqrt_inv(matrix: T) -> T:
 
     # Eliminate negative values
     eigenvalues[eigenvalues <= 0] = xp.inf
-    eigenvalues_sqrt_inv = 1 / np.sqrt(eigenvalues)
+    eigenvalues_sqrt_inv = 1 / xp.sqrt(eigenvalues)
 
     return eigenvectors * eigenvalues_sqrt_inv @ eigenvectors.T
 

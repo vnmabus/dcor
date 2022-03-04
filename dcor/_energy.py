@@ -6,8 +6,6 @@ import warnings
 from enum import Enum, auto
 from typing import Callable, TypeVar, Union
 
-import numpy as np
-
 from . import distances
 from ._utils import ArrayType, _transform_to_2d, get_namespace
 

@@ -99,13 +99,14 @@ def _sqrt(x: T) -> T:
 
     """
     # Replace negative values with 0
-    x = x * (x > 0)
-
     xp = get_namespace(x)
+    x_copy = xp.asarray(x + 0)
+    x_copy[x_copy < 0] = 0
+
     try:
-        return xp.sqrt(x)
+        return xp.sqrt(x_copy)
     except (AttributeError, TypeError):
-        return x**0.5
+        return x_copy**0.5
 
 
 def _transform_to_2d(t: T) -> T:
