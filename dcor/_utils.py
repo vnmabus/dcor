@@ -9,7 +9,7 @@ import numpy as np
 
 # TODO: Change in the future
 if TYPE_CHECKING:
-    ArrayType = np.typing.NDArray[Any]
+    ArrayType = np.typing.NDArray[float]
 else:
     ArrayType = np.ndarray
 
