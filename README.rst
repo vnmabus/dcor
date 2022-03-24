@@ -1,7 +1,7 @@
 dcor
 ====
 
-|build-status| |docs| |coverage| |pypi| |conda|
+|build-status| |docs| |coverage| |pypi| |conda| |zenodo|
 
 dcor: distance correlation and related E-statistics in Python.
 
@@ -96,3 +96,8 @@ References
     :alt: Available in Conda
     :scale: 100%
     :target: https://conda.anaconda.org/conda-forge
+    
+.. |zenodo| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3468124.svg
+    :alt: Zenodo DOI
+    :scale: 100%
+    :target: https://doi.org/10.5281/zenodo.3468124
