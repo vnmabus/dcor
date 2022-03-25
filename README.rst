@@ -1,7 +1,7 @@
 dcor
 ====
 
-|build-status| |docs| |coverage| |pypi| |conda| |zenodo|
+|tests| |docs| |coverage| |pypi| |conda| |zenodo|
 
 dcor: distance correlation and related E-statistics in Python.
 
@@ -73,7 +73,7 @@ References
            doi:10.1214/009053607000000505.
 
 .. |tests| image:: https://github.com/vnmabus/dcor/actions/workflows/main.yml/badge.svg
-    :alt: tests
+    :alt: Tests
     :scale: 100%
     :target: https://github.com/vnmabus/dcor/actions/workflows/main.yml
 
