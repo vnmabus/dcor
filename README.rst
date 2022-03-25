@@ -72,10 +72,10 @@ References
            Statistics, 35(6):2769–2794, 12 2007.
            doi:10.1214/009053607000000505.
 
-.. |build-status| image:: https://api.travis-ci.com/vnmabus/dcor.svg?branch=master
-    :alt: build status
+.. |tests| image:: https://github.com/vnmabus/dcor/actions/workflows/main.yml/badge.svg
+    :alt: tests
     :scale: 100%
-    :target: https://travis-ci.com/vnmabus/dcor
+    :target: https://github.com/vnmabus/dcor/actions/workflows/main.yml
 
 .. |docs| image:: https://readthedocs.org/projects/dcor/badge/?version=latest
     :alt: Documentation Status
