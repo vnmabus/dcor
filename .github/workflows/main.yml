@@ -29,6 +29,10 @@ jobs:
       run: |
         pip3 install .
         coverage run --source=dcor/ --omit=dcor/tests/ setup.py test;
-        
+    
+    - name: Generate coverage XML
+      run: |
+        coverage xml
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2
