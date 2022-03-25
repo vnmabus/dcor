@@ -1,14 +1,15 @@
-"""Tests of the dcor package"""
+"""Tests of the dcor package."""
 
 import re
 import unittest
+
 import dcor
 
 
 class TestVersion(unittest.TestCase):
     """Tests of the version number."""
 
-    def test_version(self):
+    def test_version(self) -> None:
         """Test that the version has the right format."""
         regex = re.compile(r"\d+\.\d+(\.\d+)?")
         self.assertTrue(regex.match(dcor.__version__))
