@@ -8,10 +8,9 @@ distribution.
 
 import numpy as _np
 
-from . import _energy, _hypothesis
-from . import distances as _distances
-from ._utils import _transform_to_2d
+from . import _energy, _hypothesis, distances as _distances
 from ._energy import EstimationStatistic
+from ._utils import _transform_to_2d
 
 
 def _energy_test_statistic_coefficient(n, m):
@@ -132,7 +131,7 @@ def _energy_test_statistic_multivariate_from_distance_matrix(
                 distance_xx=distance_xx, distance_yy=distance_yy,
                 distance_xy=distance_xy, n=n, m=m, average=average,
                 estimation_stat=estimation_stat
-                )
+            )
 
             energy += pairwise_energy
 
@@ -202,23 +201,23 @@ def energy_test(
     ...               [0, 1000, 1000, 1000],
     ...               [1000, 1000, 1000, 1000]])
     >>> dcor.homogeneity.energy_test(a, a)
-    HypothesisTest(p_value=1.0, statistic=0.0)
+    HypothesisTest(pvalue=1.0, statistic=0.0)
     >>> dcor.homogeneity.energy_test(a, b) # doctest: +ELLIPSIS
-    HypothesisTest(p_value=1.0, statistic=35.2766732...)
+    HypothesisTest(pvalue=1.0, statistic=35.2766732...)
     >>> dcor.homogeneity.energy_test(b, b)
-    HypothesisTest(p_value=1.0, statistic=0.0)
+    HypothesisTest(pvalue=1.0, statistic=0.0)
     >>> dcor.homogeneity.energy_test(a, b, num_resamples=5, random_state=0)
-    HypothesisTest(p_value=0.1666666..., statistic=35.2766732...)
+    HypothesisTest(pvalue=0.1666666..., statistic=35.2766732...)
     >>> dcor.homogeneity.energy_test(a, b, num_resamples=5, random_state=6)
-    HypothesisTest(p_value=0.3333333..., statistic=35.2766732...)
+    HypothesisTest(pvalue=0.3333333..., statistic=35.2766732...)
     >>> dcor.homogeneity.energy_test(a, c, num_resamples=7, random_state=0)
-    HypothesisTest(p_value=0.125, statistic=4233.8935035...)
+    HypothesisTest(pvalue=0.125, statistic=4233.8935035...)
 
     A different exponent for the Euclidean distance in the range
     :math:`(0, 2)` can be used:
 
     >>> dcor.homogeneity.energy_test(a, b, exponent=1.5) # doctest: +ELLIPSIS
-    HypothesisTest(p_value=1.0, statistic=171.0623923...)
+    HypothesisTest(pvalue=1.0, statistic=171.0623923...)
 
     """
 
@@ -254,7 +253,7 @@ def energy_test(
             sizes=sample_sizes,
             average=average,
             estimation_stat=estimation_stat
-            )
+        )
 
     return _hypothesis._permutation_test_with_sym_matrix(
         sample_distances,

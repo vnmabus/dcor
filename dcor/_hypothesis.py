@@ -1,54 +1,107 @@
-import collections
+from __future__ import annotations
+
+import warnings
+from dataclasses import dataclass
+from typing import Any, Callable, Iterator
 
 import numpy as np
+from dcor._utils import ArrayType
 from joblib import Parallel, delayed
+
 from ._utils import _random_state_init
 
-HypothesisTest = collections.namedtuple('HypothesisTest', ['p_value',
-                                        'statistic'])
+
+@dataclass
+class HypothesisTest():
+    pvalue: float
+    statistic: ArrayType
+
+    @property
+    def p_value(self) -> float:
+        """Old name for pvalue."""
+        warnings.warn(
+            "Attribute \"p_value\" deprecated, use \"pvalue\" instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.pvalue
+
+    def __iter__(self) -> Iterator[Any]:
+        warnings.warn(
+            "HypothesisTest will cease to be iterable.",
+            DeprecationWarning,
+        )
+        return iter((self.pvalue, self.statistic))
+
+    def __len__(self) -> int:
+        warnings.warn(
+            "HypothesisTest will cease to be sized.",
+            DeprecationWarning,
+        )
+        return 2
 
 
-def _permutation_test_with_sym_matrix(matrix, statistic_function,
-                                      num_resamples, random_state,n_jobs=1):
+def _permuted_statistic(
+    matrix: ArrayType,
+    statistic_function: Callable[[ArrayType], ArrayType],
+    permutation: np.typing.NDArray[int],
+) -> ArrayType:
+
+    permuted_matrix = matrix[np.ix_(permutation, permutation)]
+
+    return statistic_function(permuted_matrix)
+
+
+def _permutation_test_with_sym_matrix(
+    matrix: ArrayType,
+    *,
+    statistic_function: Callable[[ArrayType], ArrayType],
+    num_resamples: int,
+    random_state: np.random.RandomState | np.random.Generator | int | None,
+    n_jobs: int | None = None,
+) -> HypothesisTest:
     """
     Execute a permutation test in a symmetric matrix.
 
-    Parameters
-    ----------
-    matrix: array_like
-        Matrix that will perform the permutation test.
-    statistic_function: callable
-        Function that computes the desired statistic from the matrix.
-    num_resamples: int
-        Number of permutations resamples to take in the permutation test.
-    random_state: {None, int, array_like, numpy.random.RandomState}
-        Random state to generate the permutations.
+    Parameters:
+        matrix: Matrix that will perform the permutation test.
+        statistic_function: Function that computes the desired statistic from
+            the matrix.
+        num_resamples: Number of permutations resamples to take in the
+            permutation test.
+        random_state: Random state to generate the permutations.
+        n_jobs: Number of jobs executed in parallel by Joblib.
 
-    Returns
-    -------
-    HypothesisTest
+    Returns:
         Results of the hypothesis test.
+
     """
     matrix = np.asarray(matrix)
     random_state = _random_state_init(random_state)
 
     statistic = statistic_function(matrix)
 
-    def bootstrapPerms(mat):
-        permuted_index = random_state.permutation(mat.shape[0])
+    permutations = (
+        random_state.permutation(matrix.shape[0])
+        for _ in range(num_resamples)
+    )
 
-        permuted_matrix = mat[
-            np.ix_(permuted_index, permuted_index)]
-
-        return statistic_function(permuted_matrix)
-
-    bootstrap_statistics = Parallel(n_jobs=n_jobs)(delayed(bootstrapPerms)(matrix) for bootstrap in range(num_resamples))
-    bootstrap_statistics = np.array(bootstrap_statistics, dtype=statistic.dtype)
+    bootstrap_statistics = Parallel(n_jobs=n_jobs)(
+        delayed(_permuted_statistic)(
+            matrix,
+            statistic_function,
+            permutation,
+        ) for permutation in permutations
+    )
+    bootstrap_statistics = np.array(
+        bootstrap_statistics,
+        dtype=statistic.dtype,
+    )
 
     extreme_results = bootstrap_statistics > statistic
-    p_value = (np.sum(extreme_results) + 1.0) / (num_resamples + 1)
+    pvalue = (np.sum(extreme_results) + 1.0) / (num_resamples + 1)
 
     return HypothesisTest(
-        p_value=p_value,
-        statistic=statistic
+        pvalue=pvalue,
+        statistic=statistic,
     )

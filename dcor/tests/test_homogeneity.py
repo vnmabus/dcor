@@ -37,7 +37,7 @@ class TestEnergyTest(unittest.TestCase):
         result = dcor.homogeneity.energy_test(
             a, b, num_resamples=num_resamples, random_state=random_state)
 
-        self.assertGreater(result.p_value, significance)
+        self.assertGreater(result.pvalue, significance)
 
     def test_same_distribution_different_means(self):
         """
@@ -66,7 +66,7 @@ class TestEnergyTest(unittest.TestCase):
         result = dcor.homogeneity.energy_test(
             a, b, num_resamples=num_resamples, random_state=random_state)
 
-        self.assertLess(result.p_value, significance)
+        self.assertLess(result.pvalue, significance)
 
     def test_same_distribution_different_covariances(self):
         """
@@ -95,7 +95,7 @@ class TestEnergyTest(unittest.TestCase):
         result = dcor.homogeneity.energy_test(
             a, b, num_resamples=num_resamples, random_state=random_state)
 
-        self.assertLess(result.p_value, significance)
+        self.assertLess(result.pvalue, significance)
 
     def test_different_distributions(self):
         """
@@ -118,7 +118,7 @@ class TestEnergyTest(unittest.TestCase):
         result = dcor.homogeneity.energy_test(
             a, b, num_resamples=num_resamples, random_state=random_state)
 
-        self.assertLess(result.p_value, significance)
+        self.assertLess(result.pvalue, significance)
 
     def test_different_means_median(self):
         """
@@ -158,7 +158,7 @@ class TestEnergyTest(unittest.TestCase):
         )
 
         # Check that we detected the heterogeneity
-        self.assertLess(median_result.p_value, significance)
+        self.assertLess(median_result.pvalue, significance)
 
     def test_different_distributions_median(self):
         """
@@ -182,4 +182,4 @@ class TestEnergyTest(unittest.TestCase):
             random_state=random_state
         )
 
-        self.assertLess(result.p_value, significance)
+        self.assertLess(result.pvalue, significance)

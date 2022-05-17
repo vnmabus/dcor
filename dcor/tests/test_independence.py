@@ -37,7 +37,7 @@ class TestDcovTest(unittest.TestCase):
         result = dcor.independence.distance_covariance_test(
             a, b, num_resamples=num_resamples, random_state=random_state)
 
-        self.assertGreater(result.p_value, significance)
+        self.assertGreater(result.pvalue, significance)
 
     def test_same_variable(self):
         """
@@ -65,7 +65,7 @@ class TestDcovTest(unittest.TestCase):
         result = dcor.independence.distance_covariance_test(
             a, b, num_resamples=num_resamples, random_state=random_state)
 
-        self.assertLess(result.p_value, significance)
+        self.assertLess(result.pvalue, significance)
 
     def test_function_variable(self):
         """
@@ -94,7 +94,7 @@ class TestDcovTest(unittest.TestCase):
         result = dcor.independence.distance_covariance_test(
             a, b, num_resamples=num_resamples, random_state=random_state)
 
-        self.assertLess(result.p_value, significance)
+        self.assertLess(result.pvalue, significance)
 
     def test_dependent_variables(self):
         """
@@ -124,4 +124,4 @@ class TestDcovTest(unittest.TestCase):
         result = dcor.independence.distance_covariance_test(
             a, b, num_resamples=num_resamples, random_state=random_state)
 
-        self.assertLess(result.p_value, significance)
+        self.assertLess(result.pvalue, significance)

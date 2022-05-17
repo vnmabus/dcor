@@ -69,21 +69,21 @@ def distance_covariance_test(
     ...               [1, 1, 1, 1],
     ...               [1, 1, 0, 1]])
     >>> dcor.independence.distance_covariance_test(a, a)
-    HypothesisTest(p_value=1.0, statistic=208.0)
+    HypothesisTest(pvalue=1.0, statistic=208.0)
     >>> dcor.independence.distance_covariance_test(a, b)
     ...                                      # doctest: +ELLIPSIS
-    HypothesisTest(p_value=1.0, statistic=11.75323056...)
+    HypothesisTest(pvalue=1.0, statistic=11.75323056...)
     >>> dcor.independence.distance_covariance_test(b, b)
-    HypothesisTest(p_value=1.0, statistic=1.3604610...)
+    HypothesisTest(pvalue=1.0, statistic=1.3604610...)
     >>> dcor.independence.distance_covariance_test(a, b,
     ... num_resamples=5, random_state=0)
-    HypothesisTest(p_value=0.5, statistic=11.7532305...)
+    HypothesisTest(pvalue=0.5, statistic=11.7532305...)
     >>> dcor.independence.distance_covariance_test(a, b,
     ... num_resamples=5, random_state=13)
-    HypothesisTest(p_value=0.3333333..., statistic=11.7532305...)
+    HypothesisTest(pvalue=0.3333333..., statistic=11.7532305...)
     >>> dcor.independence.distance_covariance_test(a, a,
     ... num_resamples=7, random_state=0)
-    HypothesisTest(p_value=0.125, statistic=208.0)
+    HypothesisTest(pvalue=0.125, statistic=208.0)
 
     """
     x = _transform_to_2d(x)
@@ -179,22 +179,22 @@ def partial_distance_covariance_test(
     ...               [1000, 1000, 0, 1000]])
     >>> dcor.independence.partial_distance_covariance_test(a, a, b)
     ...                                       # doctest: +ELLIPSIS
-    HypothesisTest(p_value=1.0, statistic=142.6664416...)
+    HypothesisTest(pvalue=1.0, statistic=142.6664416...)
     >>> dcor.independence.partial_distance_covariance_test(a, b, c)
     ...                                      # doctest: +ELLIPSIS
-    HypothesisTest(p_value=1.0, statistic=7.2690070...e-15)
+    HypothesisTest(pvalue=1.0, statistic=7.2690070...e-15)
     >>> dcor.independence.partial_distance_covariance_test(b, b, c)
     ...                                      # doctest: +ELLIPSIS
-    HypothesisTest(p_value=1.0, statistic=2.2533380...e-30)
+    HypothesisTest(pvalue=1.0, statistic=2.2533380...e-30)
     >>> dcor.independence.partial_distance_covariance_test(a, b, c,
     ... num_resamples=5, random_state=0)
-    HypothesisTest(p_value=0.1666666..., statistic=7.2690070...e-15)
+    HypothesisTest(pvalue=0.1666666..., statistic=7.2690070...e-15)
     >>> dcor.independence.partial_distance_covariance_test(a, b, c,
     ... num_resamples=5, random_state=13)
-    HypothesisTest(p_value=0.1666666..., statistic=7.2690070...e-15)
+    HypothesisTest(pvalue=0.1666666..., statistic=7.2690070...e-15)
     >>> dcor.independence.partial_distance_covariance_test(a, c, b,
     ... num_resamples=7, random_state=0)
-    HypothesisTest(p_value=1.0, statistic=-7.5701764...e-12)
+    HypothesisTest(pvalue=1.0, statistic=-7.5701764...e-12)
 
     """
     random_state = _random_state_init(random_state)
@@ -316,14 +316,14 @@ def distance_correlation_t_test(x, y):
     >>> with np.errstate(divide='ignore'):
     ...     dcor.independence.distance_correlation_t_test(a, a)
     ...                                      # doctest: +ELLIPSIS
-    HypothesisTest(p_value=0.0, statistic=inf)
+    HypothesisTest(pvalue=0.0, statistic=inf)
     >>> dcor.independence.distance_correlation_t_test(a, b)
     ...                                      # doctest: +ELLIPSIS
-    HypothesisTest(p_value=0.6327451..., statistic=-0.4430164...)
+    HypothesisTest(pvalue=0.6327451..., statistic=-0.4430164...)
     >>> with np.errstate(divide='ignore'):
     ...     dcor.independence.distance_correlation_t_test(b, b)
     ...                                      # doctest: +ELLIPSIS
-    HypothesisTest(p_value=0.0, statistic=inf)
+    HypothesisTest(pvalue=0.0, statistic=inf)
 
     """
     t_test = distance_correlation_t_statistic(x, y)
@@ -334,4 +334,4 @@ def distance_correlation_t_test(x, y):
 
     p_value = 1 - scipy.stats.t.cdf(t_test, df=df)
 
-    return _hypothesis.HypothesisTest(p_value=p_value, statistic=t_test)
+    return _hypothesis.HypothesisTest(pvalue=p_value, statistic=t_test)
