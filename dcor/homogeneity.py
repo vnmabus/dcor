@@ -145,7 +145,8 @@ def energy_test(
     exponent=1,
     random_state=None,
     average=None,
-    estimation_stat=_energy.EstimationStatistic.V_STATISTIC
+    estimation_stat=_energy.EstimationStatistic.V_STATISTIC,
+    n_jobs=1,
 ):
     """
     Test of homogeneity based on the energy distance.
@@ -259,4 +260,5 @@ def energy_test(
         sample_distances,
         statistic_function=statistic_function,
         num_resamples=num_resamples,
-        random_state=random_state)
+        random_state=random_state,
+        n_jobs=n_jobs)
