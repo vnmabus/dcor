@@ -100,7 +100,7 @@ setup(
     tests_require=[
         'pytest-cov',
         'pytest-subtests',
-        'numpy>=1.17',  # Requires matmul on objects
+        'numpy>=1.22',  # Requires array_api module
     ],
     test_suite='dcor.tests',
     zip_safe=False,
