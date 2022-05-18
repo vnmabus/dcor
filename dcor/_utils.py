@@ -3,17 +3,23 @@
 from __future__ import annotations
 
 import enum
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 import numpy as np
 
 # TODO: Change in the future
 if TYPE_CHECKING:
-    ArrayType = np.typing.NDArray[float]
+    ArrayType = np.typing.NDArray[np.number]
 else:
     ArrayType = np.ndarray
 
 T = TypeVar("T", bound=ArrayType)
+RandomLike = Union[
+    np.random.RandomState,
+    np.random.Generator,
+    int,
+    None,
+]
 
 
 class CompileMode(enum.Enum):
@@ -147,7 +153,7 @@ def _can_be_numpy_double(x: ArrayType) -> bool:
 
 
 def _random_state_init(
-    random_state: np.random.RandomState | np.random.Generator | int | None,
+    random_state: RandomLike,
 ) -> np.random.RandomState | np.random.Generator:
     """
     Initialize a RandomState object.

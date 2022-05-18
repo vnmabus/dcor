@@ -2,19 +2,23 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Generic, Iterator, TypeVar
 
 import numpy as np
-from dcor._utils import ArrayType
 from joblib import Parallel, delayed
 
-from ._utils import _random_state_init
+from ._utils import ArrayType, RandomLike, _random_state_init, get_namespace
+
+T = TypeVar("T", bound=ArrayType)
 
 
 @dataclass
-class HypothesisTest():
+class HypothesisTest(Generic[T]):
+    """
+    Class containing the results of an hypothesis test.
+    """
     pvalue: float
-    statistic: ArrayType
+    statistic: T
 
     @property
     def p_value(self) -> float:
@@ -42,28 +46,40 @@ class HypothesisTest():
 
 
 def _permuted_statistic(
-    matrix: ArrayType,
-    statistic_function: Callable[[ArrayType], ArrayType],
+    matrix: T,
+    statistic_function: Callable[[T], T],
     permutation: np.typing.NDArray[int],
-) -> ArrayType:
+) -> T:
 
-    permuted_matrix = matrix[np.ix_(permutation, permutation)]
+    xp = get_namespace(matrix)
+
+    # We implicitly convert to NumPy for permuting the array if we don't
+    # have a take function.
+    # take is probably going to be included in the final version of the
+    # standard, so not much to worry about.
+    take = getattr(xp, "take", np.take)
+
+    permuted_rows = take(matrix, permutation, axis=0)
+    permuted_matrix = take(permuted_rows, permutation, axis=1)
+
+    # Transform back to the original type if NumPy conversion was needed.
+    permuted_matrix = xp.asarray(permuted_matrix)
 
     return statistic_function(permuted_matrix)
 
 
 def _permutation_test_with_sym_matrix(
-    matrix: ArrayType,
+    matrix: T,
     *,
-    statistic_function: Callable[[ArrayType], ArrayType],
+    statistic_function: Callable[[T], T],
     num_resamples: int,
-    random_state: np.random.RandomState | np.random.Generator | int | None,
+    random_state: RandomLike,
     n_jobs: int | None = None,
-) -> HypothesisTest:
+) -> HypothesisTest[T]:
     """
     Execute a permutation test in a symmetric matrix.
 
-    Parameters:
+    Args:
         matrix: Matrix that will perform the permutation test.
         statistic_function: Function that computes the desired statistic from
             the matrix.
@@ -76,7 +92,8 @@ def _permutation_test_with_sym_matrix(
         Results of the hypothesis test.
 
     """
-    matrix = np.asarray(matrix)
+    xp = get_namespace(matrix)
+    matrix = xp.asarray(matrix)
     random_state = _random_state_init(random_state)
 
     statistic = statistic_function(matrix)

@@ -2,14 +2,16 @@
 
 import unittest
 
-import dcor
 import numpy as np
+import numpy.array_api
+
+import dcor
 
 
 class TestEnergyTest(unittest.TestCase):
     """Tests for the homogeneity energy test function."""
 
-    def test_same_distribution_same_parameters(self):
+    def test_same_distribution_same_parameters(self) -> None:
         """
         Test that the test works on equal distributions.
 
@@ -24,22 +26,30 @@ class TestEnergyTest(unittest.TestCase):
 
         random_state = np.random.RandomState(0)
 
-        a = random_state.multivariate_normal(mean=mean,
-                                             cov=cov,
-                                             size=num_samples)
-        b = random_state.multivariate_normal(mean=mean,
-                                             cov=cov,
-                                             size=num_samples)
+        a = random_state.multivariate_normal(
+            mean=mean,
+            cov=cov,
+            size=num_samples,
+        )
+        b = random_state.multivariate_normal(
+            mean=mean,
+            cov=cov,
+            size=num_samples,
+        )
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
         result = dcor.homogeneity.energy_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a,
+            b,
+            num_resamples=num_resamples,
+            random_state=random_state,
+        )
 
         self.assertGreater(result.pvalue, significance)
 
-    def test_same_distribution_different_means(self):
+    def test_same_distribution_different_means(self) -> None:
         """
         Test that the test works on distributions with different means.
 
@@ -55,20 +65,30 @@ class TestEnergyTest(unittest.TestCase):
 
         random_state = np.random.RandomState(0)
 
-        a = random_state.multivariate_normal(mean=mean_0, cov=cov,
-                                             size=num_samples)
-        b = random_state.multivariate_normal(mean=mean_1, cov=cov,
-                                             size=num_samples)
+        a = random_state.multivariate_normal(
+            mean=mean_0,
+            cov=cov,
+            size=num_samples,
+        )
+        b = random_state.multivariate_normal(
+            mean=mean_1,
+            cov=cov,
+            size=num_samples,
+        )
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
         result = dcor.homogeneity.energy_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a,
+            b,
+            num_resamples=num_resamples,
+            random_state=random_state,
+        )
 
         self.assertLess(result.pvalue, significance)
 
-    def test_same_distribution_different_covariances(self):
+    def test_same_distribution_different_covariances(self) -> None:
         """
         Test that the test works on distributions with different covariance.
 
@@ -84,20 +104,30 @@ class TestEnergyTest(unittest.TestCase):
 
         random_state = np.random.RandomState(0)
 
-        a = random_state.multivariate_normal(mean=mean, cov=cov_0,
-                                             size=num_samples)
-        b = random_state.multivariate_normal(mean=mean, cov=cov_1,
-                                             size=num_samples)
+        a = random_state.multivariate_normal(
+            mean=mean,
+            cov=cov_0,
+            size=num_samples,
+        )
+        b = random_state.multivariate_normal(
+            mean=mean,
+            cov=cov_1,
+            size=num_samples,
+        )
 
         significance = 0.01
         num_resamples = int(3 / significance + 1)
 
         result = dcor.homogeneity.energy_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a,
+            b,
+            num_resamples=num_resamples,
+            random_state=random_state,
+        )
 
         self.assertLess(result.pvalue, significance)
 
-    def test_different_distributions(self):
+    def test_different_distributions(self) -> None:
         """
         Test that the test works on different distributions.
 
@@ -116,15 +146,16 @@ class TestEnergyTest(unittest.TestCase):
         num_resamples = int(3 / significance + 1)
 
         result = dcor.homogeneity.energy_test(
-            a, b, num_resamples=num_resamples, random_state=random_state)
+            a,
+            b,
+            num_resamples=num_resamples,
+            random_state=random_state,
+        )
 
         self.assertLess(result.pvalue, significance)
 
-    def test_different_means_median(self):
-        """
-        Test that the test works on the same distribution with different means,
-        using the median average.
-        """
+    def test_different_means_median(self) -> None:
+        """Check test works with different means, using the median average."""
         num_samples = 100
 
         random_state = np.random.RandomState(0)
@@ -140,7 +171,7 @@ class TestEnergyTest(unittest.TestCase):
             b,
             num_resamples=num_resamples,
             random_state=random_state,
-            average=np.median
+            average=np.median,
         )
 
         mean_result = dcor.homogeneity.energy_test(
@@ -148,22 +179,20 @@ class TestEnergyTest(unittest.TestCase):
             b,
             num_resamples=num_resamples,
             random_state=random_state,
-            average=np.mean
+            average=np.mean,
         )
 
         # Check that we are actually using a different average
         self.assertNotAlmostEqual(
-            mean_result.statistic,
-            median_result.statistic
+            float(mean_result.statistic),
+            float(median_result.statistic),
         )
 
         # Check that we detected the heterogeneity
         self.assertLess(median_result.pvalue, significance)
 
-    def test_different_distributions_median(self):
-        """
-        Test that the test works on different distributions using the median.
-        """
+    def test_different_distributions_median(self) -> None:
+        """Check test works on different distributions using the median."""
         num_samples = 100
 
         random_state = np.random.RandomState(0)
@@ -179,7 +208,103 @@ class TestEnergyTest(unittest.TestCase):
             b,
             average=np.median,
             num_resamples=num_resamples,
-            random_state=random_state
+            random_state=random_state,
         )
+
+        self.assertLess(result.pvalue, significance)
+
+
+class TestEnergyArrayAPI(unittest.TestCase):
+    """Check energy distance test works with the Array API standard."""
+
+    def test_same_distribution_same_parameters(self) -> None:
+        """
+        Test that the test works on equal distributions.
+
+        As the distributions are the same, the test should not reject
+        the null hypothesis.
+
+        """
+        vector_size = 10
+        num_samples = 100
+        mean = np.zeros(vector_size)
+        cov = np.eye(vector_size)
+
+        random_state = np.random.RandomState(0)
+
+        a = np.array_api.asarray(
+            random_state.multivariate_normal(
+                mean=mean,
+                cov=cov,
+                size=num_samples,
+            ),
+        )
+
+        b = np.array_api.asarray(
+            random_state.multivariate_normal(
+                mean=mean,
+                cov=cov,
+                size=num_samples,
+            ),
+        )
+
+        significance = 0.01
+        num_resamples = int(3 / significance + 1)
+
+        result = dcor.homogeneity.energy_test(
+            a,
+            b,
+            num_resamples=num_resamples,
+            random_state=random_state,
+        )
+
+        self.assertIsInstance(result.pvalue, float)
+        self.assertIsInstance(result.statistic, type(a))
+
+        self.assertGreater(result.pvalue, significance)
+
+    def test_same_distribution_different_means(self) -> None:
+        """
+        Test that the test works on distributions with different means.
+
+        As the distributions are not the same, the test should reject
+        the null hypothesis.
+
+        """
+        vector_size = 10
+        num_samples = 100
+        mean_0 = np.zeros(vector_size)
+        mean_1 = np.ones(vector_size)
+        cov = np.eye(vector_size)
+
+        random_state = np.random.RandomState(0)
+
+        a = np.array_api.asarray(
+            random_state.multivariate_normal(
+                mean=mean_0,
+                cov=cov,
+                size=num_samples,
+            ),
+        )
+        b = np.array_api.asarray(
+            random_state.multivariate_normal(
+                mean=mean_1,
+                cov=cov,
+                size=num_samples,
+            ),
+        )
+
+        significance = 0.01
+        num_resamples = int(3 / significance + 1)
+
+        result = dcor.homogeneity.energy_test(
+            a,
+            b,
+            num_resamples=num_resamples,
+            random_state=random_state,
+        )
+
+        self.assertIsInstance(result.pvalue, float)
+        self.assertIsInstance(result.statistic, type(a))
 
         self.assertLess(result.pvalue, significance)
