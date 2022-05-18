@@ -101,6 +101,7 @@ setup(
         'pytest-cov',
         'pytest-subtests',
         'numpy>=1.22',  # Requires array_api module
+        'numba<=0.53.1',  # Greater versions don't support numpy>=1.22
     ],
     test_suite='dcor.tests',
     zip_safe=False,
