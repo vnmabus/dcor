@@ -4,23 +4,44 @@ Functions for testing independence of several distributions.
 The functions in this module provide methods for testing if
 the samples generated from two random vectors are independent.
 """
+from __future__ import annotations
+
+from typing import TypeVar
+
 import numpy as np
 import scipy.stats
 
-from . import _dcor_internals, _hypothesis
 from ._dcor import u_distance_correlation_sqr
-from ._utils import _random_state_init, _transform_to_2d
+from ._dcor_internals import (
+    _check_same_n_elements,
+    _distance_matrix_generic,
+    _u_distance_matrix,
+    double_centered,
+    mean_product,
+    u_complementary_projection,
+    u_product,
+)
+from ._hypothesis import HypothesisTest, _permutation_test_with_sym_matrix
+from ._utils import (
+    ArrayType,
+    RandomLike,
+    _random_state_init,
+    _sqrt,
+    _transform_to_2d,
+)
+
+T = TypeVar("T", bound=ArrayType)
 
 
 def distance_covariance_test(
-    x,
-    y,
+    x: T,
+    y: T,
     *,
-    num_resamples=0,
-    exponent=1,
-    random_state=None,
-    n_jobs=1,
-):
+    num_resamples: int = 0,
+    exponent: float = 1,
+    random_state: RandomLike = None,
+    n_jobs: int = 1,
+) -> HypothesisTest[T]:
     """
     Test of distance covariance independence.
 
@@ -30,102 +51,101 @@ def distance_covariance_test(
     The test is a permutation test where the null hypothesis is that the two
     random vectors are independent.
 
-    Parameters
-    ----------
-    x: array_like
-        First random vector. The columns correspond with the individual random
-        variables while the rows are individual instances of the random vector.
-    y: array_like
-        Second random vector. The columns correspond with the individual random
-        variables while the rows are individual instances of the random vector.
-    exponent: float
-        Exponent of the Euclidean distance, in the range :math:`(0, 2)`.
-        Equivalently, it is twice the Hurst parameter of fractional Brownian
-        motion.
-    num_resamples: int
-        Number of permutations resamples to take in the permutation test.
-    random_state: {None, int, array_like, numpy.random.RandomState}
-        Random state to generate the permutations.
+    Args:
+        x: First random vector. The columns correspond with the individual
+            random variables while the rows are individual instances of the
+            random vector.
+        y: Second random vector. The columns correspond with the individual
+            random variables while the rows are individual instances of the
+            random vector.
+        exponent: Exponent of the Euclidean distance, in the range
+            :math:`(0, 2)`. Equivalently, it is twice the Hurst parameter of
+            fractional Brownian motion.
+        num_resamples: Number of permutations resamples to take in the
+            permutation test.
+        random_state: Random state to generate the permutations.
+        n_jobs: Number of jobs executed in parallel by Joblib.
 
-    Returns
-    -------
-    HypothesisTest
+    Returns:
         Results of the hypothesis test.
 
-    See Also
-    --------
-    distance_covariance
+    See Also:
+        distance_covariance
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1, 0, 0, 1],
-    ...               [0, 1, 1, 1],
-    ...               [1, 1, 1, 1],
-    ...               [1, 1, 0, 1]])
-    >>> dcor.independence.distance_covariance_test(a, a)
-    HypothesisTest(pvalue=1.0, statistic=208.0)
-    >>> dcor.independence.distance_covariance_test(a, b)
-    ...                                      # doctest: +ELLIPSIS
-    HypothesisTest(pvalue=1.0, statistic=11.75323056...)
-    >>> dcor.independence.distance_covariance_test(b, b)
-    HypothesisTest(pvalue=1.0, statistic=1.3604610...)
-    >>> dcor.independence.distance_covariance_test(a, b,
-    ... num_resamples=5, random_state=0)
-    HypothesisTest(pvalue=0.5, statistic=11.7532305...)
-    >>> dcor.independence.distance_covariance_test(a, b,
-    ... num_resamples=5, random_state=13)
-    HypothesisTest(pvalue=0.3333333..., statistic=11.7532305...)
-    >>> dcor.independence.distance_covariance_test(a, a,
-    ... num_resamples=7, random_state=0)
-    HypothesisTest(pvalue=0.125, statistic=208.0)
+    Examples:
+        >>> import numpy as np
+        >>> import dcor
+        >>> a = np.array([[1, 2, 3, 4],
+        ...               [5, 6, 7, 8],
+        ...               [9, 10, 11, 12],
+        ...               [13, 14, 15, 16]])
+        >>> b = np.array([[1, 0, 0, 1],
+        ...               [0, 1, 1, 1],
+        ...               [1, 1, 1, 1],
+        ...               [1, 1, 0, 1]])
+        >>> dcor.independence.distance_covariance_test(a, a)
+        HypothesisTest(pvalue=1.0, statistic=208.0)
+        >>> dcor.independence.distance_covariance_test(a, b)
+        ...                                      # doctest: +ELLIPSIS
+        HypothesisTest(pvalue=1.0, statistic=11.75323056...)
+        >>> dcor.independence.distance_covariance_test(b, b)
+        HypothesisTest(pvalue=1.0, statistic=1.3604610...)
+        >>> dcor.independence.distance_covariance_test(a, b,
+        ... num_resamples=5, random_state=0)
+        HypothesisTest(pvalue=0.5, statistic=11.7532305...)
+        >>> dcor.independence.distance_covariance_test(a, b,
+        ... num_resamples=5, random_state=13)
+        HypothesisTest(pvalue=0.3333333..., statistic=11.7532305...)
+        >>> dcor.independence.distance_covariance_test(a, a,
+        ... num_resamples=7, random_state=0)
+        HypothesisTest(pvalue=0.125, statistic=208.0)
 
     """
     x = _transform_to_2d(x)
     y = _transform_to_2d(y)
 
-    _dcor_internals._check_same_n_elements(x, y)
+    _check_same_n_elements(x, y)
 
     random_state = _random_state_init(random_state)
 
     # Compute U-centered matrices
-    u_x = _dcor_internals._distance_matrix_generic(
+    u_x = _distance_matrix_generic(
         x,
-        centering=_dcor_internals.double_centered,
-        exponent=exponent)
-    u_y = _dcor_internals._distance_matrix_generic(
+        centering=double_centered,
+        exponent=exponent,
+    )
+    u_y = _distance_matrix_generic(
         y,
-        centering=_dcor_internals.double_centered,
-        exponent=exponent)
+        centering=double_centered,
+        exponent=exponent,
+    )
 
     # Use the dcov statistic
-    def statistic_function(distance_matrix):
-        return u_x.shape[0] * _dcor_internals.mean_product(
-            distance_matrix, u_y)
+    def statistic_function(distance_matrix: T) -> T:
+        return u_x.shape[0] * mean_product(
+            distance_matrix,
+            u_y,
+        )
 
-    return _hypothesis._permutation_test_with_sym_matrix(
+    return _permutation_test_with_sym_matrix(
         u_x,
         statistic_function=statistic_function,
         num_resamples=num_resamples,
         random_state=random_state,
-        n_jobs=n_jobs)
+        n_jobs=n_jobs,
+    )
 
 
 def partial_distance_covariance_test(
-    x,
-    y,
-    z,
+    x: T,
+    y: T,
+    z: T,
     *,
-    num_resamples=0,
-    exponent=1,
-    random_state=None,
-    n_jobs=1,
-):
+    num_resamples: int = 0,
+    exponent: float = 1,
+    random_state: RandomLike = None,
+    n_jobs: int | None = 1,
+) -> HypothesisTest[T]:
     """
     Test of partial distance covariance independence.
 
@@ -135,138 +155,135 @@ def partial_distance_covariance_test(
     The test is a permutation test where the null hypothesis is that the first
     two random vectors are independent given the third one.
 
-    Parameters
-    ----------
-    x: array_like
-        First random vector. The columns correspond with the individual random
-        variables while the rows are individual instances of the random vector.
-    y: array_like
-        Second random vector. The columns correspond with the individual random
-        variables while the rows are individual instances of the random vector.
-    z: array_like
-        Observed random vector. The columns correspond with the individual
-        random variables while the rows are individual instances of the random
-        vector.
-    num_resamples: int
-        Number of permutations resamples to take in the permutation test.
-    random_state: {None, int, array_like, numpy.random.RandomState}
-        Random state to generate the permutations.
+    Args:
+        x: First random vector. The columns correspond with the individual
+            random variables while the rows are individual instances of the
+            random vector.
+        y: Second random vector. The columns correspond with the individual
+            random variables while the rows are individual instances of the
+            random vector.
+        z: Observed random vector. The columns correspond with the individual
+            random variables while the rows are individual instances of the
+            random vector.
+        exponent: Exponent of the Euclidean distance, in the range
+            :math:`(0, 2)`. Equivalently, it is twice the Hurst parameter of
+            fractional Brownian motion.
+        num_resamples: Number of permutations resamples to take in the
+            permutation test.
+        random_state: Random state to generate the permutations.
+        n_jobs: Number of jobs executed in parallel by Joblib.
 
-    Returns
-    -------
-    HypothesisTest
+    Returns:
         Results of the hypothesis test.
 
-    See Also
-    --------
-    partial_distance_covariance
+    See Also:
+        partial_distance_covariance
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1, 0, 0, 1],
-    ...               [0, 1, 1, 1],
-    ...               [1, 1, 1, 1],
-    ...               [1, 1, 0, 1]])
-    >>> c = np.array([[1000, 0, 0, 1000],
-    ...               [0, 1000, 1000, 1000],
-    ...               [1000, 1000, 1000, 1000],
-    ...               [1000, 1000, 0, 1000]])
-    >>> dcor.independence.partial_distance_covariance_test(a, a, b)
-    ...                                       # doctest: +ELLIPSIS
-    HypothesisTest(pvalue=1.0, statistic=142.6664416...)
-    >>> dcor.independence.partial_distance_covariance_test(a, b, c)
-    ...                                      # doctest: +ELLIPSIS
-    HypothesisTest(pvalue=1.0, statistic=7.2690070...e-15)
-    >>> dcor.independence.partial_distance_covariance_test(b, b, c)
-    ...                                      # doctest: +ELLIPSIS
-    HypothesisTest(pvalue=1.0, statistic=2.2533380...e-30)
-    >>> dcor.independence.partial_distance_covariance_test(a, b, c,
-    ... num_resamples=5, random_state=0)
-    HypothesisTest(pvalue=0.1666666..., statistic=7.2690070...e-15)
-    >>> dcor.independence.partial_distance_covariance_test(a, b, c,
-    ... num_resamples=5, random_state=13)
-    HypothesisTest(pvalue=0.1666666..., statistic=7.2690070...e-15)
-    >>> dcor.independence.partial_distance_covariance_test(a, c, b,
-    ... num_resamples=7, random_state=0)
-    HypothesisTest(pvalue=1.0, statistic=-7.5701764...e-12)
+    Examples:
+        >>> import numpy as np
+        >>> import dcor
+        >>> a = np.array([[1, 2, 3, 4],
+        ...               [5, 6, 7, 8],
+        ...               [9, 10, 11, 12],
+        ...               [13, 14, 15, 16]])
+        >>> b = np.array([[1, 0, 0, 1],
+        ...               [0, 1, 1, 1],
+        ...               [1, 1, 1, 1],
+        ...               [1, 1, 0, 1]])
+        >>> c = np.array([[1000, 0, 0, 1000],
+        ...               [0, 1000, 1000, 1000],
+        ...               [1000, 1000, 1000, 1000],
+        ...               [1000, 1000, 0, 1000]])
+        >>> dcor.independence.partial_distance_covariance_test(a, a, b)
+        ...                                       # doctest: +ELLIPSIS
+        HypothesisTest(pvalue=1.0, statistic=142.6664416...)
+        >>> dcor.independence.partial_distance_covariance_test(a, b, c)
+        ...                                      # doctest: +ELLIPSIS
+        HypothesisTest(pvalue=1.0, statistic=7.2690070...e-15)
+        >>> dcor.independence.partial_distance_covariance_test(b, b, c)
+        ...                                      # doctest: +ELLIPSIS
+        HypothesisTest(pvalue=1.0, statistic=2.2533380...e-30)
+        >>> dcor.independence.partial_distance_covariance_test(a, b, c,
+        ... num_resamples=5, random_state=0)
+        HypothesisTest(pvalue=0.1666666..., statistic=7.2690070...e-15)
+        >>> dcor.independence.partial_distance_covariance_test(a, b, c,
+        ... num_resamples=5, random_state=13)
+        HypothesisTest(pvalue=0.1666666..., statistic=7.2690070...e-15)
+        >>> dcor.independence.partial_distance_covariance_test(a, c, b,
+        ... num_resamples=7, random_state=0)
+        HypothesisTest(pvalue=1.0, statistic=-7.5701764...e-12)
 
     """
     random_state = _random_state_init(random_state)
 
     # Compute U-centered matrices
-    u_x = _dcor_internals._u_distance_matrix(x, exponent=exponent)
-    u_y = _dcor_internals._u_distance_matrix(y, exponent=exponent)
-    u_z = _dcor_internals._u_distance_matrix(z, exponent=exponent)
+    u_x = _u_distance_matrix(x, exponent=exponent)
+    u_y = _u_distance_matrix(y, exponent=exponent)
+    u_z = _u_distance_matrix(z, exponent=exponent)
 
     # Compute projections
-    proj = _dcor_internals.u_complementary_projection(u_z)
+    proj = u_complementary_projection(u_z)
 
     p_xz = proj(u_x)
     p_yz = proj(u_y)
 
     # Use the pdcor statistic
-    def statistic_function(distance_matrix):
-        return u_x.shape[0] * _dcor_internals.u_product(
-            distance_matrix, p_yz)
+    def statistic_function(distance_matrix: T) -> T:
+        return u_x.shape[0] * u_product(
+            distance_matrix,
+            p_yz,
+        )
 
-    return _hypothesis._permutation_test_with_sym_matrix(
+    return _permutation_test_with_sym_matrix(
         p_xz,
         statistic_function=statistic_function,
         num_resamples=num_resamples,
         random_state=random_state,
-        n_jobs=n_jobs)
+        n_jobs=n_jobs,
+    )
 
 
-def distance_correlation_t_statistic(x, y):
+def distance_correlation_t_statistic(
+    x: T,
+    y: T,
+) -> T:
     """
-    Transformation of the bias corrected version of distance correlation used
-    in :func:`distance_correlation_t_test`.
+    Statistic used in :func:`distance_correlation_t_test`.
 
-    Parameters
-    ----------
-    x: array_like
-        First random vector. The columns correspond with the individual random
-        variables while the rows are individual instances of the random vector.
-    y: array_like
-        Second random vector. The columns correspond with the individual random
-        variables while the rows are individual instances of the random vector.
+    Args:
+        x: First random vector. The columns correspond with the individual
+            random variables while the rows are individual instances of the
+            random vector.
+        y: Second random vector. The columns correspond with the individual
+            random variables while the rows are individual instances of the
+            random vector.
 
-    Returns
-    -------
-    numpy scalar
+    Returns:
         T statistic.
 
-    See Also
-    --------
-    distance_correlation_t_test
+    See Also:
+        distance_correlation_t_test
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1, 0, 0, 1],
-    ...               [0, 1, 1, 1],
-    ...               [1, 1, 1, 1],
-    ...               [1, 1, 0, 1]])
-    >>> with np.errstate(divide='ignore'):
-    ...     dcor.independence.distance_correlation_t_statistic(a, a)
-    inf
-    >>> dcor.independence.distance_correlation_t_statistic(a, b)
-    ...                                      # doctest: +ELLIPSIS
-    -0.4430164...
-    >>> with np.errstate(divide='ignore'):
-    ...     dcor.independence.distance_correlation_t_statistic(b, b)
-    inf
+    Examples:
+        >>> import numpy as np
+        >>> import dcor
+        >>> a = np.array([[1, 2, 3, 4],
+        ...               [5, 6, 7, 8],
+        ...               [9, 10, 11, 12],
+        ...               [13, 14, 15, 16]])
+        >>> b = np.array([[1, 0, 0, 1],
+        ...               [0, 1, 1, 1],
+        ...               [1, 1, 1, 1],
+        ...               [1, 1, 0, 1]])
+        >>> with np.errstate(divide='ignore'):
+        ...     dcor.independence.distance_correlation_t_statistic(a, a)
+        inf
+        >>> dcor.independence.distance_correlation_t_statistic(a, b)
+        ...                                      # doctest: +ELLIPSIS
+        -0.4430164...
+        >>> with np.errstate(divide='ignore'):
+        ...     dcor.independence.distance_correlation_t_statistic(b, b)
+        inf
 
     """
     bcdcor = u_distance_correlation_sqr(x, y)
@@ -274,56 +291,56 @@ def distance_correlation_t_statistic(x, y):
     n = x.shape[0]
     v = n * (n - 3) / 2
 
-    return np.sqrt(v - 1) * bcdcor / np.sqrt(1 - bcdcor**2)
+    return np.sqrt(v - 1) * bcdcor / _sqrt(1 - bcdcor**2)
 
 
-def distance_correlation_t_test(x, y):
+def distance_correlation_t_test(
+    x: T,
+    y: T,
+) -> HypothesisTest[T]:
     """
-    Test of independence for high dimension based on convergence to a Student t
-    distribution. The null hypothesis is that the two random vectors are
+    Test of independence for high dimension.
+
+    It is based on convergence to a Student t distribution.
+    The null hypothesis is that the two random vectors are
     independent.
 
-    Parameters
-    ----------
-    x: array_like
-        First random vector. The columns correspond with the individual random
-        variables while the rows are individual instances of the random vector.
-    y: array_like
-        Second random vector. The columns correspond with the individual random
-        variables while the rows are individual instances of the random vector.
+    Args:
+        x: First random vector. The columns correspond with the individual
+            random variables while the rows are individual instances of the
+            random vector.
+        y: Second random vector. The columns correspond with the individual
+            random variables while the rows are individual instances of the
+            random vector.
 
-    Returns
-    -------
-    HypothesisTest
+    Returns:
         Results of the hypothesis test.
 
-    See Also
-    --------
-    distance_correlation_t_statistic
+    See Also:
+        distance_correlation_t_statistic
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import dcor
-    >>> a = np.array([[1, 2, 3, 4],
-    ...               [5, 6, 7, 8],
-    ...               [9, 10, 11, 12],
-    ...               [13, 14, 15, 16]])
-    >>> b = np.array([[1, 0, 0, 1],
-    ...               [0, 1, 1, 1],
-    ...               [1, 1, 1, 1],
-    ...               [1, 1, 0, 1]])
-    >>> with np.errstate(divide='ignore'):
-    ...     dcor.independence.distance_correlation_t_test(a, a)
-    ...                                      # doctest: +ELLIPSIS
-    HypothesisTest(pvalue=0.0, statistic=inf)
-    >>> dcor.independence.distance_correlation_t_test(a, b)
-    ...                                      # doctest: +ELLIPSIS
-    HypothesisTest(pvalue=0.6327451..., statistic=-0.4430164...)
-    >>> with np.errstate(divide='ignore'):
-    ...     dcor.independence.distance_correlation_t_test(b, b)
-    ...                                      # doctest: +ELLIPSIS
-    HypothesisTest(pvalue=0.0, statistic=inf)
+    Examples:
+        >>> import numpy as np
+        >>> import dcor
+        >>> a = np.array([[1, 2, 3, 4],
+        ...               [5, 6, 7, 8],
+        ...               [9, 10, 11, 12],
+        ...               [13, 14, 15, 16]])
+        >>> b = np.array([[1, 0, 0, 1],
+        ...               [0, 1, 1, 1],
+        ...               [1, 1, 1, 1],
+        ...               [1, 1, 0, 1]])
+        >>> with np.errstate(divide='ignore'):
+        ...     dcor.independence.distance_correlation_t_test(a, a)
+        ...                                      # doctest: +ELLIPSIS
+        HypothesisTest(pvalue=0.0, statistic=inf)
+        >>> dcor.independence.distance_correlation_t_test(a, b)
+        ...                                      # doctest: +ELLIPSIS
+        HypothesisTest(pvalue=0.6327451..., statistic=-0.4430164...)
+        >>> with np.errstate(divide='ignore'):
+        ...     dcor.independence.distance_correlation_t_test(b, b)
+        ...                                      # doctest: +ELLIPSIS
+        HypothesisTest(pvalue=0.0, statistic=inf)
 
     """
     t_test = distance_correlation_t_statistic(x, y)
@@ -334,4 +351,4 @@ def distance_correlation_t_test(x, y):
 
     p_value = 1 - scipy.stats.t.cdf(t_test, df=df)
 
-    return _hypothesis.HypothesisTest(pvalue=p_value, statistic=t_test)
+    return HypothesisTest(pvalue=p_value, statistic=t_test)

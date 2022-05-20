@@ -1,24 +1,31 @@
-"""Tests of the distance covariance and correlation"""
+"""Tests of the distance covariance and correlation."""
+from __future__ import annotations
 
 import math
 import unittest
 from decimal import Decimal
 from fractions import Fraction
+from typing import Any, Callable, Tuple, Type, TypeVar
 
 import numpy as np
+import numpy.array_api
 
 import dcor
-import dcor._fast_dcov_avl
+from dcor._fast_dcov_avl import _dyad_update
+from dcor._hypothesis import HypothesisTest
+from dcor._utils import ArrayType
+
+T = TypeVar("T")
 
 
 class TestDistanceCorrelation(unittest.TestCase):
-    """Distance correlation tests"""
+    """Distance correlation tests."""
 
-    def setUp(self):
-        """Set the common parameters"""
+    def setUp(self) -> None:
+        """Set the common parameters."""
         self.test_max_size = 10
 
-    def test_double_centered(self):
+    def test_double_centered(self) -> None:
         """
         Test that the double centering is right.
 
@@ -37,7 +44,7 @@ class TestDistanceCorrelation(unittest.TestCase):
             np.testing.assert_allclose(column_sum, np.zeros(i), atol=1e-8)
             np.testing.assert_allclose(row_sum, np.zeros(i), atol=1e-8)
 
-    def test_dyad_update(self):  # pylint:disable=no-self-use
+    def test_dyad_update(self) -> None:  # pylint:disable=no-self-use
         """Compare dyad update results with the original code in the paper."""
         y = np.array([1, 2, 3])
         c = np.array([4, 5, 6])
@@ -56,13 +63,13 @@ class TestDistanceCorrelation(unittest.TestCase):
         pos_sums[:] = 2 ** (l_max - pos_sums)
         pos_sums = np.cumsum(pos_sums)
 
-        gamma = dcor._fast_dcov_avl._dyad_update(
+        gamma = _dyad_update(
             y, c, gamma1, l_max, s, pos_sums)
-        expected_gamma = [0., 4., 9.]
+        expected_gamma = [0, 4, 9]
 
         np.testing.assert_allclose(gamma, expected_gamma)
 
-    def test_distance_correlation_multivariate(self):
+    def test_distance_correlation_multivariate(self) -> None:
         """Compare distance correlation with the energy package."""
         matrix1 = np.array(((1, 2, 3), (4, 5, 6), (7, 8, 9)))
         matrix2 = np.array(((7, 3, 6), (2, 1, 4), (3, 8, 1)))
@@ -70,138 +77,239 @@ class TestDistanceCorrelation(unittest.TestCase):
         constant_matrix = np.ones((3, 3))
 
         correlation = dcor.distance_correlation_sqr(
-            matrix1, matrix1)
-        self.assertAlmostEqual(correlation, 1)
+            matrix1,
+            matrix1,
+        )
+        self.assertAlmostEqual(float(correlation), 1)
 
         correlation = dcor.distance_correlation_sqr(
-            matrix1, constant_matrix)
-        self.assertAlmostEqual(correlation, 0)
+            matrix1,
+            constant_matrix,
+        )
+        self.assertAlmostEqual(float(correlation), 0)
 
         correlation = dcor.distance_correlation_sqr(
-            matrix1, matrix2)
-        self.assertAlmostEqual(correlation, 0.93387, places=5)
+            matrix1,
+            matrix2,
+        )
+        self.assertAlmostEqual(float(correlation), 0.93387, places=5)
 
         correlation = dcor.distance_correlation_sqr(
-            matrix1, matrix3)
-        self.assertAlmostEqual(correlation, 0.31623, places=5)
+            matrix1,
+            matrix3,
+        )
+        self.assertAlmostEqual(float(correlation), 0.31623, places=5)
 
-    def test_distance_correlation_comparison(self):
-        """
-        Compare all implementations of the distance covariance and correlation.
-        """
-        arr1 = np.array(((1.,), (2.,), (3.,), (4.,), (5.,), (6.,)))
-        arr2 = np.array(((1.,), (7.,), (5.,), (5.,), (6.,), (2.,)))
+    def test_distance_correlation_comparison(self) -> None:
+        """Compare all implementations of distance covariance/correlation."""
+        arr1 = np.array(((1.0,), (2.0,), (3.0,), (4.0,), (5.0,), (6.0,)))
+        arr2 = np.array(((1.0,), (7.0,), (5.0,), (5.0,), (6.0,), (2.0,)))
 
         for method in dcor.DistanceCovarianceMethod:
-            with self.subTest(method=method):
 
-                compile_modes = [
-                    dcor.CompileMode.AUTO,
-                    dcor.CompileMode.NO_COMPILE,
-                ]
+            compile_modes = [
+                dcor.CompileMode.AUTO,
+                dcor.CompileMode.NO_COMPILE,
+            ]
 
-                if method is not dcor.DistanceCovarianceMethod.NAIVE:
-                    compile_modes += [dcor.CompileMode.COMPILE_CPU]
+            if method is not dcor.DistanceCovarianceMethod.NAIVE:
+                compile_modes += [dcor.CompileMode.COMPILE_CPU]
 
-                for compile_mode in compile_modes:
-                    with self.subTest(compile_mode=compile_mode):
+            for compile_mode in compile_modes:
+                with self.subTest(method=method, compile_mode=compile_mode):
 
-                        # Unbiased versions
+                    # Unbiased versions
 
-                        covariance = dcor.u_distance_covariance_sqr(
-                            arr1, arr2, method=method,
-                            compile_mode=compile_mode)
-                        self.assertAlmostEqual(covariance, -0.88889, places=5)
+                    u_covariance = dcor.u_distance_covariance_sqr(
+                        arr1,
+                        arr2,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    self.assertAlmostEqual(
+                        float(u_covariance),
+                        -0.88889,
+                        places=5,
+                    )
 
-                        correlation = dcor.u_distance_correlation_sqr(
-                            arr1, arr2, method=method,
-                            compile_mode=compile_mode)
-                        self.assertAlmostEqual(correlation, -0.41613, places=5)
+                    u_correlation = dcor.u_distance_correlation_sqr(
+                        arr1,
+                        arr2,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    self.assertAlmostEqual(
+                        float(u_correlation),
+                        -0.41613,
+                        places=5,
+                    )
 
-                        covariance = dcor.u_distance_covariance_sqr(
-                            arr1, arr1, method=method,
-                            compile_mode=compile_mode)
-                        self.assertAlmostEqual(covariance, 1.55556, places=5)
+                    u_covariance = dcor.u_distance_covariance_sqr(
+                        arr1,
+                        arr1,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    self.assertAlmostEqual(
+                        float(u_covariance),
+                        1.55556,
+                        places=5,
+                    )
 
-                        correlation = dcor.u_distance_correlation_sqr(
-                            arr1, arr1, method=method,
-                            compile_mode=compile_mode)
-                        self.assertAlmostEqual(correlation, 1, places=5)
+                    u_correlation = dcor.u_distance_correlation_sqr(
+                        arr1,
+                        arr1,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    self.assertAlmostEqual(
+                        float(u_correlation),
+                        1,
+                        places=5,
+                    )
 
-                        covariance = dcor.u_distance_covariance_sqr(
-                            arr2, arr2, method=method,
-                            compile_mode=compile_mode)
-                        self.assertAlmostEqual(covariance, 2.93333, places=5)
+                    u_covariance = dcor.u_distance_covariance_sqr(
+                        arr2,
+                        arr2,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    self.assertAlmostEqual(
+                        float(u_covariance),
+                        2.93333,
+                        places=5,
+                    )
 
-                        correlation = dcor.u_distance_correlation_sqr(
-                            arr2, arr2, method=method,
-                            compile_mode=compile_mode)
-                        self.assertAlmostEqual(correlation, 1, places=5)
+                    u_correlation = dcor.u_distance_correlation_sqr(
+                        arr2,
+                        arr2,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    self.assertAlmostEqual(
+                        float(u_correlation),
+                        1,
+                        places=5,
+                    )
 
-                        stats = dcor.u_distance_stats_sqr(
-                            arr1, arr2, method=method,
-                            compile_mode=compile_mode)
-                        np.testing.assert_allclose(
-                            tuple(stats),
-                            (-0.88889, -0.41613, 1.55556, 2.93333),
-                            rtol=1e-4,
-                        )
+                    u_stats = dcor.u_distance_stats_sqr(
+                        arr1,
+                        arr2,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    np.testing.assert_allclose(
+                        tuple(u_stats),
+                        (-0.88889, -0.41613, 1.55556, 2.93333),
+                        rtol=1e-4,
+                    )
 
-                        # Biased
+                    # Biased
 
-                        covariance = dcor.distance_covariance_sqr(
-                            arr1, arr2, method=method,
-                            compile_mode=compile_mode)
-                        self.assertAlmostEqual(covariance, 0.68519, places=5)
+                    covariance = dcor.distance_covariance_sqr(
+                        arr1,
+                        arr2,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    self.assertAlmostEqual(
+                        float(covariance),
+                        0.68519,
+                        places=5,
+                    )
 
-                        correlation = dcor.distance_correlation_sqr(
-                            arr1, arr2, method=method,
-                            compile_mode=compile_mode)
-                        self.assertAlmostEqual(correlation, 0.30661, places=5)
+                    correlation = dcor.distance_correlation_sqr(
+                        arr1,
+                        arr2,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    self.assertAlmostEqual(
+                        float(correlation),
+                        0.30661,
+                        places=5,
+                    )
 
-                        covariance = dcor.distance_covariance_sqr(
-                            arr1, arr1, method=method,
-                            compile_mode=compile_mode)
-                        self.assertAlmostEqual(covariance, 1.70679, places=5)
+                    covariance = dcor.distance_covariance_sqr(
+                        arr1,
+                        arr1,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    self.assertAlmostEqual(
+                        float(covariance),
+                        1.70679,
+                        places=5,
+                    )
 
-                        correlation = dcor.distance_correlation_sqr(
-                            arr1, arr1, method=method,
-                            compile_mode=compile_mode)
-                        self.assertAlmostEqual(correlation, 1, places=5)
+                    correlation = dcor.distance_correlation_sqr(
+                        arr1,
+                        arr1,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    self.assertAlmostEqual(
+                        float(correlation),
+                        1,
+                        places=5,
+                    )
 
-                        covariance = dcor.distance_covariance_sqr(
-                            arr2, arr2, method=method,
-                            compile_mode=compile_mode)
-                        self.assertAlmostEqual(covariance, 2.92593, places=5)
+                    covariance = dcor.distance_covariance_sqr(
+                        arr2,
+                        arr2,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    self.assertAlmostEqual(
+                        float(covariance),
+                        2.92593,
+                        places=5,
+                    )
 
-                        correlation = dcor.distance_correlation_sqr(
-                            arr2, arr2, method=method,
-                            compile_mode=compile_mode)
-                        self.assertAlmostEqual(correlation, 1, places=5)
+                    correlation = dcor.distance_correlation_sqr(
+                        arr2,
+                        arr2,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    self.assertAlmostEqual(
+                        float(correlation),
+                        1,
+                        places=5,
+                    )
 
-                        stats = dcor.distance_stats_sqr(
-                            arr1, arr2, method=method,
-                            compile_mode=compile_mode)
-                        np.testing.assert_allclose(
-                            tuple(stats),
-                            (0.68519, 0.30661, 1.70679, 2.92593),
-                            rtol=1e-4,
-                        )
+                    stats = dcor.distance_stats_sqr(
+                        arr1,
+                        arr2,
+                        method=method,
+                        compile_mode=compile_mode,
+                    )
+                    np.testing.assert_allclose(
+                        tuple(stats),
+                        (0.68519, 0.30661, 1.70679, 2.92593),
+                        rtol=1e-4,
+                    )
 
-    def test_u_distance_covariance_avl_overflow(self):
-        """Test potential overflow in fast distance correlation"""
-        arr1 = np.concatenate((np.zeros(500, dtype=int),
-                               np.ones(500, dtype=int)))
+    def test_u_distance_covariance_avl_overflow(self) -> None:
+        """Test potential overflow in fast distance correlation."""
+        arr1 = np.concatenate((
+            np.zeros(500, dtype=int),
+            np.ones(500, dtype=int),
+        ))
         covariance = dcor.u_distance_covariance_sqr(
-            arr1, arr1,
+            arr1,
+            arr1,
             method='avl',
-            compile_mode=dcor.CompileMode.NO_COMPILE)
+            compile_mode=dcor.CompileMode.NO_COMPILE,
+        )
         self.assertAlmostEqual(covariance, 0.25050, places=5)
 
-    def _test_u_distance_correlation_vector_generic(self,
-                                                    vector_type=None,
-                                                    type_cov=None,
-                                                    type_cor=None):
+    def _test_u_distance_correlation_vector_generic(
+        self,
+        vector_type: Type[Any],
+        type_cov: Type[Any] | None = None,
+        type_cor: Type[Any] | None = None,
+    ) -> None:
         """
         Auxiliar function for testing U-distance correlation in vectors.
 
@@ -214,10 +322,8 @@ class TestDistanceCorrelation(unittest.TestCase):
         if type_cor is None:
             type_cor = vector_type
 
-        arr1 = np.array([vector_type(1), vector_type(2), vector_type(3),
-                         vector_type(4), vector_type(5), vector_type(6)])
-        arr2 = np.array([vector_type(1), vector_type(7), vector_type(5),
-                         vector_type(5), vector_type(6), vector_type(2)])
+        arr1 = np.array([vector_type(i) for i in range(1, 7)])
+        arr2 = np.array([vector_type(i) for i in (1, 7, 5, 5, 6, 2)])
 
         covariance = dcor.u_distance_covariance_sqr(
             arr1, arr2, compile_mode=dcor.CompileMode.NO_COMPILE)
@@ -239,21 +345,21 @@ class TestDistanceCorrelation(unittest.TestCase):
         self.assertIsInstance(correlation, type_cor)
         self.assertAlmostEqual(correlation, type_cor(1), places=5)
 
-    def test_u_distance_correlation_vector(self):
+    def test_u_distance_correlation_vector(self) -> None:
         """Check U-distance with vectors of float."""
         return self._test_u_distance_correlation_vector_generic(
-            vector_type=float
+            vector_type=float,
         )
 
-    def test_u_distance_correlation_vector_ints(self):
+    def test_u_distance_correlation_vector_ints(self) -> None:
         """Check U-distance with vectors of integers."""
         return self._test_u_distance_correlation_vector_generic(
             vector_type=int,
             type_cov=float,
-            type_cor=float
+            type_cor=float,
         )
 
-    def test_u_distance_correlation_vector_fractions(self):
+    def test_u_distance_correlation_vector_fractions(self) -> None:
         """
         Check U-distance with vectors of fractions.
 
@@ -262,19 +368,21 @@ class TestDistanceCorrelation(unittest.TestCase):
         """
         return self._test_u_distance_correlation_vector_generic(
             vector_type=Fraction,
-            type_cor=float
+            type_cor=float,
         )
 
-    def test_u_distance_correlation_vector_decimal(self):
+    def test_u_distance_correlation_vector_decimal(self) -> None:
         """Check U-distance with vectors of Decimal."""
         return self._test_u_distance_correlation_vector_generic(
-            vector_type=Decimal
+            vector_type=Decimal,
         )
 
-    def _test_distance_correlation_vector_generic(self,
-                                                  vector_type=None,
-                                                  type_cov=None,
-                                                  type_cor=None):
+    def _test_distance_correlation_vector_generic(
+        self,
+        vector_type: Type[Any],
+        type_cov: Type[Any] | None = None,
+        type_cor: Type[Any] | None = None,
+    ) -> None:
         """
         Auxiliar function for testing distance correlation in vectors.
 
@@ -287,50 +395,56 @@ class TestDistanceCorrelation(unittest.TestCase):
         if type_cor is None:
             type_cor = vector_type
 
-        arr1 = np.array([vector_type(1), vector_type(2), vector_type(3),
-                         vector_type(4), vector_type(5), vector_type(6)])
-        arr2 = np.array([vector_type(1), vector_type(7), vector_type(5),
-                         vector_type(5), vector_type(6), vector_type(2)])
+        arr1 = np.array([vector_type(i) for i in range(1, 7)])
+        arr2 = np.array([vector_type(i) for i in (1, 7, 5, 5, 6, 2)])
 
         covariance = dcor.distance_covariance_sqr(
-            arr1, arr2, compile_mode=dcor.CompileMode.NO_COMPILE)
+            arr1,
+            arr2,
+            compile_mode=dcor.CompileMode.NO_COMPILE,
+        )
         self.assertIsInstance(covariance, type_cov)
         self.assertAlmostEqual(covariance, type_cov(0.6851851), places=6)
 
         correlation = dcor.distance_correlation_sqr(
-            arr1, arr2, compile_mode=dcor.CompileMode.NO_COMPILE)
+            arr1,
+            arr2,
+            compile_mode=dcor.CompileMode.NO_COMPILE,
+        )
         self.assertIsInstance(correlation, type_cor)
         self.assertAlmostEqual(correlation, type_cor(0.3066099), places=6)
 
-        print(covariance, correlation)
-
         covariance = dcor.distance_covariance_sqr(
-            arr1, arr1, compile_mode=dcor.CompileMode.NO_COMPILE)
+            arr1,
+            arr1,
+            compile_mode=dcor.CompileMode.NO_COMPILE,
+        )
         self.assertIsInstance(covariance, type_cov)
         self.assertAlmostEqual(covariance, type_cov(1.706791), places=5)
 
         correlation = dcor.distance_correlation_sqr(
-            arr1, arr1, compile_mode=dcor.CompileMode.NO_COMPILE)
+            arr1,
+            arr1,
+            compile_mode=dcor.CompileMode.NO_COMPILE,
+        )
         self.assertIsInstance(correlation, type_cor)
         self.assertAlmostEqual(correlation, type_cor(1), places=5)
 
-        print(covariance, correlation)
-
-    def test_distance_correlation_vector(self):
+    def test_distance_correlation_vector(self) -> None:
         """Check distance correlation with vectors of float."""
         return self._test_distance_correlation_vector_generic(
-            vector_type=float
+            vector_type=float,
         )
 
-    def test_distance_correlation_vector_ints(self):
+    def test_distance_correlation_vector_ints(self) -> None:
         """Check distance correlation with vectors of integers."""
         return self._test_distance_correlation_vector_generic(
             vector_type=int,
             type_cov=float,
-            type_cor=float
+            type_cor=float,
         )
 
-    def test_distance_correlation_vector_fractions(self):
+    def test_distance_correlation_vector_fractions(self) -> None:
         """
         Check distance correlation with vectors of fractions.
 
@@ -339,17 +453,20 @@ class TestDistanceCorrelation(unittest.TestCase):
         """
         return self._test_distance_correlation_vector_generic(
             vector_type=Fraction,
-            type_cor=float
+            type_cor=float,
         )
 
-    def test_distance_correlation_vector_decimal(self):
+    def test_distance_correlation_vector_decimal(self) -> None:
         """Check distance correlation with vectors of Decimal."""
         return self._test_distance_correlation_vector_generic(
             vector_type=Decimal,
         )
 
-    def test_statistic(self):
-        """Test that the fast and naive algorithms for biased dcor match"""
+    def _test_fast_naive_generic(
+        self,
+        function: Callable[..., np.typing.NDArray[float]],
+    ) -> None:
+        """Test that the fast and naive algorithms match."""
         for seed in range(5):
 
             random_state = np.random.RandomState(seed)
@@ -358,36 +475,114 @@ class TestDistanceCorrelation(unittest.TestCase):
                 arr1 = random_state.rand(i, 1)
                 arr2 = random_state.rand(i, 1)
 
-                stat = dcor.distance_correlation_sqr(
-                    arr1, arr2, method='naive')
+                stat = function(
+                    arr1,
+                    arr2,
+                    method='naive',
+                )
 
                 for method in dcor.DistanceCovarianceMethod:
-                    with self.subTest(method=method):
-                        stat2 = dcor.distance_correlation_sqr(
-                            arr1, arr2, method=method)
+                    stat2 = function(
+                        arr1,
+                        arr2,
+                        method=method,
+                    )
 
-                        self.assertAlmostEqual(stat, stat2)
+                    self.assertAlmostEqual(float(stat), float(stat2))
 
-    def test_u_statistic(self):
-        """Test that the fast and naive algorithms for unbiased dcor match"""
-        for seed in range(5):
+    def test_fast_naive_statistic(self) -> None:
+        """Test that the fast and naive algorithms for biased dcor match."""
+        self._test_fast_naive_generic(dcor.distance_correlation_sqr)
 
-            random_state = np.random.RandomState(seed)
+    def test_u_statistic(self) -> None:
+        """Test that the fast and naive algorithms for unbiased dcor match."""
+        self._test_fast_naive_generic(dcor.u_distance_correlation_sqr)
 
-            for i in range(4, self.test_max_size + 1):
-                arr1 = random_state.rand(i, 1)
-                arr2 = random_state.rand(i, 1)
 
-                u_stat = dcor.u_distance_correlation_sqr(
-                    arr1, arr2, method='naive')
-                for method in dcor.DistanceCovarianceMethod:
-                    with self.subTest(method=method):
-                        u_stat2 = dcor.u_distance_correlation_sqr(
-                            arr1, arr2, method=method)
+class TestDcorArrayAPI(unittest.TestCase):
+    """Check that the energy distance works with the Array API standard."""
 
-                        self.assertAlmostEqual(u_stat, u_stat2)
+    def setUp(self) -> None:
+        """Initialize Array API arrays."""
+        self.a = numpy.array_api.asarray(
+            [
+                [1, 2, 3, 4],
+                [5, 6, 7, 8],
+                [9, 10, 11, 12],
+                [13, 14, 15, 16],
+            ],
+            dtype=numpy.array_api.float64,
+        )
+        self.b = numpy.array_api.asarray(
+            [
+                [1],
+                [0],
+                [0],
+                [1],
+            ],
+            dtype=numpy.array_api.float64,
+        )
+
+    def _test_generic(
+        self,
+        function: Callable[[T, T], T],
+        results: Tuple[float, float, float],
+    ) -> None:
+        """Check dcor functions."""
+        fun_aa = function(self.a, self.a)
+        fun_ab = function(self.a, self.b)
+        fun_bb = function(self.b, self.b)
+
+        self.assertIsInstance(fun_aa, type(self.a))
+        self.assertIsInstance(fun_ab, type(self.a))
+        self.assertIsInstance(fun_bb, type(self.a))
+
+        self.assertAlmostEqual(float(fun_aa), results[0])
+        self.assertAlmostEqual(float(fun_ab), results[1])
+        self.assertAlmostEqual(float(fun_bb), results[2])
+
+    def test_distance_covariance_sqr(self) -> None:
+        """Basic check of energy_distance."""
+        self._test_generic(
+            dcor.distance_covariance_sqr,
+            (52.0, 1.0, 0.25),
+        )
+
+    def test_u_distance_covariance_sqr(self) -> None:
+        """Basic check of energy_distance."""
+        self._test_generic(
+            dcor.u_distance_covariance_sqr,
+            (42.666666666, -2.666666666, 0.666666666),
+        )
+
+    def test_distance_covariance(self) -> None:
+        """Basic check of energy_distance."""
+        self._test_generic(
+            dcor.distance_covariance,
+            (7.211102550, 1.0, 0.5),
+        )
+
+    def test_distance_correlation_sqr(self) -> None:
+        """Basic check of energy_distance."""
+        self._test_generic(
+            dcor.distance_correlation_sqr,
+            (1.0, 0.277350098, 1.0),
+        )
+
+    def test_u_distance_correlation_sqr(self) -> None:
+        """Basic check of energy_distance."""
+        self._test_generic(
+            dcor.u_distance_correlation_sqr,
+            (1.0, -0.5, 1.0),
+        )
+
+    def test_distance_correlation(self) -> None:
+        """Basic check of energy_distance."""
+        self._test_generic(
+            dcor.distance_correlation,
+            (1.0, 0.526640387, 1.0),
+        )
 
 
 if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'Test.testName']
     unittest.main()  # pragma: no cover

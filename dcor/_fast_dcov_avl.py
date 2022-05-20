@@ -4,14 +4,14 @@ Functions to compute fast distance covariance using AVL.
 import math
 import warnings
 
-from numba import float64, int64, boolean
 import numba
-from numba.types import Tuple, Array
-
 import numpy as np
+from numba import boolean, float64, int64
+from numba.types import Array, Tuple
+
+from dcor._utils import get_namespace
 
 from ._utils import CompileMode
-
 
 input_array = Array(float64, 1, 'A', readonly=True)
 
@@ -268,14 +268,16 @@ _get_impl_args_compiled = numba.njit(
 
 
 impls_dict = {
-    CompileMode.AUTO: ((_get_impl_args_compiled,
-                        _distance_covariance_sqr_avl_impl_compiled),
-                       (_get_impl_args,
-                        _distance_covariance_sqr_avl_impl)),
-    CompileMode.NO_COMPILE: ((_get_impl_args,
-                              _distance_covariance_sqr_avl_impl),),
-    CompileMode.COMPILE_CPU: ((_get_impl_args_compiled,
-                               _distance_covariance_sqr_avl_impl_compiled),)
+    CompileMode.AUTO: (
+        (_get_impl_args_compiled, _distance_covariance_sqr_avl_impl_compiled),
+        (_get_impl_args, _distance_covariance_sqr_avl_impl),
+    ),
+    CompileMode.NO_COMPILE: (
+        (_get_impl_args, _distance_covariance_sqr_avl_impl),
+    ),
+    CompileMode.COMPILE_CPU: (
+        (_get_impl_args_compiled, _distance_covariance_sqr_avl_impl_compiled),
+    )
 }
 
 
@@ -286,8 +288,12 @@ def _distance_covariance_sqr_avl_generic(
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
 
-    x = np.asarray(x)
-    y = np.asarray(y)
+    xp = get_namespace(x, y)
+    x = xp.asarray(x)
+    y = xp.asarray(y)
+
+    if xp is not np:
+        raise ValueError("AVL method is only implemented for NumPy arrays.")
 
     assert 1 <= x.ndim <= 2
     if x.ndim == 2:
@@ -301,7 +307,8 @@ def _distance_covariance_sqr_avl_generic(
 
     if compile_mode not in impls_dict:
         raise NotImplementedError(
-            f"Compile mode {compile_mode} not implemented.")
+            f"Compile mode {compile_mode} not implemented.",
+        )
 
     for get_args, impl in impls_dict[compile_mode]:
 
@@ -314,11 +321,13 @@ def _distance_covariance_sqr_avl_generic(
             if compile_mode is not CompileMode.AUTO:
                 raise e
 
-            warnings.warn(f"Falling back to uncompiled AVL fast distance "
-                          f"covariance because of TypeError exception "
-                          f"raised: {e}. Rembember: only floating point "
-                          f"values can be used in the compiled "
-                          f"implementations.")
+            warnings.warn(
+                f"Falling back to uncompiled AVL fast distance "
+                f"covariance because of TypeError exception "
+                f"raised: {e}. Rembember: only floating point "
+                f"values can be used in the compiled "
+                f"implementations.",
+            )
 
 
 def _generate_rowwise_internal(target):

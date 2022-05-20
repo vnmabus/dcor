@@ -9,11 +9,17 @@ from __future__ import annotations
 
 from typing import Callable, Sequence, TypeVar
 
-import numpy as _np
+import numpy as np
 
-from . import _energy, _hypothesis, distances as _distances
-from ._energy import EstimationStatistic, EstimationStatisticLike
-from ._hypothesis import HypothesisTest
+from . import distances as _distances
+from ._energy import (
+    EstimationStatistic,
+    EstimationStatisticLike,
+    _check_valid_energy_exponent,
+    _energy_distance_from_distance_matrices,
+    energy_distance,
+)
+from ._hypothesis import HypothesisTest, _permutation_test_with_sym_matrix
 from ._utils import ArrayType, RandomLike, _transform_to_2d, get_namespace
 
 T = TypeVar("T", bound=ArrayType)
@@ -37,7 +43,7 @@ def _energy_test_statistic_from_distance_matrices(
     estimation_stat: EstimationStatisticLike = EstimationStatistic.V_STATISTIC,
 ) -> T:
     """Test statistic with precomputed distance matrices."""
-    energy_distance = _energy._energy_distance_from_distance_matrices(
+    energy_distance = _energy_distance_from_distance_matrices(
         distance_xx=distance_xx,
         distance_yy=distance_yy,
         distance_xy=distance_xy,
@@ -111,7 +117,7 @@ def energy_test_statistic(
 
     coefficient = _energy_test_statistic_coefficient(n, m)
 
-    return coefficient * _energy.energy_distance(
+    return coefficient * energy_distance(
         x,
         y,
         exponent=exponent,
@@ -194,6 +200,7 @@ def energy_test(
             distance using Hoeffding's unbiased U-statistics. Otherwise, use
             von Mises's biased V-statistics. If this is provided as a string,
             it will first be converted to an EstimationStatistic enum instance.
+        n_jobs: Number of jobs executed in parallel by Joblib.
 
     Returns:
         Results of the hypothesis test.
@@ -230,16 +237,16 @@ def energy_test(
         A different exponent for the Euclidean distance in the range
         :math:`(0, 2)` can be used:
 
-        >>> dcor.homogeneity.energy_test(a, b, exponent=1.5) # doctest: +ELLIPSIS
+        >>> dcor.homogeneity.energy_test(a, b, exponent=1.5)
+        ...                                               # doctest: +ELLIPSIS
         HypothesisTest(pvalue=1.0, statistic=171.0623923...)
 
     """
-
     samples = [_transform_to_2d(a) for a in args]
 
     num_samples = len(samples)
 
-    _energy._check_valid_energy_exponent(exponent)
+    _check_valid_energy_exponent(exponent)
 
     sample_sizes = tuple(a.shape[0] for a in samples)
 
@@ -249,11 +256,11 @@ def energy_test(
     try:
         concat = xp.concat
     except AttributeError:
-        concat = _np.concatenate
+        concat = np.concatenate
     pooled_samples = concat(samples)
 
-    sample_indexes_array = _np.zeros(num_samples, dtype=int)
-    sample_indexes_array[1:] = _np.cumsum(sample_sizes)[:-1]
+    sample_indexes_array = np.zeros(num_samples, dtype=int)
+    sample_indexes_array[1:] = np.cumsum(sample_sizes)[:-1]
     sample_indexes = tuple(sample_indexes_array)
 
     # Compute the distance matrix once
@@ -272,7 +279,7 @@ def energy_test(
             estimation_stat=estimation_stat,
         )
 
-    return _hypothesis._permutation_test_with_sym_matrix(
+    return _permutation_test_with_sym_matrix(
         sample_distances,
         statistic_function=statistic_function,
         num_resamples=num_resamples,

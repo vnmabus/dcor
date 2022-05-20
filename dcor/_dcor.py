@@ -16,7 +16,17 @@ from __future__ import annotations
 
 from dataclasses import astuple, dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Generic, Iterator, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    Iterator,
+    TypeVar,
+    Union,
+)
+
+import numpy as np
 
 from dcor._dcor_internals import _af_inv_scaled
 
@@ -157,7 +167,9 @@ class _DcovAlgorithmInternalsAuto():
         exponent: float,
         **kwargs: Any,
     ) -> Any:
-        if _can_use_fast_algorithm(x, y, exponent):
+        xp = get_namespace(x, y)
+
+        if xp == np and _can_use_fast_algorithm(x, y, exponent):
             return getattr(DistanceCovarianceMethod.AVL.value, method)(
                 x,
                 y,
@@ -431,8 +443,11 @@ class DistanceCovarianceMethod(Enum):
         return '%s.%s' % (self.__class__.__name__, self.name)
 
 
+DistanceCovarianceMethodLike = Union[DistanceCovarianceMethod, str]
+
+
 def _to_algorithm(
-    algorithm: DistanceCovarianceMethod | str,
+    algorithm: DistanceCovarianceMethodLike,
 ) -> DistanceCovarianceMethod:
     """Convert to algorithm if string."""
     if isinstance(algorithm, DistanceCovarianceMethod):
@@ -446,7 +461,7 @@ def distance_covariance_sqr(
     y: T,
     *,
     exponent: float = 1,
-    method: DistanceCovarianceMethod | str = DistanceCovarianceMethod.AUTO,
+    method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> T:
     """
@@ -506,7 +521,7 @@ def u_distance_covariance_sqr(
     y: T,
     *,
     exponent: float = 1,
-    method: DistanceCovarianceMethod = DistanceCovarianceMethod.AUTO,
+    method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> T:
     """
@@ -566,7 +581,7 @@ def distance_covariance(
     y: T,
     *,
     exponent: float = 1,
-    method: DistanceCovarianceMethod | str = DistanceCovarianceMethod.AUTO,
+    method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> T:
     """
@@ -627,7 +642,7 @@ def distance_stats_sqr(
     y: T,
     *,
     exponent: float = 1,
-    method: DistanceCovarianceMethod | str = DistanceCovarianceMethod.AUTO,
+    method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> Stats[T]:
     """
@@ -703,7 +718,7 @@ def u_distance_stats_sqr(
     y: T,
     *,
     exponent: float = 1,
-    method: DistanceCovarianceMethod | str = DistanceCovarianceMethod.AUTO,
+    method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> T:
     """
@@ -782,7 +797,7 @@ def distance_stats(
     y: T,
     *,
     exponent: float = 1,
-    method: DistanceCovarianceMethod | str = DistanceCovarianceMethod.AUTO,
+    method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> Stats[T]:
     """
@@ -863,7 +878,7 @@ def distance_correlation_sqr(
     y: T,
     *,
     exponent: float = 1,
-    method: DistanceCovarianceMethod | str = DistanceCovarianceMethod.AUTO,
+    method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> T:
     """
@@ -923,7 +938,7 @@ def u_distance_correlation_sqr(
     y: T,
     *,
     exponent: float = 1,
-    method: DistanceCovarianceMethod | str = DistanceCovarianceMethod.AUTO,
+    method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> T:
     """
@@ -985,7 +1000,7 @@ def distance_correlation(
     y: T,
     *,
     exponent: float = 1,
-    method: DistanceCovarianceMethod | str = DistanceCovarianceMethod.AUTO,
+    method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> T:
     """
@@ -1044,7 +1059,7 @@ def distance_correlation(
 def distance_correlation_af_inv_sqr(
     x: T,
     y: T,
-    method: DistanceCovarianceMethod | str = DistanceCovarianceMethod.AUTO,
+    method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> T:
     """
@@ -1114,7 +1129,7 @@ def distance_correlation_af_inv_sqr(
 def distance_correlation_af_inv(
     x: T,
     y: T,
-    method: DistanceCovarianceMethod | str = DistanceCovarianceMethod.AUTO,
+    method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> T:
     """
