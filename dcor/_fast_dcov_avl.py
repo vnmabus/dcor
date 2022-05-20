@@ -1,23 +1,45 @@
 '''
 Functions to compute fast distance covariance using AVL.
 '''
+from __future__ import annotations
+
 import math
 import warnings
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 import numba
 import numpy as np
 from numba import boolean, float64, int64
 from numba.types import Array, Tuple
 
-from dcor._utils import get_namespace
-
-from ._utils import CompileMode
+from ._utils import CompileMode, get_namespace
 
 input_array = Array(float64, 1, 'A', readonly=True)
 
 
-def _dyad_update(y, c, gamma, l_max, s,
-                 pos_sums):  # pylint:disable=too-many-locals
+if TYPE_CHECKING:
+    NumpyArrayType = np.typing.NDArray[np.number[Any]]
+    NumpyArrayFloatType = np.typing.NDArray[np.floating[Any]]
+    NumpyArrayIntType = np.typing.NDArray[np.integer[Any]]
+    from typing import Literal
+else:
+    NumpyArrayType = np.ndarray
+    NumpyArrayFloatType = np.ndarray
+    NumpyArrayIntType = np.ndarray
+    Literal = str
+
+
+T = TypeVar("T", bound=NumpyArrayType)
+
+
+def _dyad_update(
+    y: np.typing.NDArray[np.float64],
+    c: np.typing.NDArray[np.float64],
+    gamma: np.typing.NDArray[np.float64],
+    l_max: int,
+    s: np.typing.NDArray[np.float64],
+    pos_sums: np.typing.NDArray[np.int64],
+) -> np.typing.NDArray[np.float64]:  # pylint:disable=too-many-locals
     # This function has many locals so it can be compared
     # with the original algorithm.
     """
@@ -28,44 +50,59 @@ def _dyad_update(y, c, gamma, l_max, s,
 
     """
     n = y.shape[0]
+    exps2 = 2 ** np.arange(l_max)
 
     # Step 3: iteration
     for i in range(1, n):
 
         # Step 3.a: update s(l, k)
-        for l in range(l_max):
-            k = int(math.ceil(y[i - 1] / 2 ** l))
-            pos = k - 1
-
-            if l > 0:
-                pos += pos_sums[l - 1]
-
-            s[pos] += c[i - 1]
+        positions = np.ceil(y[i - 1] / exps2).astype(np.int64) - 1
+        positions[1:] += pos_sums[:-1]
+        s[positions] += c[i - 1]
 
         # Steps 3.b and 3.c
-        for l in range(l_max):
-            k = int(math.floor((y[i] - 1) / 2 ** l))
-            if k / 2 > math.floor(k / 2):
-                pos = k - 1
-                if l > 0:
-                    pos += pos_sums[l - 1]
-
-                gamma[i] = gamma[i] + s[pos]
+        positions = np.floor((y[i] - 1) / exps2).astype(np.int64)
+        valid_positions = (positions / 2 > np.floor(positions / 2))
+        positions -= 1
+        positions[1:] += pos_sums[:-1]
+        gamma[i] += np.sum(s[positions[valid_positions]])
 
     return gamma
 
 
 _dyad_update_compiled = numba.njit(
-    float64[:](float64[:], float64[:], float64[:],
-               int64, float64[:], int64[:]),
-    cache=True)(
-        _dyad_update)
+    float64[:](
+        float64[:],
+        float64[:],
+        float64[:],
+        int64,
+        float64[:],
+        int64[:],
+    ),
+    cache=True,
+)(
+    _dyad_update,
+)
 
 
-def _generate_partial_sum_2d(compiled):
+def _generate_partial_sum_2d(
+    compiled: bool,
+) -> Callable[..., np.typing.NDArray[np.float64]]:
 
-    def _partial_sum_2d(x, y, c, ix, iy, sx_c, sy_c, c_sum, l_max,
-                        s, pos_sums, gamma):  # pylint:disable=too-many-locals
+    def _partial_sum_2d(
+        x: np.typing.NDArray[np.float64],
+        y: np.typing.NDArray[np.float64],
+        c: np.typing.NDArray[np.float64],
+        ix: np.typing.NDArray[np.int64],
+        iy: np.typing.NDArray[np.int64],
+        sx_c: np.typing.NDArray[np.float64],
+        sy_c: np.typing.NDArray[np.float64],
+        c_sum: float,
+        l_max: int,
+        s: np.typing.NDArray[np.float64],
+        pos_sums: np.typing.NDArray[np.int64],
+        gamma: np.typing.NDArray[np.float64],
+    ) -> np.typing.NDArray[np.float64]:  # pylint:disable=too-many-locals
 
         dyad_update = _dyad_update_compiled if compiled else _dyad_update
 
@@ -73,35 +110,63 @@ def _generate_partial_sum_2d(compiled):
 
         # Step 7
         gamma = c_sum - c - 2 * sy_c[iy] - 2 * sx_c + 4 * gamma
-        gamma = gamma[ix]
-
-        return gamma
+        return gamma[ix]
 
     return _partial_sum_2d
 
 
 _partial_sum_2d = _generate_partial_sum_2d(compiled=False)
 _partial_sum_2d_compiled = numba.njit(
-    float64[:](float64[:], float64[:], float64[:],
-               int64[:], int64[:], float64[:], float64[:], float64,
-               int64, float64[:], int64[:], float64[:]),
-    cache=True)(
-    _generate_partial_sum_2d(compiled=True))
+    float64[:](
+        float64[:],
+        float64[:],
+        float64[:],
+        int64[:],
+        int64[:],
+        float64[:],
+        float64[:],
+        float64,
+        int64,
+        float64[:],
+        int64[:],
+        float64[:],
+    ),
+    cache=True,
+)(
+    _generate_partial_sum_2d(compiled=True),
+)
 
 
-def _generate_distance_covariance_sqr_avl_impl(compiled):
+def _generate_distance_covariance_sqr_avl_impl(
+    compiled: bool,
+) -> Callable[..., NumpyArrayType]:
 
     def _distance_covariance_sqr_avl_impl(
-            x, y, ix, iy, vx, vy, unbiased,
-            iy_reord,
-            c, sx_c, sy_c, c_sum, l_max, s,
-            pos_sums, gamma):  # pylint:disable=too-many-locals
+        x: np.typing.NDArray[np.float64],
+        y: np.typing.NDArray[np.float64],
+        ix: np.typing.NDArray[np.int64],
+        iy: np.typing.NDArray[np.int64],
+        vx: np.typing.NDArray[np.float64],
+        vy: np.typing.NDArray[np.float64],
+        unbiased: bool,
+        iy_reord: np.typing.NDArray[np.int64],
+        c: np.typing.NDArray[np.float64],
+        sx_c: np.typing.NDArray[np.float64],
+        sy_c: np.typing.NDArray[np.float64],
+        c_sum: np.typing.NDArray[np.float64],
+        l_max: int,
+        s: np.typing.NDArray[np.float64],
+        pos_sums: np.typing.NDArray[np.int64],
+        gamma: np.typing.NDArray[np.float64],
+    ) -> np.typing.NDArray[np.float64]:  # pylint:disable=too-many-locals
         # This function has many locals so it can be compared
         # with the original algorithm.
         """Fast algorithm for the squared distance covariance."""
-
-        partial_sum_2d = (_partial_sum_2d_compiled
-                          if compiled else _partial_sum_2d)
+        partial_sum_2d = (
+            _partial_sum_2d_compiled
+            if compiled
+            else _partial_sum_2d
+        )
 
         n = x.shape[0]
 
@@ -133,21 +198,25 @@ def _generate_distance_covariance_sqr_avl_impl(compiled):
         x_reord = vx
 
         # Step 2
-        new_y = iy_reord + 1.
+        new_y = iy_reord + 1.0
 
         # Step 7
-        gamma_1 = partial_sum_2d(
-            x_reord, new_y, c[0], ix, iy_reord, sx_c[0], sy_c[0], c_sum[0],
-            l_max, s[0], pos_sums, gamma[0])
-        gamma_x = partial_sum_2d(
-            x_reord, new_y, c[1], ix, iy_reord, sx_c[1], sy_c[1], c_sum[1],
-            l_max, s[1], pos_sums, gamma[1])
-        gamma_y = partial_sum_2d(
-            x_reord, new_y, c[2], ix, iy_reord, sx_c[2], sy_c[2], c_sum[2],
-            l_max, s[2], pos_sums, gamma[2])
-        gamma_xy = partial_sum_2d(
-            x_reord, new_y, c[3], ix, iy_reord, sx_c[3], sy_c[3], c_sum[3],
-            l_max, s[3], pos_sums, gamma[3])
+        gamma_1, gamma_x, gamma_y, gamma_xy = [
+            partial_sum_2d(
+                x_reord,
+                new_y,
+                c[i],
+                ix,
+                iy_reord,
+                sx_c[i],
+                sy_c[i],
+                c_sum[i],
+                l_max,
+                s[i],
+                pos_sums,
+                gamma[i],
+            ) for i in range(4)
+        ]
 
         # Step 8
         aijbij = np.sum(x * y * gamma_1 + gamma_xy - x * gamma_y - y * gamma_x)
@@ -157,28 +226,45 @@ def _generate_distance_covariance_sqr_avl_impl(compiled):
             d2 = (n - 2)
             d1 = (n - 1)
         else:
-            d3 = d2 = d1 = n
+            d3 = n
+            d2 = n
+            d1 = n
 
         # Step 9
-        d_cov = (aijbij / n / d3 - 2 * sum_ab / n / d2 / d3 +
-                 a_dot_dot / n * b_dot_dot / d1 / d2 / d3)
-
-        return d_cov
+        return (
+            aijbij / n / d3 - 2 * sum_ab / n / d2 / d3 +
+            a_dot_dot / n * b_dot_dot / d1 / d2 / d3
+        )
 
     return _distance_covariance_sqr_avl_impl
 
 
 _distance_covariance_sqr_avl_impl = _generate_distance_covariance_sqr_avl_impl(
-    compiled=False)
+    compiled=False,
+)
 _distance_covariance_sqr_avl_impl_compiled = numba.njit(
-    float64(input_array, input_array,
-            int64[:], int64[:],
-            float64[:], float64[:],
-            boolean, int64[:],
-            float64[:, :], float64[:, :], float64[:, :], float64[:], int64,
-            float64[:, :], int64[:], float64[:, :]),
-    cache=True)(
-    _generate_distance_covariance_sqr_avl_impl(compiled=True))
+    float64(
+        input_array,
+        input_array,
+        int64[:],
+        int64[:],
+        float64[:],
+        float64[:],
+        boolean,
+        int64[:],
+        float64[:, :],
+        float64[:, :],
+        float64[:, :],
+        float64[:],
+        int64,
+        float64[:, :],
+        int64[:],
+        float64[:, :],
+    ),
+    cache=True,
+)(
+    _generate_distance_covariance_sqr_avl_impl(compiled=True),
+)
 
 
 def _get_impl_args(x, y, unbiased=False):
@@ -211,12 +297,15 @@ def _get_impl_args(x, y, unbiased=False):
     iy_reord = np.zeros_like(y, dtype=np.int64)
     iy_reord[argsort_y_reord] = temp
 
-    c = np.stack((
-        np.ones_like(x),
-        vx,
-        y_reord,
-        x_times_y_reord
-    ), axis=-2)
+    c = np.stack(
+        (
+            np.ones_like(x),
+            vx,
+            y_reord,
+            x_times_y_reord,
+        ),
+        axis=-2,
+    )
 
     c_reord = np.zeros_like(c)
     sx_c = np.zeros_like(c)
@@ -242,29 +331,47 @@ def _get_impl_args(x, y, unbiased=False):
 
     gamma = np.zeros_like(c)
 
-    return (x, y,
-            ix, iy,
-            vx, vy,
-            unbiased,
-            iy_reord,
-            c, sx_c, sy_c,
-            c_sum,
-            l_max,
-            s,
-            pos_sums,
-            gamma)
+    return (
+        x,
+        y,
+        ix,
+        iy,
+        vx,
+        vy,
+        unbiased,
+        iy_reord,
+        c,
+        sx_c,
+        sy_c,
+        c_sum,
+        l_max,
+        s,
+        pos_sums,
+        gamma,
+    )
 
 
 _get_impl_args_compiled = numba.njit(
-    Tuple((input_array, input_array,
-           int64[:], int64[:],
-           float64[:], float64[:],
-           boolean, int64[:],
-           float64[:, :], float64[:, :], float64[:, :], float64[:],
-           int64, float64[:, :], int64[:],
-           float64[:, :]))(input_array, input_array, boolean),
-    cache=True)(
-        _get_impl_args)
+    Tuple((
+        input_array,
+        input_array,
+        int64[:],
+        int64[:],
+        float64[:],
+        float64[:],
+        boolean,
+        int64[:],
+        float64[:, :],
+        float64[:, :],
+        float64[:, :],
+        float64[:],
+        int64,
+        float64[:, :],
+        int64[:],
+        float64[:, :],
+    ))(input_array, input_array, boolean),
+    cache=True,
+)(_get_impl_args)
 
 
 impls_dict = {
@@ -282,7 +389,13 @@ impls_dict = {
 
 
 def _distance_covariance_sqr_avl_generic(
-        x, y, *, exponent=1, unbiased=False, compile_mode=CompileMode.AUTO):
+    x: T,
+    y: T,
+    *,
+    exponent: float = 1,
+    unbiased: bool = False,
+    compile_mode: CompileMode = CompileMode.AUTO,
+) -> T:
     """Fast algorithm for the squared distance covariance."""
 
     if exponent != 1:
@@ -330,10 +443,16 @@ def _distance_covariance_sqr_avl_generic(
             )
 
 
-def _generate_rowwise_internal(target):
+def _generate_rowwise_internal(
+    target: Literal["cpu", "parallel"],
+) -> Callable[..., NumpyArrayType]:
 
     def _rowwise_distance_covariance_sqr_avl_generic_internal(
-            x, y, unbiased, res):
+        x: T,
+        y: T,
+        unbiased: bool,
+        res: T,
+    ) -> T:
 
         args = _get_impl_args_compiled(x, y, unbiased)
 
@@ -344,7 +463,8 @@ def _generate_rowwise_internal(target):
         '(n),(n),()->()',
         nopython=True,
         cache=True,
-        target=target)(_rowwise_distance_covariance_sqr_avl_generic_internal)
+        target=target,
+    )(_rowwise_distance_covariance_sqr_avl_generic_internal)
 
 
 _rowwise_distance_covariance_sqr_avl_generic_internal_cpu = (
@@ -365,8 +485,12 @@ rowwise_impls_dict = {
 
 
 def _rowwise_distance_covariance_sqr_avl_generic(
-        x, y, exponent=1, unbiased=False,
-        compile_mode=CompileMode.AUTO):
+    x: T,
+    y: T,
+    exponent: float = 1,
+    unbiased: bool = False,
+    compile_mode: CompileMode = CompileMode.AUTO,
+) -> T:
 
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
