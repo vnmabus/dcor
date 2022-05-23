@@ -38,6 +38,7 @@ resulting graph.
         avl_times = np.zeros(len(n_samples_list))
         avl_uncompiled_times = np.zeros(len(n_samples_list))
         mergesort_times = np.zeros(len(n_samples_list))
+        mergesort_uncompiled_times = np.zeros(len(n_samples_list))
         naive_times = np.zeros(len(n_samples_list))
         
         for i, n_samples in enumerate(n_samples_list):
@@ -58,12 +59,21 @@ resulting graph.
         	def mergesort():
         		return dcor.distance_covariance(x, y, method='MERGESORT')
         		
+        	def mergesort_uncompiled():
+        		return dcor.distance_covariance(
+        		    x,
+        		    y,
+        		    method='MERGESORT',
+        		    compile_mode=dcor.CompileMode.NO_COMPILE,
+        		)
+        		
         	def naive():
         		return dcor.distance_covariance(x, y, method='NAIVE')
         		
         	avl_times[i] = timeit(avl, number=n_times)
         	avl_uncompiled_times[i] = timeit(avl_uncompiled, number=n_times)
         	mergesort_times[i] = timeit(mergesort, number=n_times)
+        	mergesort_uncompiled_times[i] = timeit(mergesort_uncompiled, number=n_times)
         	naive_times[i] = timeit(naive, number=n_times)
         
         plt.title("Distance covariance performance comparison")
@@ -85,7 +95,9 @@ compilation with Numba:
         plt.xlabel("Number of samples")
         plt.ylabel("Time (seconds)")
         plt.plot(n_samples_list, avl_times, label="avl")
+        plt.plot(n_samples_list, mergesort_times, label="mergesort")
         plt.plot(n_samples_list, avl_uncompiled_times, label="avl (uncompiled)")
+        plt.plot(n_samples_list, mergesort_uncompiled_times, label="mergesort (uncompiled)")
         plt.legend()
         plt.show()
 

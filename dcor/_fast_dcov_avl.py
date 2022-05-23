@@ -19,13 +19,9 @@ input_array = Array(float64, 1, 'A', readonly=True)
 
 if TYPE_CHECKING:
     NumpyArrayType = np.typing.NDArray[np.number[Any]]
-    NumpyArrayFloatType = np.typing.NDArray[np.floating[Any]]
-    NumpyArrayIntType = np.typing.NDArray[np.integer[Any]]
     from typing import Literal
 else:
     NumpyArrayType = np.ndarray
-    NumpyArrayFloatType = np.ndarray
-    NumpyArrayIntType = np.ndarray
     Literal = str
 
 
