@@ -52,20 +52,71 @@ def _dyad_update(
     n = y.shape[0]
     exps2 = 2 ** np.arange(l_max)
 
+    y_col = np.expand_dims(y, axis=1)
+
+    # Step 3.a: update s(l, k)
+    positions_3a = np.ceil(y_col / exps2).astype(np.int64) - 1
+    positions_3a[:, 1:] += pos_sums[:-1]
+
+    # Steps 3.b and 3.c
+    positions_3b = np.floor((y_col - 1) / exps2).astype(np.int64)
+    valid_positions = (positions_3b / 2 > np.floor(positions_3b / 2))
+    positions_3b -= 1
+    positions_3b[:, 1:] += pos_sums[:-1]
+
+    # Step 3.a: update s(l, k)
+    s_full = s.repeat(n).reshape((-1, n)).T
+    first_index = np.arange(s_full.shape[0])[:, np.newaxis]
+    s_full[first_index, positions_3a] += c[:, np.newaxis]
+    s_full = np.cumsum(s_full, axis=0)
+
+    # Steps 3.b and 3.c
+    s_values = np.take_along_axis(s_full, positions_3b, axis=1)
+    gamma = np.sum(s_values * valid_positions, axis=1)
+
+    return gamma
+
+
+def _dyad_update_compiled_version(
+    y: np.typing.NDArray[np.float64],
+    c: np.typing.NDArray[np.float64],
+    gamma: np.typing.NDArray[np.float64],
+    l_max: int,
+    s: np.typing.NDArray[np.float64],
+    pos_sums: np.typing.NDArray[np.int64],
+) -> np.typing.NDArray[np.float64]:  # pylint:disable=too-many-locals
+    # This function has many locals so it can be compared
+    # with the original algorithm.
+    """
+    Inner function of the fast distance covariance.
+
+    This function is compiled because otherwise it would become
+    a bottleneck.
+
+    """
+    n = y.shape[0]
+    exps2 = 2 ** np.arange(l_max)
+
+    y_col = np.expand_dims(y, axis=1)
+
+    # Step 3.a: update s(l, k)
+    positions_3a = np.ceil(y_col / exps2).astype(np.int64) - 1
+    positions_3a[:, 1:] += pos_sums[:-1]
+
+    # Steps 3.b and 3.c
+    positions_3b = np.floor((y_col - 1) / exps2).astype(np.int64)
+    valid_positions = (positions_3b / 2 > np.floor(positions_3b / 2))
+    positions_3b -= 1
+    positions_3b[:, 1:] += pos_sums[:-1]
+
     # Step 3: iteration
     for i in range(1, n):
 
         # Step 3.a: update s(l, k)
-        positions = np.ceil(y[i - 1] / exps2).astype(np.int64) - 1
-        positions[1:] += pos_sums[:-1]
-        s[positions] += c[i - 1]
+        s[positions_3a[i - 1]] += c[i - 1]
 
         # Steps 3.b and 3.c
-        positions = np.floor((y[i] - 1) / exps2).astype(np.int64)
-        valid_positions = (positions / 2 > np.floor(positions / 2))
-        positions -= 1
-        positions[1:] += pos_sums[:-1]
-        gamma[i] += np.sum(s[positions[valid_positions]])
+        gamma[i] += np.sum(s[positions_3b[i][valid_positions[i]]])
 
     return gamma
 
@@ -81,7 +132,7 @@ _dyad_update_compiled = numba.njit(
     ),
     cache=True,
 )(
-    _dyad_update,
+    _dyad_update_compiled_version,
 )
 
 
