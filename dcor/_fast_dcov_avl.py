@@ -50,9 +50,10 @@ def _dyad_update(
 
     """
     n = y.shape[0]
+    s[...] = 0
     exps2 = 2 ** np.arange(l_max)
 
-    y_col = np.expand_dims(y, axis=1)
+    y_col = y[:, np.newaxis]
 
     # Step 3.a: update s(l, k)
     positions_3a = np.ceil(y_col / exps2).astype(np.int64) - 1
@@ -95,28 +96,30 @@ def _dyad_update_compiled_version(
 
     """
     n = y.shape[0]
-    exps2 = 2 ** np.arange(l_max)
-
-    y_col = np.expand_dims(y, axis=1)
-
-    # Step 3.a: update s(l, k)
-    positions_3a = np.ceil(y_col / exps2).astype(np.int64) - 1
-    positions_3a[:, 1:] += pos_sums[:-1]
-
-    # Steps 3.b and 3.c
-    positions_3b = np.floor((y_col - 1) / exps2).astype(np.int64)
-    valid_positions = (positions_3b / 2 > np.floor(positions_3b / 2))
-    positions_3b -= 1
-    positions_3b[:, 1:] += pos_sums[:-1]
+    s[...] = 0
 
     # Step 3: iteration
     for i in range(1, n):
 
         # Step 3.a: update s(l, k)
-        s[positions_3a[i - 1]] += c[i - 1]
+        for l in range(l_max):
+            k = int(math.ceil(y[i - 1] / 2 ** l))
+            pos = k - 1
+
+            if l > 0:
+                pos += pos_sums[l - 1]
+
+            s[pos] += c[i - 1]
 
         # Steps 3.b and 3.c
-        gamma[i] += np.sum(s[positions_3b[i][valid_positions[i]]])
+        for l in range(l_max):
+            k = int(math.floor((y[i] - 1) / 2 ** l))
+            if k / 2 > math.floor(k / 2):
+                pos = k - 1
+                if l > 0:
+                    pos += pos_sums[l - 1]
+
+                gamma[i] = gamma[i] + s[pos]
 
     return gamma
 
@@ -263,7 +266,7 @@ def _generate_distance_covariance_sqr_avl_impl(
                 sy_c[i],
                 c_sum[i],
                 l_max,
-                s[i],
+                s,
                 pos_sums,
                 gamma[i],
             ) for i in range(4)
@@ -308,7 +311,7 @@ _distance_covariance_sqr_avl_impl_compiled = numba.njit(
         float64[:, :],
         float64[:],
         int64,
-        float64[:, :],
+        float64[:],
         int64[:],
         float64[:, :],
     ),
@@ -318,7 +321,11 @@ _distance_covariance_sqr_avl_impl_compiled = numba.njit(
 )
 
 
-def _get_impl_args(x, y, unbiased=False):
+def _get_impl_args(
+    x: np.typing.NDArray[np.float64],
+    y: np.typing.NDArray[np.float64],
+    unbiased: bool = False,
+):
     """
     Get the parameters used in the algorithm.
     """
@@ -374,7 +381,7 @@ def _get_impl_args(x, y, unbiased=False):
     l_max = int(math.ceil(np.log2(n)))
 
     s_len = 2 ** (l_max + 1)
-    s = np.zeros(c.shape[:-1] + (s_len,), dtype=c.dtype)
+    s = np.empty(s_len, dtype=c.dtype)
 
     pos_sums = np.arange(l_max, dtype=np.int64)
     pos_sums[:] = 2 ** (l_max - pos_sums)
@@ -417,7 +424,7 @@ _get_impl_args_compiled = numba.njit(
         float64[:, :],
         float64[:],
         int64,
-        float64[:, :],
+        float64[:],
         int64[:],
         float64[:, :],
     ))(input_array, input_array, boolean),
@@ -435,7 +442,7 @@ impls_dict = {
     ),
     CompileMode.COMPILE_CPU: (
         (_get_impl_args_compiled, _distance_covariance_sqr_avl_impl_compiled),
-    )
+    ),
 }
 
 
@@ -448,7 +455,6 @@ def _distance_covariance_sqr_avl_generic(
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> T:
     """Fast algorithm for the squared distance covariance."""
-
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
 
