@@ -71,7 +71,7 @@ def _dyad_update(
         zip(positions_3a, positions_3b, valid_positions, c),
     ):
         # Steps 3.b and 3.c
-        gamma[i] = np_sum(s[pos_b[valid]], out=gamma[i])
+        gamma[i] = np_sum(s[pos_b[valid]])
 
         # Step 3.a: update s(l, k)
         s[pos_a] += c_i
