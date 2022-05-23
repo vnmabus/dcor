@@ -49,7 +49,6 @@ def _dyad_update(
     a bottleneck.
 
     """
-    n = y.shape[0]
     s[...] = 0
     exps2 = 2 ** np.arange(l_max)
 
@@ -60,18 +59,19 @@ def _dyad_update(
     positions_3a[:, 1:] += pos_sums[:-1]
 
     # Steps 3.b and 3.c
-    positions_3b = np.floor((y_col - 1) / exps2).astype(np.int64)
-    valid_positions = (positions_3b / 2 > np.floor(positions_3b / 2))
-    positions_3b -= 1
+    positions_3b = np.floor((y_col - 1) / exps2).astype(np.int64) - 1
+    valid_positions = positions_3b % 2 == 0
     positions_3b[:, 1:] += pos_sums[:-1]
 
     # Caution: vectorizing this loop naively can cause the algorithm
     # to use N^2 memory!!
+    np_sum = np.sum
+
     for i, (pos_a, pos_b, valid, c_i) in enumerate(
         zip(positions_3a, positions_3b, valid_positions, c),
     ):
         # Steps 3.b and 3.c
-        gamma[i] = np.sum(s[pos_b[valid]])
+        gamma[i] = np_sum(s[pos_b[valid]], out=gamma[i])
 
         # Step 3.a: update s(l, k)
         s[pos_a] += c_i
@@ -114,9 +114,8 @@ def _dyad_update_compiled_version(
 
         # Steps 3.b and 3.c
         for l in range(l_max):
-            k = int(math.floor((y[i] - 1) / 2 ** l))
-            if k / 2 > math.floor(k / 2):
-                pos = k - 1
+            pos = int(math.floor((y[i] - 1) / 2 ** l)) - 1
+            if pos % 2 == 0:
                 if l > 0:
                     pos += pos_sums[l - 1]
 
