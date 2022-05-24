@@ -44,65 +44,15 @@ References
 """
 import os
 import pathlib
-import sys
 
 from setuptools import find_packages, setup
-
-needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
-pytest_runner = ['pytest-runner'] if needs_pytest else []
-
-DOCLINES = (__doc__ or '').split("\n")
 
 version = (
     pathlib.Path(os.path.dirname(__file__)) / 'dcor' / 'VERSION'
 ).read_text().strip()
 
 setup(
-    name='dcor',
     version=version,
-    description=DOCLINES[1],
-    long_description="\n".join(DOCLINES[3:]),
-    url='https://github.com/vnmabus/dcor',
-    author='Carlos Ramos Carreño',
-    author_email='vnmabus@gmail.com',
     include_package_data=True,
-    platforms=['any'],
-    license='MIT',
     packages=find_packages(),
-    python_requires='>=3.7, <4',
-    classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: Developers',
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: MIT License',
-        'Natural Language :: English',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
-        'Topic :: Scientific/Engineering :: Mathematics',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-    ],
-    keywords=[
-        'distance correlation',
-        'distance covariance',
-        'energy distance',
-        'e-statistic',
-        'dependency measure',
-        'homogeneity',
-    ],
-    install_requires=[
-        'numpy',
-        'numba>=0.51',
-        'scipy',
-        'joblib',
-    ],
-    setup_requires=pytest_runner,
-    tests_require=[
-        'pytest-cov',
-        'pytest-subtests',
-        'numpy>=1.22',  # Requires array_api module
-        'numba<=0.53.1',  # Greater versions don't support numpy>=1.22
-    ],
-    test_suite='dcor.tests',
-    zip_safe=False,
 )
