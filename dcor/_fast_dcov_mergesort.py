@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar
 import numba
 import numpy as np
 from numba import boolean, float64, int64
+from numba.types import Array
 
-from ._utils import CompileMode, _transform_to_2d
+from ._utils import CompileMode, _transform_to_1d
 
 if TYPE_CHECKING:
     NumpyArrayType = np.typing.NDArray[np.number[Any]]
@@ -21,6 +22,11 @@ else:
 
 T = TypeVar("T", bound=NumpyArrayType)
 
+NumbaVector = Array(dtype=float64, ndim=1, layout="C")
+NumbaVectorReadOnly = Array(dtype=float64, ndim=1, layout="C", readonly=True)
+NumbaMatrix = Array(dtype=float64, ndim=2, layout="C")
+NumbaMatrixReadOnly = Array(dtype=float64, ndim=2, layout="C", readonly=True)
+
 
 def _compute_weight_sums(
     y: np.typing.NDArray[np.float64],
@@ -29,7 +35,7 @@ def _compute_weight_sums(
 
     n_samples = y.shape[0]
 
-    weight_sums = np.zeros((n_samples,) + weights.shape[1:], dtype=y.dtype)
+    weight_sums = np.zeros(weights.shape[1:] + (n_samples,), dtype=y.dtype)
 
     # Buffer that contains the indexes of the current and
     # last iterations
@@ -85,7 +91,7 @@ def _compute_weight_sums(
                     current_indexes[indexes_idx] = previous_index_2
                     subarray_2_idx += 1
 
-                    weight_sums[previous_index_2] += (
+                    weight_sums[:, previous_index_2] += (
                         weights_cumsum[subarray_1_idx_last + 1]
                         - weights_cumsum[subarray_1_idx]
                     )
@@ -116,7 +122,7 @@ def _compute_weight_sums(
 
 
 _compute_weight_sums_compiled = numba.njit(
-    float64[:, :](float64[:], float64[:, :]),
+    NumbaMatrix(NumbaVectorReadOnly, NumbaMatrixReadOnly),
     cache=True,
 )(_compute_weight_sums)
 
@@ -141,10 +147,10 @@ def _generate_compute_aijbij_term(
         weights = np.column_stack((np.ones_like(y), y, x, x * y))
         weight_sums = compute_weight_sums(y, weights)
 
-        term_1 = (x * y) @ weight_sums[:, 0]
-        term_2 = x @ weight_sums[:, 1]
-        term_3 = y @ weight_sums[:, 2]
-        term_4 = np.sum(weight_sums[:, 3])
+        term_1 = (x * y) @ weight_sums[0]
+        term_2 = x @ weight_sums[1]
+        term_3 = y @ weight_sums[2]
+        term_4 = np.sum(weight_sums[3])
 
         # First term in the equation
         sums_term = term_1 - term_2 - term_3 + term_4
@@ -163,7 +169,7 @@ def _generate_compute_aijbij_term(
 
 _compute_aijbij_term = _generate_compute_aijbij_term(compiled=False)
 _compute_aijbij_term_compiled = numba.njit(
-    float64(float64[:], float64[:]),
+    float64(NumbaVectorReadOnly, NumbaVectorReadOnly),
     cache=True,
 )(
     _generate_compute_aijbij_term(
@@ -189,7 +195,7 @@ def _compute_row_sums(
 
 
 _compute_row_sums_compiled = numba.njit(
-    float64[:](float64[:]),
+    NumbaVector(NumbaVectorReadOnly),
     cache=True)(_compute_row_sums)
 
 
@@ -214,20 +220,18 @@ def _generate_distance_covariance_sqr_mergesort_generic_impl(
             else _compute_row_sums
         )
 
-        x_ravel = x.ravel()
-        y_ravel = y.ravel()
-        n = x_ravel.shape[0]
+        n = x.shape[0]
 
         # Sort x in ascending order
-        ordered_indexes = np.argsort(x_ravel)
-        x_ravel = x_ravel[ordered_indexes]
-        y_ravel = y_ravel[ordered_indexes]
+        ordered_indexes = np.argsort(x)
+        x = x[ordered_indexes]
+        y = y[ordered_indexes]
 
-        aijbij = compute_aijbij_term(x_ravel, y_ravel)
-        a_i = compute_row_sums(x_ravel)
+        aijbij = compute_aijbij_term(x, y)
+        a_i = compute_row_sums(x)
 
-        ordered_indexes_y = np.argsort(y_ravel)
-        b_i_perm = compute_row_sums(y_ravel[ordered_indexes_y])
+        ordered_indexes_y = np.argsort(y)
+        b_i_perm = compute_row_sums(y[ordered_indexes_y])
         b_i = np.empty_like(b_i_perm)
         b_i[ordered_indexes_y] = b_i_perm
 
@@ -261,7 +265,7 @@ _distance_covariance_sqr_mergesort_generic_impl = (
     )
 )
 _distance_covariance_sqr_mergesort_generic_impl_compiled = numba.njit(
-    float64(float64[:, :], float64[:, :], boolean),
+    float64(NumbaVectorReadOnly, NumbaVectorReadOnly, boolean),
     cache=True,
 )(
     _generate_distance_covariance_sqr_mergesort_generic_impl(
@@ -295,16 +299,15 @@ def _distance_covariance_sqr_mergesort_generic(
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
 
-    x = _transform_to_2d(x)
-    y = _transform_to_2d(y)
+    x, y = _transform_to_1d(x, y)
 
-    if compile_mode not in {
-        CompileMode.AUTO,
-        CompileMode.COMPILE_CPU,
-        CompileMode.NO_COMPILE,
-    }:
+    if not isinstance(x, np.ndarray):
+        raise ValueError("AVL method is only implemented for NumPy arrays.")
+
+    if compile_mode not in impls_dict:
         raise NotImplementedError(
-            f"Compile mode {compile_mode} not implemented.")
+            f"Compile mode {compile_mode} not implemented.",
+        )
 
     for impl in impls_dict[compile_mode]:
 

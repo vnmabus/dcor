@@ -153,10 +153,9 @@ def pairwise_distances(
                [ 4.47213595,  9.16515139, 16.61324773, 24.41311123]])
 
     """
-    x = _transform_to_2d(x)
-
     if y is None or y is x:
+        x, = _transform_to_2d(x)
         return _pdist(x, exponent=exponent)
 
-    y = _transform_to_2d(y)
+    x, y = _transform_to_2d(x, y)
     return _cdist(x, y, exponent=exponent)

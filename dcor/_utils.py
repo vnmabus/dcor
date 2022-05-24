@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import enum
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Iterable, TypeVar, Union
 
 import numpy as np
 
@@ -115,18 +115,37 @@ def _sqrt(x: T) -> T:
         return x_copy**0.5
 
 
-def _transform_to_2d(t: T) -> T:
+def _transform_to_1d(*args: T) -> Iterable[T]:
+    """Convert column matrices to vectors, to always have a 1d shape."""
+    xp = get_namespace(*args)
+
+    for array in args:
+        array = xp.asarray(array)
+
+        dim = len(array.shape)
+        assert dim <= 2
+
+        if dim == 2:
+            assert array.shape[1] == 1
+            array = xp.reshape(array, -1)
+
+        yield array
+
+
+def _transform_to_2d(*args: T) -> Iterable[T]:
     """Convert vectors to column matrices, to always have a 2d shape."""
-    xp = get_namespace(t)
-    t = xp.asarray(t)
+    xp = get_namespace(*args)
 
-    dim = len(t.shape)
-    assert dim <= 2
+    for array in args:
+        array = xp.asarray(array)
 
-    if dim < 2:
-        t = xp.expand_dims(t, axis=1)
+        dim = len(array.shape)
+        assert dim <= 2
 
-    return t
+        if dim < 2:
+            array = xp.expand_dims(array, axis=1)
+
+        yield array
 
 
 def _can_be_numpy_double(x: ArrayType) -> bool:

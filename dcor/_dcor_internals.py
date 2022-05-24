@@ -545,7 +545,7 @@ def _distance_matrix_generic(
     """Compute a centered distance matrix given a matrix."""
     _check_valid_dcov_exponent(exponent)
 
-    x = _transform_to_2d(x)
+    x, = _transform_to_2d(x)
 
     # Calculate distance matrices
     a = distances.pairwise_distances(x, exponent=exponent)
@@ -588,7 +588,7 @@ def _mat_sqrt_inv(matrix: T) -> T:
 
 def _cov(x: T) -> T:
     """Equivalent to np.cov(x, rowvar=False)."""
-    x = _transform_to_2d(x)
+    x, = _transform_to_2d(x)
 
     xp = get_namespace(x)
 
@@ -600,7 +600,7 @@ def _cov(x: T) -> T:
 
 def _af_inv_scaled(x: T) -> T:
     """Scale a random vector for using the affinely invariant measures."""
-    x = _transform_to_2d(x)
+    x, = _transform_to_2d(x)
 
     cov_matrix = _cov(x)
 

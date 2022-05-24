@@ -12,6 +12,8 @@ import numpy as np
 from numba import boolean, float64, int64
 from numba.types import Array, Tuple
 
+from dcor._utils import _transform_to_1d
+
 from ._utils import CompileMode, get_namespace
 
 input_array = Array(float64, 1, 'A', readonly=True)
@@ -454,22 +456,10 @@ def _distance_covariance_sqr_avl_generic(
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
 
-    xp = get_namespace(x, y)
-    x = xp.asarray(x)
-    y = xp.asarray(y)
+    x, y = _transform_to_1d(x, y)
 
-    if xp is not np:
+    if not isinstance(x, np.ndarray):
         raise ValueError("AVL method is only implemented for NumPy arrays.")
-
-    assert 1 <= x.ndim <= 2
-    if x.ndim == 2:
-        assert x.shape[1] == 1
-        x = x[:, 0]
-
-    assert 1 <= y.ndim <= 2
-    if y.ndim == 2:
-        assert y.shape[1] == 1
-        y = y[:, 0]
 
     if compile_mode not in impls_dict:
         raise NotImplementedError(

@@ -191,8 +191,7 @@ def energy_distance(
         0.0
 
     """
-    x = _transform_to_2d(x)
-    y = _transform_to_2d(y)
+    x, y = _transform_to_2d(x, y)
 
     _check_valid_energy_exponent(exponent)
 

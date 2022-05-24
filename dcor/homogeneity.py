@@ -109,8 +109,7 @@ def energy_test_statistic(
         0.0
 
     """
-    x = _transform_to_2d(x)
-    y = _transform_to_2d(y)
+    x, y = _transform_to_2d(x, y)
 
     n = x.shape[0]
     m = y.shape[0]
@@ -242,7 +241,7 @@ def energy_test(
         HypothesisTest(pvalue=1.0, statistic=171.0623923...)
 
     """
-    samples = [_transform_to_2d(a) for a in args]
+    samples = list(_transform_to_2d(*args))
 
     num_samples = len(samples)
 

@@ -101,8 +101,7 @@ def distance_covariance_test(
         HypothesisTest(pvalue=0.125, statistic=208.0)
 
     """
-    x = _transform_to_2d(x)
-    y = _transform_to_2d(y)
+    x, y = _transform_to_2d(x, y)
 
     _check_same_n_elements(x, y)
 
