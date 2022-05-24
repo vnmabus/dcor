@@ -16,7 +16,12 @@ from dcor._utils import _transform_to_1d
 
 from ._utils import CompileMode, get_namespace
 
-input_array = Array(float64, 1, 'A', readonly=True)
+NumbaVector = Array(dtype=float64, ndim=1, layout="C")
+NumbaVectorReadOnly = Array(dtype=float64, ndim=1, layout="C", readonly=True)
+NumbaIntVector = Array(dtype=int64, ndim=1, layout="C")
+NumbaIntVectorReadOnly = Array(dtype=int64, ndim=1, layout="C", readonly=True)
+NumbaMatrix = Array(dtype=float64, ndim=2, layout="C")
+NumbaMatrixReadOnly = Array(dtype=float64, ndim=2, layout="C", readonly=True)
 
 
 if TYPE_CHECKING:
@@ -123,13 +128,13 @@ def _dyad_update_compiled_version(
 
 
 _dyad_update_compiled = numba.njit(
-    float64[:](
-        float64[:],
-        float64[:],
-        float64[:],
+    NumbaVectorReadOnly(
+        NumbaVectorReadOnly,
+        NumbaVectorReadOnly,
+        NumbaVector,
         int64,
-        float64[:],
-        int64[:],
+        NumbaVector,
+        NumbaIntVectorReadOnly,
     ),
     cache=True,
 )(
@@ -169,19 +174,19 @@ def _generate_partial_sum_2d(
 
 _partial_sum_2d = _generate_partial_sum_2d(compiled=False)
 _partial_sum_2d_compiled = numba.njit(
-    float64[:](
-        float64[:],
-        float64[:],
-        float64[:],
-        int64[:],
-        int64[:],
-        float64[:],
-        float64[:],
+    NumbaVectorReadOnly(
+        NumbaVectorReadOnly,
+        NumbaVectorReadOnly,
+        NumbaVectorReadOnly,
+        NumbaIntVectorReadOnly,
+        NumbaIntVectorReadOnly,
+        NumbaVectorReadOnly,
+        NumbaVectorReadOnly,
         float64,
         int64,
-        float64[:],
-        int64[:],
-        float64[:],
+        NumbaVector,
+        NumbaIntVectorReadOnly,
+        NumbaVector,
     ),
     cache=True,
 )(
@@ -296,22 +301,22 @@ _distance_covariance_sqr_avl_impl = _generate_distance_covariance_sqr_avl_impl(
 )
 _distance_covariance_sqr_avl_impl_compiled = numba.njit(
     float64(
-        input_array,
-        input_array,
-        int64[:],
-        int64[:],
-        float64[:],
-        float64[:],
+        NumbaVectorReadOnly,
+        NumbaVectorReadOnly,
+        NumbaIntVectorReadOnly,
+        NumbaIntVectorReadOnly,
+        NumbaVectorReadOnly,
+        NumbaVectorReadOnly,
         boolean,
-        int64[:],
-        float64[:, :],
-        float64[:, :],
-        float64[:, :],
-        float64[:],
+        NumbaIntVectorReadOnly,
+        NumbaMatrixReadOnly,
+        NumbaMatrixReadOnly,
+        NumbaMatrixReadOnly,
+        NumbaVectorReadOnly,
         int64,
-        float64[:],
-        int64[:],
-        float64[:, :],
+        NumbaVector,
+        NumbaIntVectorReadOnly,
+        NumbaMatrix,
     ),
     cache=True,
 )(
@@ -409,23 +414,23 @@ def _get_impl_args(
 
 _get_impl_args_compiled = numba.njit(
     Tuple((
-        input_array,
-        input_array,
-        int64[:],
-        int64[:],
-        float64[:],
-        float64[:],
+        NumbaVectorReadOnly,
+        NumbaVectorReadOnly,
+        NumbaIntVectorReadOnly,
+        NumbaIntVectorReadOnly,
+        NumbaVectorReadOnly,
+        NumbaVectorReadOnly,
         boolean,
-        int64[:],
-        float64[:, :],
-        float64[:, :],
-        float64[:, :],
-        float64[:],
+        NumbaIntVectorReadOnly,
+        NumbaMatrixReadOnly,
+        NumbaMatrixReadOnly,
+        NumbaMatrixReadOnly,
+        NumbaVectorReadOnly,
         int64,
-        float64[:],
-        int64[:],
-        float64[:, :],
-    ))(input_array, input_array, boolean),
+        NumbaVector,
+        NumbaIntVectorReadOnly,
+        NumbaMatrix,
+    ))(NumbaVectorReadOnly, NumbaVectorReadOnly, boolean),
     cache=True,
 )(_get_impl_args)
 
@@ -502,7 +507,7 @@ def _generate_rowwise_internal(
         res[0] = _distance_covariance_sqr_avl_impl_compiled(*args)
 
     return numba.guvectorize(
-        [(input_array, input_array, boolean, float64[:])],
+        [(NumbaVectorReadOnly, NumbaVectorReadOnly, boolean, float64[:])],
         '(n),(n),()->()',
         nopython=True,
         cache=True,

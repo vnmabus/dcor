@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 import numba
 import numpy as np
-from numba import boolean, float64, int64
+from numba import boolean, float64
 from numba.types import Array
 
 from ._utils import CompileMode, _transform_to_1d
