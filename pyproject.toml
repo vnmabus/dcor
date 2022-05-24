@@ -43,6 +43,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
+  "pytest",
   "pytest-cov",
   "pytest-subtests",
   "numpy>=1.22",  # Requires array_api module
