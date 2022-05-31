@@ -43,54 +43,16 @@ References
 
 """
 import os
-import sys
+import pathlib
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
-needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
-pytest_runner = ['pytest-runner'] if needs_pytest else []
+version = (
+    pathlib.Path(os.path.dirname(__file__)) / 'dcor' / 'VERSION'
+).read_text().strip()
 
-DOCLINES = (__doc__ or '').split("\n")
-
-with open(os.path.join(os.path.dirname(__file__),
-                       'VERSION'), 'r') as version_file:
-    version = version_file.read().strip()
-
-setup(name='dcor',
-      version=version,
-      description=DOCLINES[1],
-      long_description="\n".join(DOCLINES[3:]),
-      url='https://github.com/vnmabus/dcor',
-      author='Carlos Ramos Carreño',
-      author_email='vnmabus@gmail.com',
-      include_package_data=True,
-      platforms=['any'],
-      license='MIT',
-      packages=find_packages(),
-      python_requires='>=3.6, <4',
-      classifiers=[
-          'Development Status :: 4 - Beta',
-          'Intended Audience :: Developers',
-          'Intended Audience :: Science/Research',
-          'License :: OSI Approved :: MIT License',
-          'Natural Language :: English',
-          'Operating System :: OS Independent',
-          'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.6',
-          'Programming Language :: Python :: 3.7',
-          'Topic :: Scientific/Engineering :: Mathematics',
-          'Topic :: Software Development :: Libraries :: Python Modules',
-      ],
-      keywords=['distance correlation', 'distance covariance',
-                'energy distance', 'e-statistic',
-                'dependency measure', 'homogeneity'],
-      install_requires=['numpy',
-                        'numba>=0.51',
-                        'scipy'],
-      setup_requires=pytest_runner,
-      tests_require=['pytest-cov',
-                     'pytest-subtests',
-                     'numpy>=1.17'  # Requires matmul on objects
-                     ],
-      test_suite='dcor.tests',
-      zip_safe=False)
+setup(
+    version=version,
+    include_package_data=True,
+    packages=find_packages(),
+)

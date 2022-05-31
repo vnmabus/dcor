@@ -1,3 +1,60 @@
+[project]
+name = "dcor"
+description = "dcor: distance correlation and related E-statistics in Python."
+readme = "README.rst"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+keywords = [
+	"distance correlation",
+	"distance covariance",
+	"energy distance",
+	"e-statistic",
+	"dependency measure",
+	"homogeneity",
+	"independence",
+]
+authors = [
+  {name = "Carlos Ramos Carreño", email = "vnmabus@gmail.com"},
+]
+maintainers = [
+  {name = "Carlos Ramos Carreño", email = "vnmabus@gmail.com"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dynamic = ["version"]
+
+dependencies = [
+  "numpy",
+  "numba>=0.51",
+  "scipy",
+  "joblib",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "pytest-cov",
+  "pytest-subtests",
+  "numpy>=1.22",  # Requires array_api module
+  "numba<=0.53.1",  # Greater versions don't support numpy>=1.22
+]
+
+[project.urls]
+homepage = "https://github.com/vnmabus/dcor"
+documentation = "https://dcor.readthedocs.io"
+repository = "https://github.com/vnmabus/dcor"
+
 [build-system]
 # Minimum requirements for the build system to execute.
 requires = ["setuptools"]

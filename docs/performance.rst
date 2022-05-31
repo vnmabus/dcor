@@ -36,7 +36,9 @@ resulting graph.
         n_times = 100
         n_samples_list = [10, 50, 100, 500, 1000]
         avl_times = np.zeros(len(n_samples_list))
+        avl_uncompiled_times = np.zeros(len(n_samples_list))
         mergesort_times = np.zeros(len(n_samples_list))
+        mergesort_uncompiled_times = np.zeros(len(n_samples_list))
         naive_times = np.zeros(len(n_samples_list))
         
         for i, n_samples in enumerate(n_samples_list):
@@ -46,14 +48,32 @@ resulting graph.
         	def avl():
         		return dcor.distance_covariance(x, y, method='AVL')
         		
+        	def avl_uncompiled():
+        		return dcor.distance_covariance(
+        		    x,
+        		    y,
+        		    method='AVL',
+        		    compile_mode=dcor.CompileMode.NO_COMPILE,
+        		)
+        		
         	def mergesort():
         		return dcor.distance_covariance(x, y, method='MERGESORT')
+        		
+        	def mergesort_uncompiled():
+        		return dcor.distance_covariance(
+        		    x,
+        		    y,
+        		    method='MERGESORT',
+        		    compile_mode=dcor.CompileMode.NO_COMPILE,
+        		)
         		
         	def naive():
         		return dcor.distance_covariance(x, y, method='NAIVE')
         		
         	avl_times[i] = timeit(avl, number=n_times)
+        	avl_uncompiled_times[i] = timeit(avl_uncompiled, number=n_times)
         	mergesort_times[i] = timeit(mergesort, number=n_times)
+        	mergesort_uncompiled_times[i] = timeit(mergesort_uncompiled, number=n_times)
         	naive_times[i] = timeit(naive, number=n_times)
         
         plt.title("Distance covariance performance comparison")
@@ -66,7 +86,22 @@ resulting graph.
         plt.show()
 
 We can see that the performance of the fast methods is much better than
-the performance of the naive algorithm. In order to see the differences
+the performance of the naive algorithm. We can also check the difference made by the
+compilation with Numba:
+
+.. jupyter-execute::
+
+        plt.title("Distance covariance performance comparison")
+        plt.xlabel("Number of samples")
+        plt.ylabel("Time (seconds)")
+        plt.plot(n_samples_list, avl_times, label="avl")
+        plt.plot(n_samples_list, mergesort_times, label="mergesort")
+        plt.plot(n_samples_list, avl_uncompiled_times, label="avl (uncompiled)")
+        plt.plot(n_samples_list, mergesort_uncompiled_times, label="mergesort (uncompiled)")
+        plt.legend()
+        plt.show()
+
+In order to see the differences
 between the two fast methods, we will again compute them with more
 samples. The large sample sizes used here could not be used with the naive
 algorithm, as its used memory also grows quadratically.

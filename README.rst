@@ -1,7 +1,7 @@
 dcor
 ====
 
-|build-status| |docs| |coverage| |pypi| |conda|
+|tests| |docs| |coverage| |pypi| |conda| |zenodo|
 
 dcor: distance correlation and related E-statistics in Python.
 
@@ -72,10 +72,10 @@ References
            Statistics, 35(6):2769–2794, 12 2007.
            doi:10.1214/009053607000000505.
 
-.. |build-status| image:: https://api.travis-ci.com/vnmabus/dcor.svg?branch=master
-    :alt: build status
+.. |tests| image:: https://github.com/vnmabus/dcor/actions/workflows/main.yml/badge.svg
+    :alt: Tests
     :scale: 100%
-    :target: https://travis-ci.com/vnmabus/dcor
+    :target: https://github.com/vnmabus/dcor/actions/workflows/main.yml
 
 .. |docs| image:: https://readthedocs.org/projects/dcor/badge/?version=latest
     :alt: Documentation Status
@@ -96,3 +96,8 @@ References
     :alt: Available in Conda
     :scale: 100%
     :target: https://conda.anaconda.org/conda-forge
+    
+.. |zenodo| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3468124.svg
+    :alt: Zenodo DOI
+    :scale: 100%
+    :target: https://doi.org/10.5281/zenodo.3468124
