@@ -24,6 +24,12 @@ T = TypeVar("T", bound=NumpyArrayType)
 
 NumbaVector = Array(dtype=float64, ndim=1, layout="C")
 NumbaVectorReadOnly = Array(dtype=float64, ndim=1, layout="C", readonly=True)
+NumbaVectorReadOnlyNonContiguous = Array(
+    dtype=float64,
+    ndim=1,
+    layout="A",
+    readonly=True,
+)
 NumbaMatrix = Array(dtype=float64, ndim=2, layout="C")
 NumbaMatrixReadOnly = Array(dtype=float64, ndim=2, layout="C", readonly=True)
 
@@ -209,6 +215,9 @@ def _generate_distance_covariance_sqr_mergesort_generic_impl(
         unbiased: bool,
     ) -> np.typing.NDArray[np.float64]:
 
+        x = np.ascontiguousarray(x)
+        y = np.ascontiguousarray(y)
+
         compute_aijbij_term = (
             _compute_aijbij_term_compiled
             if compiled
@@ -265,7 +274,11 @@ _distance_covariance_sqr_mergesort_generic_impl = (
     )
 )
 _distance_covariance_sqr_mergesort_generic_impl_compiled = numba.njit(
-    float64(NumbaVectorReadOnly, NumbaVectorReadOnly, boolean),
+    float64(
+        NumbaVectorReadOnlyNonContiguous,
+        NumbaVectorReadOnlyNonContiguous,
+        boolean,
+    ),
     cache=True,
 )(
     _generate_distance_covariance_sqr_mergesort_generic_impl(

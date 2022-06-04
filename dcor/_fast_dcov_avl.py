@@ -12,12 +12,16 @@ import numpy as np
 from numba import boolean, float64, int64
 from numba.types import Array, Tuple
 
-from dcor._utils import _transform_to_1d
-
-from ._utils import CompileMode, get_namespace
+from ._utils import CompileMode, _transform_to_1d, get_namespace
 
 NumbaVector = Array(dtype=float64, ndim=1, layout="C")
 NumbaVectorReadOnly = Array(dtype=float64, ndim=1, layout="C", readonly=True)
+NumbaVectorReadOnlyNonContiguous = Array(
+    dtype=float64,
+    ndim=1,
+    layout="A",
+    readonly=True,
+)
 NumbaIntVector = Array(dtype=int64, ndim=1, layout="C")
 NumbaIntVectorReadOnly = Array(dtype=int64, ndim=1, layout="C", readonly=True)
 NumbaMatrix = Array(dtype=float64, ndim=2, layout="C")
@@ -333,9 +337,12 @@ def _get_impl_args(
     Get the parameters used in the algorithm.
     """
 
-    n = x.shape[-1]
+    x = np.ascontiguousarray(x)
+    y = np.ascontiguousarray(y)
+
+    n = x.shape[0]
     assert n > 3
-    assert n == y.shape[-1]
+    assert n == y.shape[0]
     temp = np.arange(n)
 
     argsort_x = np.argsort(x)
@@ -430,7 +437,7 @@ _get_impl_args_compiled = numba.njit(
         NumbaVector,
         NumbaIntVectorReadOnly,
         NumbaMatrix,
-    ))(NumbaVectorReadOnly, NumbaVectorReadOnly, boolean),
+    ))(NumbaVectorReadOnlyNonContiguous, NumbaVectorReadOnlyNonContiguous, boolean),
     cache=True,
 )(_get_impl_args)
 
@@ -507,7 +514,12 @@ def _generate_rowwise_internal(
         res[0] = _distance_covariance_sqr_avl_impl_compiled(*args)
 
     return numba.guvectorize(
-        [(NumbaVectorReadOnly, NumbaVectorReadOnly, boolean, float64[:])],
+        [(
+            NumbaVectorReadOnlyNonContiguous,
+            NumbaVectorReadOnlyNonContiguous,
+            boolean,
+            float64[:],
+        )],
         '(n),(n),()->()',
         nopython=True,
         cache=True,
