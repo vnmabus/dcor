@@ -498,6 +498,19 @@ class TestDistanceCorrelation(unittest.TestCase):
         """Test that the fast and naive algorithms for unbiased dcor match."""
         self._test_fast_naive_generic(dcor.u_distance_correlation_sqr)
 
+    def test_dcor_constant(self) -> None:
+        """Test that it works with constant random variables."""
+        a = np.ones(100)
+
+        cov = dcor.distance_covariance(a, a)
+        self.assertAlmostEqual(cov, 0)
+
+        corr = dcor.distance_correlation(a, a)
+        self.assertAlmostEqual(corr, 0)
+
+        corr_af_inv = dcor.distance_correlation_af_inv(a, a)
+        self.assertAlmostEqual(corr_af_inv, 0)
+
 
 class TestDcorArrayAPI(unittest.TestCase):
     """Check that the energy distance works with the Array API standard."""
@@ -582,6 +595,22 @@ class TestDcorArrayAPI(unittest.TestCase):
             dcor.distance_correlation,
             (1.0, 0.526640387, 1.0),
         )
+
+    def test_dcor_constant(self) -> None:
+        """Test that it works with constant random variables."""
+        a = np.array_api.ones(100)
+
+        cov = dcor.distance_covariance(a, a)
+        self.assertIsInstance(cov, type(self.a))
+        self.assertAlmostEqual(cov, 0)
+
+        corr = dcor.distance_correlation(a, a)
+        self.assertIsInstance(corr, type(self.a))
+        self.assertAlmostEqual(corr, 0)
+
+        corr_af_inv = dcor.distance_correlation_af_inv(a, a)
+        self.assertIsInstance(corr_af_inv, type(self.a))
+        self.assertAlmostEqual(corr_af_inv, 0)
 
 
 if __name__ == "__main__":
