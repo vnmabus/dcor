@@ -288,7 +288,7 @@ def _distance_sqr_stats_naive_generic(
     # Comparisons using a tolerance can change results if the
     # covariance has a similar order of magnitude
     if denominator == 0.0:
-        correlation_xy_sqr = xp.asarray(0, dtype=covariance_xy_sqr.dtype)
+        correlation_xy_sqr = xp.zeros_like(covariance_xy_sqr)
     else:
         correlation_xy_sqr = covariance_xy_sqr / denominator
 
@@ -388,7 +388,7 @@ def _distance_stats_sqr_generic(
     # Comparisons using a tolerance can change results if the
     # covariance has a similar order of magnitude
     if denominator == 0.0:
-        correlation_xy_sqr = xp.asarray(0, dtype=covariance_xy_sqr.dtype)
+        correlation_xy_sqr = xp.zeros_like(covariance_xy_sqr)
     else:
         correlation_xy_sqr = covariance_xy_sqr / denominator
 
@@ -1120,7 +1120,7 @@ def distance_correlation_af_inv_sqr(
     xp = get_namespace(x, y)
 
     return (
-        xp.asarray(0, dtype=correlation.dtype)
+        xp.zeros_like(correlation)
         if xp.isnan(correlation)
         else correlation
     )

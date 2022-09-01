@@ -52,6 +52,7 @@ version = (
 ).read_text().strip()
 
 setup(
+    name="dcor",
     version=version,
     include_package_data=True,
     packages=find_packages(),
