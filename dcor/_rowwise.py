@@ -6,7 +6,7 @@ import numpy as np
 
 from . import _dcor
 from ._fast_dcov_avl import _rowwise_distance_covariance_sqr_avl_generic
-from ._utils import _sqrt, RowwiseMode
+from ._utils import RowwiseMode as RowwiseMode, _sqrt
 
 
 def _generate_rowwise_distance_covariance_sqr(unbiased):
