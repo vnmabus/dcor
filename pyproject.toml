@@ -1,6 +1,6 @@
 [project]
 name = "dcor"
-description = "dcor: distance correlation and related E-statistics in Python."
+description = "dcor: distance correlation and energy statistics in Python."
 readme = "README.rst"
 requires-python = ">=3.8"
 license = {file = "LICENSE"}

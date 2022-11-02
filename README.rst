@@ -3,7 +3,7 @@ dcor
 
 |tests| |docs| |coverage| |pypi| |conda| |zenodo|
 
-dcor: distance correlation and related E-statistics in Python.
+dcor: distance correlation and energy statistics in Python.
 
 E-statistics are functions of distances between statistical observations
 in metric spaces.
