@@ -134,13 +134,13 @@ algorithm, as its used memory also grows quadratically.
         plt.show()
 
 
-Paralllel computation of distance covariance
+Parallel computation of distance covariance
 --------------------------------------------
 
 The following code shows the computation of the distance covariance between
 several random variables, using the :func:`dcor.rowwise` function. If the
 machine has several CPUs, the time spent using the parallel implementation
-woud be divided by the number of CPUs. If there is only one, there will
+would be divided by the number of CPUs. If there is only one, there will
 be no difference.
 
 For now, optimized and parallel implementations are only available for the fast

@@ -28,10 +28,12 @@ import pkg_resources
 try:
     release = pkg_resources.get_distribution('dcor').version
 except pkg_resources.DistributionNotFound:
-    print('To build the documentation, The distribution information of dcor\n'
-          'Has to be available.  Either install the package into your\n'
-          'development environment or run "setup.py develop" to setup the\n'
-          'metadata.  A virtualenv is recommended!\n')
+    print(
+        'To build the documentation, The distribution information of dcor\n'
+        'Has to be available.  Either install the package into your\n'
+        'development environment or run "setup.py develop" to setup the\n'
+        'metadata.  A virtualenv is recommended!\n',
+    )
     sys.exit(1)
 del pkg_resources
 
@@ -46,14 +48,16 @@ version = '.'.join(release.split('.')[:2])
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.autosummary',
-              'sphinx.ext.todo',
-              'sphinx.ext.viewcode',
-              'sphinx.ext.napoleon',
-              'sphinx.ext.mathjax',
-              'sphinxcontrib.bibtex',
-              'jupyter_sphinx']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.todo',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.mathjax',
+    'sphinxcontrib.bibtex',
+    'jupyter_sphinx',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -109,12 +113,7 @@ autosummary_generate = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
-
-
-def setup(app):
-    app.add_css_file('css/wide.css')
-
+html_theme = "pydata_sphinx_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -126,21 +125,6 @@ def setup(app):
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
-# Custom sidebar templates, must be a dictionary that maps document names
-# to template names.
-#
-# This is required for the alabaster theme
-# refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
-html_sidebars = {
-    '**': [
-        'about.html',
-        'navigation.html',
-        'relations.html',  # needs 'show_related': True theme option to display
-        'searchbox.html',
-        'donate.html',
-    ]
-}
 
 
 # -- Options for HTMLHelp output ------------------------------------------

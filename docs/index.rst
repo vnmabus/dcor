@@ -30,17 +30,9 @@ References
    performance
    energycomparison
    apilist
-   internalapi
 
 dcor is developed `on Github <http://github.com/vnmabus/dcor>`_. Please
 report `issues <https://github.com/vnmabus/dcor/issues>`_ there as well.
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
 .. |build-status| image:: https://api.travis-ci.org/vnmabus/dcor.svg?branch=master
     :alt: build status
