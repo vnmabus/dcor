@@ -132,6 +132,31 @@ html_static_path = ['_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'dcordoc'
 
+html_theme_options = {
+    "use_edit_page_button": True,
+    "github_url": "https://github.com/vnmabus/dcor",
+    "icon_links": [
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/dcor",
+            "icon": "https://avatars.githubusercontent.com/u/2964877",
+            "type": "url",
+        },
+        {
+            "name": "Anaconda",
+            "url": "https://anaconda.org/conda-forge/dcor",
+            "icon": "https://avatars.githubusercontent.com/u/3571983",
+            "type": "url",
+        },
+    ],
+}
+
+html_context = {
+    "github_user": "vnmabus",
+    "github_repo": "dcor",
+    "github_version": "develop",
+    "doc_path": "docs",
+}
 
 # -- Options for LaTeX output ---------------------------------------------
 
