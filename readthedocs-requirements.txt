@@ -1,6 +1,6 @@
 -r requirements.txt
 Sphinx>=3
-sphinx_rtd_theme
+pydata-sphinx-theme
 sphinxcontrib-bibtex
 jupyter-sphinx
 matplotlib
