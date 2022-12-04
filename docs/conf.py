@@ -56,11 +56,17 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'sphinxcontrib.bibtex',
+    'sphinx_gallery.gen_gallery',
     'jupyter_sphinx',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+
+sphinx_gallery_conf = {
+    'examples_dirs': '../examples',
+    'gallery_dirs': 'auto_examples',
+}
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:

@@ -50,6 +50,7 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/* functions/*
 	rm -rf $(BUILDDIR)/* modules/*
+	rm -rf $(BUILDDIR)/* auto_examples/*
 
 .PHONY: html
 html:

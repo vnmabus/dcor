@@ -28,9 +28,10 @@ References
 
    installation
    theory
+   auto_examples/index
+   apilist
    performance
    energycomparison
-   apilist
 
 dcor is developed `on Github <http://github.com/vnmabus/dcor>`_. Please
 report `issues <https://github.com/vnmabus/dcor/issues>`_ there as well.

@@ -2,6 +2,7 @@
 Sphinx>=3
 pydata-sphinx-theme
 sphinxcontrib-bibtex
+sphinx-gallery
 jupyter-sphinx
 matplotlib
 pygments>=2.4.1
