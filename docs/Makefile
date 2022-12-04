@@ -51,6 +51,7 @@ clean:
 	rm -rf $(BUILDDIR)/* functions/*
 	rm -rf $(BUILDDIR)/* modules/*
 	rm -rf $(BUILDDIR)/* auto_examples/*
+	rm -rf $(BUILDDIR)/* backreferences/*
 
 .PHONY: html
 html:

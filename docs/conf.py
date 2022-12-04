@@ -57,6 +57,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinxcontrib.bibtex',
     'sphinx_gallery.gen_gallery',
+    'sphinx.ext.intersphinx',
     'jupyter_sphinx',
 ]
 
@@ -66,6 +67,24 @@ templates_path = ['_templates']
 sphinx_gallery_conf = {
     'examples_dirs': '../examples',
     'gallery_dirs': 'auto_examples',
+    'reference_url': {
+        # The module you locally document uses None
+        'dcor': None,
+    },
+    'backreferences_dir': 'backreferences',
+    'doc_module': 'dcor',
+}
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/{.major}'.format(
+        sys.version_info),
+        None,
+    ),
+    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
+    'sklearn': ('https://scikit-learn.org/stable', None),
+    'matplotlib': ('https://matplotlib.org/', None),
+    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
 }
 
 # The suffix(es) of source filenames.
