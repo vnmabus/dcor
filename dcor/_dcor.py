@@ -31,9 +31,9 @@ import numpy as np
 from dcor._dcor_internals import _af_inv_scaled
 
 from ._dcor_internals import (
-    MatrixCentered,
-    _distance_matrix,
-    _u_distance_matrix,
+    _compute_distances,
+    _dcov_from_sums,
+    _symmetric_matrix_sums,
     mean_product,
     u_product,
 )
@@ -111,7 +111,7 @@ class _DcovAlgorithmInternals():
                     lambda *args, **kwargs: stats_generic(
                         *args,
                         **kwargs,
-                        matrix_centered=_distance_matrix,
+                        bias_corrected=False,
                         product=mean_product,
                     )
                 )
@@ -133,7 +133,7 @@ class _DcovAlgorithmInternals():
                     lambda *args, **kwargs: stats_generic(
                         *args,
                         **kwargs,
-                        matrix_centered=_u_distance_matrix,
+                        bias_corrected=True,
                         product=u_product,
                     )
                 )
@@ -235,10 +235,13 @@ def _distance_covariance_sqr_naive(
     """
     _naive_check_compile_mode(compile_mode)
 
-    a = _distance_matrix(x, exponent=exponent)
-    b = _distance_matrix(y, exponent=exponent)
+    a, b = _compute_distances(
+        x,
+        y,
+        exponent=exponent,
+    )
 
-    return mean_product(a, b)
+    return _dcov_from_sums(a, b, bias_corrected=False)
 
 
 def _u_distance_covariance_sqr_naive(
@@ -256,16 +259,19 @@ def _u_distance_covariance_sqr_naive(
     """
     _naive_check_compile_mode(compile_mode)
 
-    a = _u_distance_matrix(x, exponent=exponent)
-    b = _u_distance_matrix(y, exponent=exponent)
+    a, b = _compute_distances(
+        x,
+        y,
+        exponent=exponent,
+    )
 
-    return u_product(a, b)
+    return _dcov_from_sums(a, b, bias_corrected=True)
 
 
 def _distance_sqr_stats_naive_generic(
     x: T,
     y: T,
-    matrix_centered: MatrixCentered,
+    bias_corrected: bool,
     product: Callable[[T, T], T],
     exponent: float = 1,
     compile_mode: CompileMode = CompileMode.AUTO,
@@ -273,12 +279,36 @@ def _distance_sqr_stats_naive_generic(
     """Compute generic squared stats."""
     _naive_check_compile_mode(compile_mode)
 
-    a = matrix_centered(x, exponent=exponent)
-    b = matrix_centered(y, exponent=exponent)
+    a, b = _compute_distances(
+        x,
+        y,
+        exponent=exponent,
+    )
 
-    covariance_xy_sqr = product(a, b)
-    variance_x_sqr = product(a, a)
-    variance_y_sqr = product(b, b)
+    a_sums = _symmetric_matrix_sums(a)
+    b_sums = _symmetric_matrix_sums(b)
+
+    covariance_xy_sqr = _dcov_from_sums(
+        a,
+        b,
+        a_sums=a_sums,
+        b_sums=b_sums,
+        bias_corrected=bias_corrected,
+    )
+    variance_x_sqr = _dcov_from_sums(
+        a,
+        a,
+        a_sums=a_sums,
+        b_sums=a_sums,
+        bias_corrected=bias_corrected,
+    )
+    variance_y_sqr = _dcov_from_sums(
+        b,
+        b,
+        a_sums=b_sums,
+        b_sums=b_sums,
+        bias_corrected=bias_corrected,
+    )
 
     xp = get_namespace(x, y)
 
@@ -312,7 +342,7 @@ def _distance_correlation_sqr_naive(
     return _distance_sqr_stats_naive_generic(
         x,
         y,
-        matrix_centered=_distance_matrix,
+        bias_corrected=False,
         product=mean_product,
         exponent=exponent,
     ).correlation_xy
@@ -330,7 +360,7 @@ def _u_distance_correlation_sqr_naive(
     return _distance_sqr_stats_naive_generic(
         x,
         y,
-        matrix_centered=_u_distance_matrix,
+        bias_corrected=True,
         product=u_product,
         exponent=exponent,
     ).correlation_xy
@@ -770,7 +800,7 @@ def u_distance_stats_sqr(
         variance_x=42.6666666..., variance_y=42.6666666...)
         >>> dcor.u_distance_stats_sqr(a, b) # doctest: +ELLIPSIS
         ...                     # doctest: +NORMALIZE_WHITESPACE
-        Stats(covariance_xy=-2.6666666..., correlation_xy=-0.5,
+        Stats(covariance_xy=-2.6666666..., correlation_xy=-0.4999999...,
         variance_x=42.6666666..., variance_y=0.6666666...)
         >>> dcor.u_distance_stats_sqr(b, b) # doctest: +ELLIPSIS
         ...                     # doctest: +NORMALIZE_WHITESPACE
@@ -977,7 +1007,7 @@ def u_distance_correlation_sqr(
         >>> dcor.u_distance_correlation_sqr(a, a)
         1.0
         >>> dcor.u_distance_correlation_sqr(a, b)
-        -0.5
+        -0.4999999...
         >>> dcor.u_distance_correlation_sqr(b, b)
         1.0
         >>> dcor.u_distance_correlation_sqr(a, b, exponent=0.5)

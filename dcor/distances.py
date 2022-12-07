@@ -48,8 +48,8 @@ def _pdist_scipy(
     if exponent != 1:
         metric = 'sqeuclidean'
 
-    distances = spatial.distance.pdist(x, metric=metric)
-    distances = spatial.distance.squareform(distances)
+    # cdist is actually FASTER than pdist + squareform
+    distances = spatial.distance.cdist(x, x, metric=metric)
 
     if exponent != 1:
         distances **= exponent / 2

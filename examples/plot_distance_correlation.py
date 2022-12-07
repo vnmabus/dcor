@@ -169,7 +169,7 @@ for (x, y, xlim, ylim), ax in zip(all_datasets(), axes.flat):
 # %%
 # For comparison, we include the results obtained with the standard Pearson
 # correlation, also available in
-# `the Wikipedia
+# `Wikipedia
 # <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient#/media/File:Correlation_examples2.svg>`_.
 
 fig, axes = plt.subplots(4, 7, **subplot_kwargs)

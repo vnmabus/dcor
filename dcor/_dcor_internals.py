@@ -7,7 +7,7 @@ distance covariance and correlation.
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Callable, TypeVar
+from typing import TYPE_CHECKING, Callable, Tuple, TypeVar
 
 from . import distances
 from ._utils import ArrayType, _transform_to_2d, get_namespace
@@ -80,6 +80,55 @@ def _float_copy_to_out(out: T | None, origin: T) -> T:
     return out
 
 
+def _symmetric_matrix_sums(a: T) -> Tuple[T, T]:
+    """Compute row, column and total sums of a symmetric matrix."""
+    # Currently there is no portable way to check the order (Fortran/C)
+    # across different array libraries.
+    # Thus, we assume data is C-contiguous and then the faster array is 1.
+    fast_axis = 1
+
+    xp = get_namespace(a)
+
+    axis_sum = xp.sum(a, axis=fast_axis)
+    total_sum = xp.sum(axis_sum)
+
+    return axis_sum, total_sum
+
+
+def _dcov_from_sums(
+    a: T,
+    b: T,
+    a_sums: Tuple[T, T] | None = None,
+    b_sums: Tuple[T, T] | None = None,
+    bias_corrected: bool = False,
+) -> T:
+    """Compute distance covariance WITHOUT centering first."""
+    dim = a.shape[0]
+
+    a_axis_sum, a_total_sum = a_sums if a_sums else _symmetric_matrix_sums(a)
+    b_axis_sum, b_total_sum = b_sums if b_sums else _symmetric_matrix_sums(b)
+
+    xp = get_namespace(a, b)
+
+    a_vec = xp.reshape(a, -1)
+    b_vec = xp.reshape(b, -1)
+
+    first_term = (a_vec @ b_vec) / dim
+    second_term = a_axis_sum @ b_axis_sum / dim
+    third_term = a_total_sum * b_total_sum / dim
+
+    if bias_corrected:
+        first_term /= (dim - 3)
+        second_term /= (dim - 2) * (dim - 3)
+        third_term /= (dim - 1) * (dim - 2) * (dim - 3)
+    else:
+        first_term /= dim
+        second_term /= dim**2
+        third_term /= dim**3
+
+    return first_term - 2 * second_term + third_term
+
+
 def double_centered(a: T, *, out: T | None = None) -> T:
     r"""
     Return a copy of the matrix :math:`a` which is double centered.
@@ -99,7 +148,7 @@ def double_centered(a: T, *, out: T | None = None) -> T:
         \frac{1}{N}\sum_{k=1}^N a_{kj} + \frac{1}{N^2}\sum_{k=1}^N a_{kj}.
 
     Args:
-        a: Original square matrix.
+        a: Original symmetric square matrix.
         out: If not None, specifies where to return the resulting array. This
             array should allow non integer numbers.
 
@@ -112,10 +161,10 @@ def double_centered(a: T, *, out: T | None = None) -> T:
     Examples:
         >>> import numpy as np
         >>> import dcor
-        >>> a = np.array([[1, 2], [3, 4]])
+        >>> a = np.array([[1, 2], [2, 4]])
         >>> dcor.double_centered(a)
-        array([[0., 0.],
-               [0., 0.]])
+        array([[ 0.25, -0.25],
+               [-0.25,  0.25]])
         >>> b = np.array([[1, 2, 3], [2, 4, 5], [3, 5, 6]])
         >>> dcor.double_centered(b)
         array([[ 0.44444444, -0.22222222, -0.22222222],
@@ -134,16 +183,16 @@ def double_centered(a: T, *, out: T | None = None) -> T:
     """
     out = _float_copy_to_out(out, a)
 
-    xp = get_namespace(a)
+    dim = a.shape[0]
+    axis_sum, total_sum = _symmetric_matrix_sums(a)
 
-    mu = xp.mean(a)
-    mu_cols = xp.mean(a, axis=0, keepdims=True)
-    mu_rows = xp.mean(a, axis=1, keepdims=True)
+    total_mean = total_sum / dim**2
+    axis_mean = axis_sum / dim
 
     # Do one operation at a time, to improve broadcasting memory usage.
-    out -= mu_rows
-    out -= mu_cols
-    out += mu
+    out -= axis_mean[None, :]
+    out -= axis_mean[:, None]
+    out += total_mean
 
     return out
 
@@ -168,7 +217,7 @@ def u_centered(a: T, *, out: T | None = None) -> T:
         \end{cases}
 
     Args:
-        a: Original square matrix.
+        a: Original symmetric square matrix.
         out: If not None, specifies where to return the resulting array. This
             array should allow non integer numbers.
 
@@ -212,20 +261,18 @@ def u_centered(a: T, *, out: T | None = None) -> T:
 
     dim = a.shape[0]
 
-    xp = get_namespace(a)
+    axis_sum, total_sum = _symmetric_matrix_sums(a)
 
-    u_mu = xp.sum(a) / ((dim - 1) * (dim - 2))
-    sum_cols = xp.sum(a, axis=0, keepdims=True)
-    sum_rows = xp.sum(a, axis=1, keepdims=True)
-    u_mu_cols = sum_cols / (dim - 2)
-    u_mu_rows = sum_rows / (dim - 2)
+    total_u_mean = total_sum / ((dim - 1) * (dim - 2))
+    axis_u_mean = axis_sum / (dim - 2)
 
     # Do one operation at a time, to improve broadcasting memory usage.
-    out -= u_mu_rows
-    out -= u_mu_cols
-    out += u_mu
+    out -= axis_u_mean[None, :]
+    out -= axis_u_mean[:, None]
+    out += total_u_mean
 
     # The diagonal is zero
+    xp = get_namespace(a)
     out[xp.eye(dim, dtype=xp.bool)] = 0
 
     return out
@@ -537,6 +584,24 @@ def u_complementary_projection(a: T) -> Callable[[T], T]:
     return projection
 
 
+def _compute_distances(
+    x: T,
+    y: T,
+    *,
+    exponent: float = 1,
+) -> Tuple[T, T]:
+    """Compute a centered distance matrix given a matrix."""
+    _check_valid_dcov_exponent(exponent)
+
+    x, y = _transform_to_2d(x, y)
+
+    # Calculate distance matrices
+    a = distances.pairwise_distances(x, exponent=exponent)
+    b = distances.pairwise_distances(y, exponent=exponent)
+
+    return a, b
+
+
 def _distance_matrix_generic(
     x: T,
     centering: Centering,
@@ -554,15 +619,6 @@ def _distance_matrix_generic(
     a = centering(a, out=a)
 
     return a
-
-
-def _distance_matrix(x: T, *, exponent: float = 1) -> T:
-    """Compute the double centered distance matrix given a matrix."""
-    return _distance_matrix_generic(
-        x,
-        centering=double_centered,
-        exponent=exponent,
-    )
 
 
 def _u_distance_matrix(x: T, *, exponent: float = 1) -> T:

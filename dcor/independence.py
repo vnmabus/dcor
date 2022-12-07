@@ -92,10 +92,10 @@ def distance_covariance_test(
         HypothesisTest(pvalue=1.0, statistic=1.3604610...)
         >>> dcor.independence.distance_covariance_test(a, b,
         ... num_resamples=5, random_state=0)
-        HypothesisTest(pvalue=0.5, statistic=11.7532305...)
+        HypothesisTest(pvalue=0.8333333333333334, statistic=11.7532305...)
         >>> dcor.independence.distance_covariance_test(a, b,
         ... num_resamples=5, random_state=13)
-        HypothesisTest(pvalue=0.3333333..., statistic=11.7532305...)
+        HypothesisTest(pvalue=0.5..., statistic=11.7532305...)
         >>> dcor.independence.distance_covariance_test(a, a,
         ... num_resamples=7, random_state=0)
         HypothesisTest(pvalue=0.125, statistic=208.0)
@@ -198,16 +198,16 @@ def partial_distance_covariance_test(
         HypothesisTest(pvalue=1.0, statistic=142.6664416...)
         >>> dcor.independence.partial_distance_covariance_test(a, b, c)
         ...                                      # doctest: +ELLIPSIS
-        HypothesisTest(pvalue=1.0, statistic=7.2690070...e-15)
+        HypothesisTest(pvalue=1.0, statistic=7.0791037...e-15)
         >>> dcor.independence.partial_distance_covariance_test(b, b, c)
         ...                                      # doctest: +ELLIPSIS
-        HypothesisTest(pvalue=1.0, statistic=2.2533380...e-30)
+        HypothesisTest(pvalue=1.0, statistic=6.3170502...e-31)
         >>> dcor.independence.partial_distance_covariance_test(a, b, c,
         ... num_resamples=5, random_state=0)
-        HypothesisTest(pvalue=0.1666666..., statistic=7.2690070...e-15)
+        HypothesisTest(pvalue=0.1666666..., statistic=7.0791037...e-15)
         >>> dcor.independence.partial_distance_covariance_test(a, b, c,
         ... num_resamples=5, random_state=13)
-        HypothesisTest(pvalue=0.1666666..., statistic=7.2690070...e-15)
+        HypothesisTest(pvalue=0.1666666..., statistic=7.0791037...e-15)
         >>> dcor.independence.partial_distance_covariance_test(a, c, b,
         ... num_resamples=7, random_state=0)
         HypothesisTest(pvalue=1.0, statistic=-7.5701764...e-12)
