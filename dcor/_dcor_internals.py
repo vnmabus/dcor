@@ -7,7 +7,7 @@ distance covariance and correlation.
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Callable, Tuple, TypeVar
+from typing import TYPE_CHECKING, Callable, Literal, Tuple, TypeVar, overload
 
 from . import distances
 from ._utils import ArrayType, _transform_to_2d, get_namespace
@@ -95,36 +95,99 @@ def _symmetric_matrix_sums(a: T) -> Tuple[T, T]:
     return axis_sum, total_sum
 
 
-def _dcov_from_sums(
-    a: T,
-    b: T,
-    a_sums: Tuple[T, T] | None = None,
-    b_sums: Tuple[T, T] | None = None,
-    bias_corrected: bool = False,
-) -> T:
-    """Compute distance covariance WITHOUT centering first."""
-    dim = a.shape[0]
+@overload
+def _dcov_terms_naive(
+    x: T,
+    y: T,
+    exponent: float,
+    return_var_terms: Literal[False] = False,
+) -> Tuple[
+    T,
+    Tuple[T, T],
+    Tuple[T, T],
+]:
+    pass
 
-    a_axis_sum, a_total_sum = a_sums if a_sums else _symmetric_matrix_sums(a)
-    b_axis_sum, b_total_sum = b_sums if b_sums else _symmetric_matrix_sums(b)
 
-    xp = get_namespace(a, b)
+@overload
+def _dcov_terms_naive(
+    x: T,
+    y: T,
+    exponent: float,
+    return_var_terms: Literal[True],
+) -> Tuple[
+    T,
+    Tuple[T, T],
+    Tuple[T, T],
+    T,
+    T,
+]:
+    pass
+
+
+def _dcov_terms_naive(
+    x: T,
+    y: T,
+    exponent: float,
+    return_var_terms: bool = False,
+) -> Tuple[
+    T,
+    Tuple[T, T],
+    Tuple[T, T],
+] | Tuple[
+    T,
+    Tuple[T, T],
+    Tuple[T, T],
+    T,
+    T,
+]:
+    """Return terms used in dcov."""
+    xp = get_namespace(x, y)
+    a, b = _compute_distances(
+        x,
+        y,
+        exponent=exponent,
+    )
 
     a_vec = xp.reshape(a, -1)
     b_vec = xp.reshape(b, -1)
 
-    first_term = (a_vec @ b_vec) / dim
-    second_term = a_axis_sum @ b_axis_sum / dim
-    third_term = a_total_sum * b_total_sum / dim
+    mean_prod = a_vec @ b_vec
+    a_sums = _symmetric_matrix_sums(a)
+    b_sums = _symmetric_matrix_sums(b)
+
+    if return_var_terms:
+        mean_prod_a = a_vec @ a_vec
+        mean_prod_b = b_vec @ b_vec
+        return mean_prod, a_sums, b_sums, mean_prod_a, mean_prod_b
+
+    return mean_prod, a_sums, b_sums
+
+
+def _dcov_from_terms(
+    mean_prod: T,
+    a_sums: Tuple[T, T],
+    b_sums: Tuple[T, T],
+    *,
+    n_samples: int,
+    bias_corrected: bool = False,
+) -> T:
+    """Compute distance covariance WITHOUT centering first."""
+    a_axis_sum, a_total_sum = a_sums
+    b_axis_sum, b_total_sum = b_sums
+
+    first_term = mean_prod / n_samples
+    second_term = a_axis_sum @ b_axis_sum / n_samples
+    third_term = a_total_sum * b_total_sum / n_samples
 
     if bias_corrected:
-        first_term /= (dim - 3)
-        second_term /= (dim - 2) * (dim - 3)
-        third_term /= (dim - 1) * (dim - 2) * (dim - 3)
+        first_term /= (n_samples - 3)
+        second_term /= (n_samples - 2) * (n_samples - 3)
+        third_term /= (n_samples - 1) * (n_samples - 2) * (n_samples - 3)
     else:
-        first_term /= dim
-        second_term /= dim**2
-        third_term /= dim**3
+        first_term /= n_samples
+        second_term /= n_samples**2
+        third_term /= n_samples**3
 
     return first_term - 2 * second_term + third_term
 

@@ -31,9 +31,8 @@ import numpy as np
 from dcor._dcor_internals import _af_inv_scaled
 
 from ._dcor_internals import (
-    _compute_distances,
-    _dcov_from_sums,
-    _symmetric_matrix_sums,
+    _dcov_from_terms,
+    _dcov_terms_naive,
     mean_product,
     u_product,
 )
@@ -112,7 +111,6 @@ class _DcovAlgorithmInternals():
                         *args,
                         **kwargs,
                         bias_corrected=False,
-                        product=mean_product,
                     )
                 )
 
@@ -134,7 +132,6 @@ class _DcovAlgorithmInternals():
                         *args,
                         **kwargs,
                         bias_corrected=True,
-                        product=u_product,
                     )
                 )
 
@@ -235,13 +232,11 @@ def _distance_covariance_sqr_naive(
     """
     _naive_check_compile_mode(compile_mode)
 
-    a, b = _compute_distances(
-        x,
-        y,
-        exponent=exponent,
+    return _dcov_from_terms(
+        *_dcov_terms_naive(x, y, exponent),
+        n_samples=x.shape[0],
+        bias_corrected=False,
     )
-
-    return _dcov_from_sums(a, b, bias_corrected=False)
 
 
 def _u_distance_covariance_sqr_naive(
@@ -259,54 +254,51 @@ def _u_distance_covariance_sqr_naive(
     """
     _naive_check_compile_mode(compile_mode)
 
-    a, b = _compute_distances(
-        x,
-        y,
-        exponent=exponent,
+    return _dcov_from_terms(
+        *_dcov_terms_naive(x, y, exponent),
+        n_samples=x.shape[0],
+        bias_corrected=True,
     )
-
-    return _dcov_from_sums(a, b, bias_corrected=True)
 
 
 def _distance_sqr_stats_naive_generic(
     x: T,
     y: T,
     bias_corrected: bool,
-    product: Callable[[T, T], T],
     exponent: float = 1,
     compile_mode: CompileMode = CompileMode.AUTO,
 ) -> Stats[T]:
     """Compute generic squared stats."""
     _naive_check_compile_mode(compile_mode)
 
-    a, b = _compute_distances(
+    n_samples = x.shape[0]
+
+    mean_prod, a_sums, b_sums, a_mean_prod, b_mean_prod = _dcov_terms_naive(
         x,
         y,
         exponent=exponent,
+        return_var_terms=True,
     )
 
-    a_sums = _symmetric_matrix_sums(a)
-    b_sums = _symmetric_matrix_sums(b)
-
-    covariance_xy_sqr = _dcov_from_sums(
-        a,
-        b,
+    covariance_xy_sqr = _dcov_from_terms(
+        mean_prod=mean_prod,
         a_sums=a_sums,
         b_sums=b_sums,
+        n_samples=n_samples,
         bias_corrected=bias_corrected,
     )
-    variance_x_sqr = _dcov_from_sums(
-        a,
-        a,
+    variance_x_sqr = _dcov_from_terms(
+        mean_prod=a_mean_prod,
         a_sums=a_sums,
         b_sums=a_sums,
+        n_samples=n_samples,
         bias_corrected=bias_corrected,
     )
-    variance_y_sqr = _dcov_from_sums(
-        b,
-        b,
+    variance_y_sqr = _dcov_from_terms(
+        mean_prod=b_mean_prod,
         a_sums=b_sums,
         b_sums=b_sums,
+        n_samples=n_samples,
         bias_corrected=bias_corrected,
     )
 
@@ -343,7 +335,6 @@ def _distance_correlation_sqr_naive(
         x,
         y,
         bias_corrected=False,
-        product=mean_product,
         exponent=exponent,
     ).correlation_xy
 
@@ -361,7 +352,6 @@ def _u_distance_correlation_sqr_naive(
         x,
         y,
         bias_corrected=True,
-        product=u_product,
         exponent=exponent,
     ).correlation_xy
 
