@@ -16,26 +16,13 @@ from __future__ import annotations
 
 from dataclasses import astuple, dataclass
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Generic,
-    Iterator,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Generic, Iterator, TypeVar, Union
 
 import numpy as np
 
 from dcor._dcor_internals import _af_inv_scaled
 
-from ._dcor_internals import (
-    _dcov_from_terms,
-    _dcov_terms_naive,
-    mean_product,
-    u_product,
-)
+from ._dcor_internals import _dcov_from_terms, _dcov_terms_naive
 from ._fast_dcov_avl import _distance_covariance_sqr_avl_generic
 from ._fast_dcov_mergesort import _distance_covariance_sqr_mergesort_generic
 from ._utils import ArrayType, CompileMode, _sqrt, get_namespace
@@ -421,16 +408,16 @@ def _distance_stats_sqr_generic(
 
 
 class DistanceCovarianceMethod(Enum):
-    """
-    Method used for computing the distance covariance.
+    """Method used for computing the distance covariance."""
 
-    """
     AUTO = _DcovAlgorithmInternalsAuto()
     """
-    Try to select the best algorithm. It will try to use a fast
-    algorithm if possible. Otherwise it will use the naive
-    implementation.
+    Try to select the best algorithm.
+    
+    It will try to use a fast algorithm if possible.
+    Otherwise it will use the naive implementation.
     """
+
     NAIVE = _DcovAlgorithmInternals(
         dcov_sqr=_distance_covariance_sqr_naive,
         u_dcov_sqr=_u_distance_covariance_sqr_naive,
@@ -438,15 +425,15 @@ class DistanceCovarianceMethod(Enum):
         u_dcor_sqr=_u_distance_correlation_sqr_naive,
         stats_generic=_distance_sqr_stats_naive_generic,
     )
-    r"""
-    Use the usual estimator of the distance covariance, which is
-    :math:`O(n^2)`
-    """
+    r"""Usual estimator of the distance covariance, which is :math:`O(n^2)`"""
+
     AVL = _DcovAlgorithmInternals(
         dcov_generic=_distance_covariance_sqr_avl_generic,
     )
     r"""
-    Use the fast implementation from
+    Use the AVL fast implementation.
+    
+    This is the implementation described in
     :cite:`b-fast_distance_correlation_avl` which is
     :math:`O(n\log n)`
     """
@@ -454,7 +441,9 @@ class DistanceCovarianceMethod(Enum):
         dcov_generic=_distance_covariance_sqr_mergesort_generic,
     )
     r"""
-    Use the fast implementation from
+    Use the mergesort fast implementation.
+    
+    This is the implementation described in
     :cite:`b-fast_distance_correlation_mergesort` which is
     :math:`O(n\log n)`
     """
