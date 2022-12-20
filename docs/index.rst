@@ -32,6 +32,7 @@ References
    apilist
    performance
    energycomparison
+   development
 
 dcor is developed `on Github <http://github.com/vnmabus/dcor>`_. Please
 report `issues <https://github.com/vnmabus/dcor/issues>`_ there as well.
