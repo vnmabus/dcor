@@ -65,10 +65,15 @@ dcor.distance_correlation(x, y)
 n_features_x2 = 2
 
 x2 = random_state.uniform(-1, 1, size=(n_samples, 2))
-y2 = np.array([x2[:, 0], x2[:, 1]**2, x2[:, 0] + x2[:, 1]]).T
+y2 = x2[:, 0]**2 + x2[:, 1]**2
 
 print(x2.shape)
 print(y2.shape)
+
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+ax.scatter(x2[:, 0], x2[:, 1], y2, s=1)
+plt.show()
 
 dcor.distance_correlation(x2, y2)
 
@@ -87,7 +92,7 @@ dcor.distance_covariance(x, y)
 n_calls = 100
 
 timeit.timeit(
-    lambda: dcor.distance_covariance(x, y, method="naive"),
+    lambda: dcor.distance_correlation(x, y, method="naive"),
     number=n_calls,
 )
 
@@ -97,13 +102,13 @@ timeit.timeit(
 # of the AVL balanced trees and one based on the popular sorting
 # algorithm mergesort:
 timeit.timeit(
-    lambda: dcor.distance_covariance(x, y, method="avl"),
+    lambda: dcor.distance_correlation(x, y, method="avl"),
     number=n_calls,
 )
 
 # %%
 timeit.timeit(
-    lambda: dcor.distance_covariance(x, y, method="mergesort"),
+    lambda: dcor.distance_correlation(x, y, method="mergesort"),
     number=n_calls,
 )
 
@@ -112,7 +117,7 @@ timeit.timeit(
 # the default value for the method, "auto", means):
 
 timeit.timeit(
-    lambda: dcor.distance_covariance(x, y, method="auto"),
+    lambda: dcor.distance_correlation(x, y, method="auto"),
     number=n_calls,
 )
 
@@ -121,6 +126,6 @@ timeit.timeit(
 # random vectors will produce an error.
 
 try:
-    dcor.distance_covariance(x2, y2, method="avl")
+    dcor.distance_correlation(x2, y2, method="avl")
 except Exception:
     traceback.print_exc()
