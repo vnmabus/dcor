@@ -260,7 +260,15 @@ def _distance_sqr_stats_naive_generic(
 
     n_samples = x.shape[0]
 
-    mean_prod, a_sums, b_sums, a_mean_prod, b_mean_prod = _dcov_terms_naive(
+    (
+        mean_prod,
+        a_axis_sum,
+        a_total_sum,
+        b_axis_sum,
+        b_total_sum,
+        a_mean_prod,
+        b_mean_prod,
+    ) = _dcov_terms_naive(
         x,
         y,
         exponent=exponent,
@@ -269,22 +277,28 @@ def _distance_sqr_stats_naive_generic(
 
     covariance_xy_sqr = _dcov_from_terms(
         mean_prod=mean_prod,
-        a_sums=a_sums,
-        b_sums=b_sums,
+        a_axis_sum=a_axis_sum,
+        a_total_sum=a_total_sum,
+        b_axis_sum=b_axis_sum,
+        b_total_sum=b_total_sum,
         n_samples=n_samples,
         bias_corrected=bias_corrected,
     )
     variance_x_sqr = _dcov_from_terms(
         mean_prod=a_mean_prod,
-        a_sums=a_sums,
-        b_sums=a_sums,
+        a_axis_sum=a_axis_sum,
+        a_total_sum=a_total_sum,
+        b_axis_sum=a_axis_sum,
+        b_total_sum=a_total_sum,
         n_samples=n_samples,
         bias_corrected=bias_corrected,
     )
     variance_y_sqr = _dcov_from_terms(
         mean_prod=b_mean_prod,
-        a_sums=b_sums,
-        b_sums=b_sums,
+        a_axis_sum=b_axis_sum,
+        a_total_sum=b_total_sum,
+        b_axis_sum=b_axis_sum,
+        b_total_sum=b_total_sum,
         n_samples=n_samples,
         bias_corrected=bias_corrected,
     )

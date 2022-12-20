@@ -132,12 +132,16 @@ def _dcov_terms_naive(
     return_var_terms: bool = False,
 ) -> Tuple[
     T,
-    Tuple[T, T],
-    Tuple[T, T],
+    T,
+    T,
+    T,
+    T,
 ] | Tuple[
     T,
-    Tuple[T, T],
-    Tuple[T, T],
+    T,
+    T,
+    T,
+    T,
     T,
     T,
 ]:
@@ -159,23 +163,21 @@ def _dcov_terms_naive(
     if return_var_terms:
         mean_prod_a = a_vec @ a_vec
         mean_prod_b = b_vec @ b_vec
-        return mean_prod, a_sums, b_sums, mean_prod_a, mean_prod_b
+        return mean_prod, *a_sums, *b_sums, mean_prod_a, mean_prod_b
 
-    return mean_prod, a_sums, b_sums
+    return mean_prod, *a_sums, *b_sums
 
 
 def _dcov_from_terms(
     mean_prod: T,
-    a_sums: Tuple[T, T],
-    b_sums: Tuple[T, T],
-    *,
+    a_axis_sum: T,
+    a_total_sum: T,
+    b_axis_sum: T,
+    b_total_sum: T,
     n_samples: int,
     bias_corrected: bool = False,
 ) -> T:
     """Compute distance covariance WITHOUT centering first."""
-    a_axis_sum, a_total_sum = a_sums
-    b_axis_sum, b_total_sum = b_sums
-
     first_term = mean_prod / n_samples
     second_term = a_axis_sum @ b_axis_sum / n_samples
     third_term = a_total_sum * b_total_sum / n_samples
