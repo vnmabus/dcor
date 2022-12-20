@@ -12,7 +12,6 @@ import numpy as np
 from numba import boolean, float64, int64
 from numba.types import Tuple
 
-from ._dcor_internals import _dcov_from_terms
 from ._dcor_internals_numba import (
     NumbaIntVectorReadOnly,
     NumbaMatrix,
@@ -20,7 +19,7 @@ from ._dcor_internals_numba import (
     NumbaVector,
     NumbaVectorReadOnly,
     NumbaVectorReadOnlyNonContiguous,
-    _dcov_from_terms_compiled,
+    _generate_distance_covariance_sqr_from_terms_impl,
 )
 from ._utils import CompileMode, _transform_to_1d
 
@@ -302,7 +301,7 @@ _get_impl_args_compiled = numba.njit(
 
 def _generate_distance_covariance_sqr_terms_avl_impl(
     compiled: bool,
-) -> Callable[..., NumpyArrayType]:
+) -> Callable[..., Any]:
 
     def _distance_covariance_sqr_terms_avl_impl(
         x: np.typing.NDArray[np.float64],
@@ -428,57 +427,10 @@ _distance_covariance_sqr_terms_avl_impl_compiled = numba.njit(
 )
 
 
-def _generate_distance_covariance_sqr_avl_impl(
-    compiled: bool,
-) -> Callable[..., NumpyArrayType]:
-
-    def _distance_covariance_sqr_avl_impl(
-        x: np.typing.NDArray[np.float64],
-        y: np.typing.NDArray[np.float64],
-        unbiased: bool,
-    ) -> np.typing.NDArray[np.float64]:  # pylint:disable=too-many-locals
-        # This function has many locals so it can be compared
-        # with the original algorithm.
-        """Fast algorithm for the squared distance covariance."""
-        distance_covariance_sqr_terms = (
-            _distance_covariance_sqr_terms_avl_impl_compiled
-            if compiled
-            else _distance_covariance_sqr_terms_avl_impl
-        )
-        dcov_from_terms = (
-            _dcov_from_terms_compiled
-            if compiled
-            else _dcov_from_terms
-        )
-
-        n = x.shape[0]
-
-        (
-            aijbij,
-            a_i_dot,
-            a_dot_dot,
-            b_i_dot,
-            b_dot_dot,
-            _,
-            _,
-        ) = distance_covariance_sqr_terms(x, y, return_var_terms=False)
-
-        # Step 9
-        return dcov_from_terms(
-            aijbij,
-            a_i_dot,
-            a_dot_dot,
-            b_i_dot,
-            b_dot_dot,
-            n,
-            unbiased,
-        )
-
-    return _distance_covariance_sqr_avl_impl
-
-
-_distance_covariance_sqr_avl_impl = _generate_distance_covariance_sqr_avl_impl(
+_distance_covariance_sqr_avl_impl = _generate_distance_covariance_sqr_from_terms_impl(
     compiled=False,
+    terms_compiled=_distance_covariance_sqr_terms_avl_impl_compiled,
+    terms_uncompiled=_distance_covariance_sqr_terms_avl_impl,
 )
 _distance_covariance_sqr_avl_impl_compiled = numba.njit(
     float64(
@@ -488,7 +440,11 @@ _distance_covariance_sqr_avl_impl_compiled = numba.njit(
     ),
     cache=True,
 )(
-    _generate_distance_covariance_sqr_avl_impl(compiled=True),
+    _generate_distance_covariance_sqr_from_terms_impl(
+        compiled=True,
+        terms_compiled=_distance_covariance_sqr_terms_avl_impl_compiled,
+        terms_uncompiled=_distance_covariance_sqr_terms_avl_impl,
+    ),
 )
 
 

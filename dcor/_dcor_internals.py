@@ -7,20 +7,12 @@ distance covariance and correlation.
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Callable, Literal, Tuple, TypeVar, overload
+from typing import Callable, Literal, Protocol, Tuple, TypeVar, overload
 
 from . import distances
 from ._utils import ArrayType, CompileMode, _transform_to_2d, get_namespace
 
 T = TypeVar("T", bound=ArrayType)
-
-if TYPE_CHECKING:
-    try:
-        from typing import Protocol
-    except ImportError:
-        from typing_extensions import Protocol
-else:
-    Protocol = object
 
 
 class Centering(Protocol):
