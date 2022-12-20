@@ -494,27 +494,27 @@ _distance_covariance_sqr_avl_impl_compiled = numba.njit(
 
 impls_dict = {
     CompileMode.AUTO: (
-        _distance_covariance_sqr_avl_impl_compiled,
-        _distance_covariance_sqr_avl_impl,
+        _distance_covariance_sqr_terms_avl_impl_compiled,
+        _distance_covariance_sqr_terms_avl_impl,
     ),
     CompileMode.NO_COMPILE: (
-        _distance_covariance_sqr_avl_impl,
+        _distance_covariance_sqr_terms_avl_impl,
     ),
     CompileMode.COMPILE_CPU: (
-        _distance_covariance_sqr_avl_impl_compiled,
+        _distance_covariance_sqr_terms_avl_impl_compiled,
     ),
 }
 
 
-def _distance_covariance_sqr_avl_generic(
+def _distance_covariance_sqr_terms_avl(
     x: T,
     y: T,
     *,
     exponent: float = 1,
-    unbiased: bool = False,
     compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: bool = False,
 ) -> T:
-    """Fast algorithm for the squared distance covariance."""
+    """Fast algorithm for the squared distance covariance terms."""
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
 
@@ -532,7 +532,7 @@ def _distance_covariance_sqr_avl_generic(
 
         try:
 
-            return impl(x, y, unbiased)
+            return impl(x, y, return_var_terms)
 
         except TypeError as e:
 
@@ -541,7 +541,7 @@ def _distance_covariance_sqr_avl_generic(
 
             warnings.warn(
                 f"Falling back to uncompiled AVL fast distance "
-                f"covariance because of TypeError exception "
+                f"covariance terms because of TypeError exception "
                 f"raised: {e}. Rembember: only floating point "
                 f"values can be used in the compiled "
                 f"implementations.",

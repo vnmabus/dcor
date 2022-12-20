@@ -10,7 +10,7 @@ import warnings
 from typing import TYPE_CHECKING, Callable, Literal, Tuple, TypeVar, overload
 
 from . import distances
-from ._utils import ArrayType, _transform_to_2d, get_namespace
+from ._utils import ArrayType, CompileMode, _transform_to_2d, get_namespace
 
 T = TypeVar("T", bound=ArrayType)
 
@@ -99,12 +99,18 @@ def _symmetric_matrix_sums(a: T) -> Tuple[T, T]:
 def _dcov_terms_naive(
     x: T,
     y: T,
+    *,
     exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
     return_var_terms: Literal[False] = False,
 ) -> Tuple[
     T,
-    Tuple[T, T],
-    Tuple[T, T],
+    T,
+    T,
+    T,
+    T,
+    None,
+    None,
 ]:
     pass
 
@@ -113,12 +119,16 @@ def _dcov_terms_naive(
 def _dcov_terms_naive(
     x: T,
     y: T,
+    *,
     exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
     return_var_terms: Literal[True],
 ) -> Tuple[
     T,
-    Tuple[T, T],
-    Tuple[T, T],
+    T,
+    T,
+    T,
+    T,
     T,
     T,
 ]:
@@ -128,7 +138,9 @@ def _dcov_terms_naive(
 def _dcov_terms_naive(
     x: T,
     y: T,
+    *,
     exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
     return_var_terms: bool = False,
 ) -> Tuple[
     T,
@@ -136,16 +148,15 @@ def _dcov_terms_naive(
     T,
     T,
     T,
-] | Tuple[
-    T,
-    T,
-    T,
-    T,
-    T,
-    T,
-    T,
+    T | None,
+    T | None,
 ]:
     """Return terms used in dcov."""
+    if compile_mode not in {CompileMode.AUTO, CompileMode.NO_COMPILE}:
+        raise NotImplementedError(
+            f"Compile mode {compile_mode} not implemented.",
+        )
+
     xp = get_namespace(x, y)
     a, b = _compute_distances(
         x,
@@ -160,12 +171,14 @@ def _dcov_terms_naive(
     a_sums = _symmetric_matrix_sums(a)
     b_sums = _symmetric_matrix_sums(b)
 
+    mean_prod_a = None
+    mean_prod_b = None
+
     if return_var_terms:
         mean_prod_a = a_vec @ a_vec
         mean_prod_b = b_vec @ b_vec
-        return mean_prod, *a_sums, *b_sums, mean_prod_a, mean_prod_b
 
-    return mean_prod, *a_sums, *b_sums
+    return mean_prod, *a_sums, *b_sums, mean_prod_a, mean_prod_b
 
 
 def _dcov_from_terms(
