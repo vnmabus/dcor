@@ -21,6 +21,7 @@
 # import sys
 # sys.path.insert(0, '/home/carlos/git/dcor/dcor')
 
+import os
 import sys
 
 import pkg_resources
@@ -64,6 +65,9 @@ extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
+rtd_version = os.environ.get("READTHEDOCS_VERSION", "latest")
+branch = "master" if rtd_version == "stable" else "develop"
+
 sphinx_gallery_conf = {
     'examples_dirs': '../examples',
     'gallery_dirs': 'auto_examples',
@@ -73,6 +77,14 @@ sphinx_gallery_conf = {
     },
     'backreferences_dir': 'backreferences',
     'doc_module': 'dcor',
+    'binder': {
+        'org': 'VNMabus',
+        'repo': 'dcor',
+        'branch': branch,
+        'binderhub_url': 'https://mybinder.org',
+        'dependencies': ['../binder/requirements.txt'],
+        'notebooks_dir': '../examples',
+    },
 }
 
 intersphinx_mapping = {
