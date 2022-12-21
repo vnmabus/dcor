@@ -31,6 +31,7 @@ References
    auto_examples/index
    apilist
    energycomparison
+   Release Notes <https://github.com/vnmabus/dcor/releases>
    development
 
 dcor is developed `on Github <http://github.com/vnmabus/dcor>`_. Please
