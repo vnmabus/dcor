@@ -20,4 +20,10 @@ use the :code:`conda-forge` channel instead.
 Requirements
 ------------
 
-dcor is available in Python 3.5 or above, in all operating systems.
+dcor is available in Python 3.8 or above, in all operating systems.
+The package dcor depends on the following libraries:
+
+- numpy
+- numba >= 0.51
+- scipy
+- joblib

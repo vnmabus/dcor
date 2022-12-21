@@ -6,7 +6,7 @@ This page contains the necessary information to contribute to this package.
 Contributing guide
 ------------------
 
-The guide for contributors is in the repo:
+The guide for contributors is in the repository:
 https://github.com/vnmabus/dcor/blob/develop/CONTRIBUTING.md.
 
 Building the documentation

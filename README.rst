@@ -48,11 +48,11 @@ use the :code:`conda-forge` channel.
 Requirements
 ------------
 
-dcor is available in Python 3.5 or above and in Python 2.7, in all operating systems.
-The package dcors depends on the following libraries:
+dcor is available in Python 3.8 or above in all operating systems.
+The package dcor depends on the following libraries:
 
 - numpy
-- numba>=0.51
+- numba >= 0.51
 - scipy
 - joblib
 

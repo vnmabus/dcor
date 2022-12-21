@@ -18,7 +18,7 @@ Table of energy-dcor equivalents
 .. default-role:: py:obj
 
 .. list-table::
-    :widths: 25 25 50
+    :widths: 25 25 100
     :header-rows: 1
     :class: comparison-table
     
