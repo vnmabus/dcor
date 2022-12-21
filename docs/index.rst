@@ -30,7 +30,6 @@ References
    theory
    auto_examples/index
    apilist
-   performance
    energycomparison
    development
 

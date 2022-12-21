@@ -21,10 +21,14 @@
 # import sys
 # sys.path.insert(0, '/home/carlos/git/dcor/dcor')
 
+
 import os
 import sys
 
 import pkg_resources
+# Patch sphinx_gallery.binder.gen_binder_rst so as to point to .py file in
+# repository
+import sphinx_gallery.binder
 
 try:
     release = pkg_resources.get_distribution('dcor').version
@@ -269,3 +273,24 @@ epub_exclude_files = ['search.html']
 bibtex_bibfiles = ['refs.bib']
 
 autodoc_typehints = "description"
+
+# Binder integration
+# Taken from
+# https://stanczakdominik.github.io/posts/simple-binder-usage-with-sphinx-gallery-through-jupytext/
+original_gen_binder_rst = sphinx_gallery.binder.gen_binder_rst
+
+
+def patched_gen_binder_rst(*args, **kwargs):
+    return original_gen_binder_rst(*args, **kwargs).replace(
+        "../examples/auto_",
+        "",
+    ).replace(
+        ".ipynb",
+        ".py",
+    )
+
+
+#  # And then we finish our monkeypatching misdeed by redirecting
+
+# sphinx-gallery to use our function:
+sphinx_gallery.binder.gen_binder_rst = patched_gen_binder_rst
