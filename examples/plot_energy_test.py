@@ -142,7 +142,7 @@ for delta in deltas:
     for n_obs in n_obs_list:
         n_errors = 0
         for _ in range(n_tests):
-            x = multivariate_normal(n_obs, delta)
+            x = multivariate_normal(n_obs, 0)
             y = multivariate_normal(n_obs, delta)
 
             test_result = dcor.homogeneity.energy_test(
