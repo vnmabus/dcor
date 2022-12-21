@@ -17,7 +17,7 @@ import dcor
 # sphinx_gallery_thumbnail_number = 3
 
 # %%
-# Given samples of two random vectors with arbitrary dimension, the
+# Given matching samples of two random vectors with arbitrary dimensions, the
 # distance covariance can be used to construct a permutation test of
 # independence.
 # The null hypothesis :math:`\mathcal{H}_0` is that the two random
@@ -137,6 +137,8 @@ plt.show()
 # a lower number of test repetitions due to time constraints.
 # Users are encouraged to download this example and increase that number to
 # obtain better estimates of the Type I error.
+# In order to replicate the original results, one should set the value of
+# ``n_tests`` to 10000.
 
 # %%
 # We generate independent data following a multivariate Gaussian distribution
