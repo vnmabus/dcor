@@ -30,18 +30,18 @@ from ._utils import (
     _transform_to_2d,
 )
 
-T = TypeVar("T", bound=ArrayType)
+Array = TypeVar("Array", bound=ArrayType)
 
 
 def distance_covariance_test(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     num_resamples: int = 0,
     exponent: float = 1,
     random_state: RandomLike = None,
     n_jobs: int = 1,
-) -> HypothesisTest[T]:
+) -> HypothesisTest[Array]:
     """
     Test of distance covariance independence.
 
@@ -120,7 +120,7 @@ def distance_covariance_test(
     )
 
     # Use the dcov statistic
-    def statistic_function(distance_matrix: T) -> T:
+    def statistic_function(distance_matrix: Array) -> Array:
         return u_x.shape[0] * mean_product(
             distance_matrix,
             u_y,
@@ -136,15 +136,15 @@ def distance_covariance_test(
 
 
 def partial_distance_covariance_test(
-    x: T,
-    y: T,
-    z: T,
+    x: Array,
+    y: Array,
+    z: Array,
     *,
     num_resamples: int = 0,
     exponent: float = 1,
     random_state: RandomLike = None,
     n_jobs: int | None = 1,
-) -> HypothesisTest[T]:
+) -> HypothesisTest[Array]:
     """
     Test of partial distance covariance independence.
 
@@ -227,7 +227,7 @@ def partial_distance_covariance_test(
     p_yz = proj(u_y)
 
     # Use the pdcor statistic
-    def statistic_function(distance_matrix: T) -> T:
+    def statistic_function(distance_matrix: Array) -> Array:
         return u_x.shape[0] * u_product(
             distance_matrix,
             p_yz,
@@ -243,9 +243,9 @@ def partial_distance_covariance_test(
 
 
 def distance_correlation_t_statistic(
-    x: T,
-    y: T,
-) -> T:
+    x: Array,
+    y: Array,
+) -> Array:
     """
     Statistic used in :func:`distance_correlation_t_test`.
 
@@ -294,9 +294,9 @@ def distance_correlation_t_statistic(
 
 
 def distance_correlation_t_test(
-    x: T,
-    y: T,
-) -> HypothesisTest[T]:
+    x: Array,
+    y: Array,
+) -> HypothesisTest[Array]:
     """
     Test of independence for high dimension.
 

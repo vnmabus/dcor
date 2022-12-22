@@ -17,10 +17,10 @@ from __future__ import annotations
 from dataclasses import astuple, dataclass
 from enum import Enum
 from typing import (
-    TYPE_CHECKING,
     Generic,
     Iterator,
     Literal,
+    Protocol,
     Tuple,
     TypeVar,
     Union,
@@ -36,33 +36,31 @@ from ._fast_dcov_avl import _distance_covariance_sqr_terms_avl
 from ._fast_dcov_mergesort import _distance_covariance_sqr_terms_mergesort
 from ._utils import ArrayType, CompileMode, _sqrt, get_namespace
 
-T = TypeVar("T", bound=ArrayType)
-
-if TYPE_CHECKING:
-    try:
-        from typing import Protocol
-    except ImportError:
-        from typing_extensions import Protocol
-else:
-    Protocol = object
+Array = TypeVar("Array", bound=ArrayType)
 
 
 @dataclass(frozen=True)
-class Stats(Generic[T]):
+class Stats(Generic[Array]):
     """Distance covariance related stats."""
-    covariance_xy: T
-    correlation_xy: T
-    variance_x: T
-    variance_y: T
+    covariance_xy: Array
+    correlation_xy: Array
+    variance_x: Array
+    variance_y: Array
 
-    def __iter__(self) -> Iterator[T]:
+    def __iter__(self) -> Iterator[Array]:
         return iter(astuple(self))
 
 
 class DCovFunction(Protocol):
     """Callback protocol for dcov method."""
 
-    def __call__(self, __x: T, __y: T, *, compile_mode: CompileMode) -> T:
+    def __call__(
+        self,
+        __x: Array,
+        __y: Array,
+        *,
+        compile_mode: CompileMode,
+    ) -> Array:
         ...
 
 
@@ -72,18 +70,18 @@ class DCovTermsFunction(Protocol):
     @overload
     def __call__(
         self,
-        __x: T,
-        __y: T,
+        __x: Array,
+        __y: Array,
         *,
         exponent: float,
         compile_mode: CompileMode = CompileMode.AUTO,
         return_var_terms: Literal[False] = False,
     ) -> Tuple[
-        T,
-        T,
-        T,
-        T,
-        T,
+        Array,
+        Array,
+        Array,
+        Array,
+        Array,
         None,
         None,
     ]:
@@ -92,58 +90,58 @@ class DCovTermsFunction(Protocol):
     @overload
     def __call__(
         self,
-        __x: T,
-        __y: T,
+        __x: Array,
+        __y: Array,
         *,
         exponent: float,
         compile_mode: CompileMode = CompileMode.AUTO,
         return_var_terms: Literal[True],
     ) -> Tuple[
-        T,
-        T,
-        T,
-        T,
-        T,
-        T,
-        T,
+        Array,
+        Array,
+        Array,
+        Array,
+        Array,
+        Array,
+        Array,
     ]:
         ...
 
     def __call__(
         self,
-        __x: T,
-        __y: T,
+        __x: Array,
+        __y: Array,
         *,
         exponent: float,
         compile_mode: CompileMode = CompileMode.AUTO,
         return_var_terms: bool = False,
     ) -> Tuple[
-        T,
-        T,
-        T,
-        T,
-        T,
-        T | None,
-        T | None,
+        Array,
+        Array,
+        Array,
+        Array,
+        Array,
+        Array | None,
+        Array | None,
     ]:
         ...
 
 
 def _dcov_terms_auto(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float,
     compile_mode: CompileMode = CompileMode.AUTO,
     return_var_terms: bool = False,
 ) -> Tuple[
-    T,
-    T,
-    T,
-    T,
-    T,
-    T | None,
-    T | None,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array | None,
+    Array | None,
 ]:
     xp = get_namespace(x, y)
 
@@ -172,13 +170,13 @@ class _DcovAlgorithmInternals():
 
     def dcov_sqr(
         self,
-        x: T,
-        y: T,
+        x: Array,
+        y: Array,
         *,
         exponent: float = 1,
         compile_mode: CompileMode = CompileMode.AUTO,
         bias_corrected=False,
-    ) -> T:
+    ) -> Array:
         """Generic estimator for distance covariance."""
         terms = self.terms(
             x,
@@ -195,13 +193,13 @@ class _DcovAlgorithmInternals():
 
     def stats_sqr(
         self,
-        x: T,
-        y: T,
+        x: Array,
+        y: Array,
         *,
         bias_corrected: bool = False,
         exponent: float = 1,
         compile_mode: CompileMode = CompileMode.AUTO,
-    ) -> Stats[T]:
+    ) -> Stats[Array]:
         """Compute generic squared stats."""
         n_samples = x.shape[0]
 
@@ -269,7 +267,7 @@ class _DcovAlgorithmInternals():
         )
 
 
-def _is_random_variable(x: T) -> bool:
+def _is_random_variable(x: Array) -> bool:
     """
     Check if the matrix x correspond to a random variable.
 
@@ -280,7 +278,7 @@ def _is_random_variable(x: T) -> bool:
     return len(x.shape) == 1 or x.shape[1] == 1
 
 
-def _can_use_fast_algorithm(x: T, y: T, exponent: float = 1) -> bool:
+def _can_use_fast_algorithm(x: Array, y: Array, exponent: float = 1) -> bool:
     """
     Check if the fast algorithm for distance stats can be used.
 
@@ -298,13 +296,13 @@ def _can_use_fast_algorithm(x: T, y: T, exponent: float = 1) -> bool:
 
 
 def _distance_stats_sqr_generic(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     dcov_function: DCovFunction,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> Stats[T]:
+) -> Stats[Array]:
     """Compute the distance stats using a dcov algorithm."""
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
@@ -341,7 +339,7 @@ class DistanceCovarianceMethod(Enum):
     )
     """
     Try to select the best algorithm.
-    
+
     It will try to use a fast algorithm if possible.
     Otherwise it will use the naive implementation.
     """
@@ -356,7 +354,7 @@ class DistanceCovarianceMethod(Enum):
     )
     r"""
     Use the AVL fast implementation.
-    
+
     This is the implementation described in
     :cite:`b-fast_distance_correlation_avl` which is
     :math:`O(n\log n)`
@@ -366,7 +364,7 @@ class DistanceCovarianceMethod(Enum):
     )
     r"""
     Use the mergesort fast implementation.
-    
+
     This is the implementation described in
     :cite:`b-fast_distance_correlation_mergesort` which is
     :math:`O(n\log n)`
@@ -376,7 +374,11 @@ class DistanceCovarianceMethod(Enum):
         return '%s.%s' % (self.__class__.__name__, self.name)
 
 
-DistanceCovarianceMethodLike = Union[DistanceCovarianceMethod, str]
+_DistanceCovarianceMethodName = Literal["auto", "naive", "avl", "mergesort"]
+DistanceCovarianceMethodLike = Union[
+    DistanceCovarianceMethod,
+    _DistanceCovarianceMethodName,
+]
 
 
 def _to_algorithm(
@@ -390,13 +392,13 @@ def _to_algorithm(
 
 
 def distance_covariance_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Usual (biased) estimator for the squared distance covariance.
 
@@ -450,13 +452,13 @@ def distance_covariance_sqr(
 
 
 def u_distance_covariance_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Unbiased estimator for the squared distance covariance.
 
@@ -511,13 +513,13 @@ def u_distance_covariance_sqr(
 
 
 def distance_covariance(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Usual (biased) estimator for the distance covariance.
 
@@ -572,13 +574,13 @@ def distance_covariance(
 
 
 def distance_stats_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> Stats[T]:
+) -> Stats[Array]:
     """
     Usual (biased) statistics related with the squared distance covariance.
 
@@ -648,13 +650,13 @@ def distance_stats_sqr(
 
 
 def u_distance_stats_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Unbiased statistics related with the squared distance covariance.
 
@@ -728,13 +730,13 @@ def u_distance_stats_sqr(
 
 
 def distance_stats(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> Stats[T]:
+) -> Stats[Array]:
     """
     Usual (biased) statistics related with the distance covariance.
 
@@ -809,13 +811,13 @@ def distance_stats(
 
 
 def distance_correlation_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Usual (biased) estimator for the squared distance correlation.
 
@@ -869,13 +871,13 @@ def distance_correlation_sqr(
 
 
 def u_distance_correlation_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Bias-corrected estimator for the squared distance correlation.
 
@@ -932,13 +934,13 @@ def u_distance_correlation_sqr(
 
 
 def distance_correlation(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Usual (biased) estimator for the distance correlation.
 
@@ -993,11 +995,11 @@ def distance_correlation(
 
 
 def distance_correlation_af_inv_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Square of the affinely invariant distance correlation.
 
@@ -1063,11 +1065,11 @@ def distance_correlation_af_inv_sqr(
 
 
 def distance_correlation_af_inv(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Affinely invariant distance correlation.
 

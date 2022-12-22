@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import warnings
 from enum import Enum, auto
-from typing import Callable, TypeVar, Union
+from typing import Callable, Literal, TypeVar, Union
 
 from . import distances
 from ._utils import ArrayType, _transform_to_2d, get_namespace
 
-T = TypeVar("T", bound=ArrayType)
+Array = TypeVar("Array", bound=ArrayType)
+
+_EstimationStatisticStr = Literal["U", "V", "u_statistic", "v_statistic"]
 
 
 class EstimationStatistic(Enum):
@@ -58,7 +60,7 @@ class EstimationStatistic(Enum):
     """
 
 
-EstimationStatisticLike = Union[EstimationStatistic, str]
+EstimationStatisticLike = Union[EstimationStatistic, _EstimationStatisticStr]
 
 
 def _check_valid_energy_exponent(exponent: float) -> None:
@@ -73,7 +75,7 @@ def _check_valid_energy_exponent(exponent: float) -> None:
         warnings.warn(warning_msg)
 
 
-def _get_flat_upper_matrix(x: T, k: int) -> T:
+def _get_flat_upper_matrix(x: Array, k: int) -> Array:
     """Get flat upper matrix from diagonal k."""
     xp = get_namespace(x)
     x_mask = xp.triu(xp.ones_like(x, dtype=xp.bool), k=k)
@@ -84,12 +86,12 @@ def _get_flat_upper_matrix(x: T, k: int) -> T:
 
 
 def _energy_distance_from_distance_matrices(
-    distance_xx: T,
-    distance_yy: T,
-    distance_xy: T,
-    average: Callable[[T], T] | None = None,
+    distance_xx: Array,
+    distance_yy: Array,
+    distance_xy: Array,
+    average: Callable[[Array], Array] | None = None,
     estimation_stat: EstimationStatisticLike = EstimationStatistic.V_STATISTIC,
-) -> T:
+) -> Array:
     """
     Compute energy distance with precalculated distance matrices.
 
@@ -127,13 +129,13 @@ def _energy_distance_from_distance_matrices(
 
 
 def energy_distance(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
-    average: Callable[[T], T] | None = None,
+    average: Callable[[Array], Array] | None = None,
     exponent: float = 1,
     estimation_stat: EstimationStatisticLike = EstimationStatistic.V_STATISTIC,
-) -> T:
+) -> Array:
     """
     Estimator for energy distance.
 
@@ -152,10 +154,9 @@ def energy_distance(
             :math:`(0, 2)`.
         average: A function that will be used to calculate an average of
             distances. This defaults to the mean.
-        estimation_stat: Union[str, EstimationStatistic]
-            If EstimationStatistic.U_STATISTIC, calculate energy distance using
-            Hoeffding's unbiased U-statistics. Otherwise, use von Mises's
-            biased V-statistics.
+        estimation_stat: If EstimationStatistic.U_STATISTIC, calculate energy
+            distance using Hoeffding's unbiased U-statistics. Otherwise,
+            use von Mises's biased V-statistics.
             If this is provided as a string, it will first be converted to
             an EstimationStatistic enum instance.
 

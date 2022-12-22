@@ -136,4 +136,6 @@ covariance.
 .. autosummary::
    :toctree: functions
    
+   dcor.CompileMode
    dcor.DistanceCovarianceMethod
+   dcor.EstimationStatistic
