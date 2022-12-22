@@ -30,11 +30,12 @@ def partial_distance_covariance(
     Warning: 
         Partial distance covariance should be used carefully as they present
         some undesirable or counterintuitive properties. In particular, the
-        reader cannot assume that :math:`{V}^{*}` characterizes independence,
-        i.e., :math:`\mathcal{V}^{*}(X, Y; Z)=0` does not always implies that
-        :math:`X` and :math:`Y` are conditionally independent given :math:`Z`
-        and viceversa. A more detailed discussion and some counter examples
-        can be found in Sec. 4.2 of :footcite:t:`partial_distance_correlation`.
+        reader cannot assume that :math:`\mathcal{V}^{*}` characterizes 
+        independence, i.e., :math:`\mathcal{V}^{*}(X, Y; Z)=0` does not always
+        implies that :math:`X` and :math:`Y` are conditionally independent 
+        given :math:`Z` and vice versa. A more detailed discussion and some 
+        counter examples can be found in Sec. 4.2 of 
+        :footcite:t:`partial_distance_correlation`.
 
     Parameters:
         x: First random vector. The columns correspond with the individual
@@ -101,11 +102,12 @@ def partial_distance_correlation(
     Warning: 
         Partial distance correlation should be used carefully as they present
         some undesirable or counterintuitive properties. In particular, the
-        reader cannot assume that :math:`{R}^{*}` characterizes independence,
-        i.e., :math:`\mathcal{R}^{*}(X, Y; Z)=0` does not always implies that
-        :math:`X` and :math:`Y` are conditionally independent given :math:`Z`
-        and viceversa. A more detailed discussion and some counter examples
-        can be found in Sec. 4.2 of :footcite:t:`partial_distance_correlation`.
+        reader cannot assume that :math:`\mathcal{R}^{*}` characterizes 
+        independence, i.e., :math:`\mathcal{R}^{*}(X, Y; Z)=0` does not always
+        implies that :math:`X` and :math:`Y` are conditionally independent 
+        given :math:`Z` and vice versa. A more detailed discussion and some 
+        counter examples can be found in Sec. 4.2 of 
+        :footcite:t:`partial_distance_correlation`.
 
     Parameters:
         x: First random vector. The columns correspond with the individual
