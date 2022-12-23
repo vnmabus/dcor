@@ -28,7 +28,7 @@ def partial_distance_covariance(
     to the random variable corresponding to :math:`z`.
 
     Warning: 
-        Partial distance covariance should be used carefully as they present
+        Partial distance covariance should be used carefully as it presents
         some undesirable or counterintuitive properties. In particular, the
         reader cannot assume that :math:`\mathcal{V}^{*}` characterizes 
         independence, i.e., :math:`\mathcal{V}^{*}(X, Y; Z)=0` does not always
