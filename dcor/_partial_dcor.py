@@ -100,7 +100,7 @@ def partial_distance_correlation(
     to the random variable corresponding to :math:`z`.
 
     Warning: 
-        Partial distance correlation should be used carefully as they present
+        Partial distance correlation should be used carefully as it presents
         some undesirable or counterintuitive properties. In particular, the
         reader cannot assume that :math:`\mathcal{R}^{*}` characterizes 
         independence, i.e., :math:`\mathcal{R}^{*}(X, Y; Z)=0` does not always
