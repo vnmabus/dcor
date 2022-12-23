@@ -27,6 +27,16 @@ def partial_distance_covariance(
     random vectors corresponding to :math:`x` and :math:`y` with respect
     to the random variable corresponding to :math:`z`.
 
+    Warning: 
+        Partial distance covariance should be used carefully as it presents
+        some undesirable or counterintuitive properties. In particular, the
+        reader cannot assume that :math:`\mathcal{V}^{*}` characterizes 
+        independence, i.e., :math:`\mathcal{V}^{*}(X, Y; Z)=0` does not always
+        implies that :math:`X` and :math:`Y` are conditionally independent 
+        given :math:`Z` and vice versa. A more detailed discussion and some 
+        counter examples can be found in Sec. 4.2 of 
+        :footcite:t:`partial_distance_correlation`.
+
     Parameters:
         x: First random vector. The columns correspond with the individual
             random variables while the rows are individual instances of the
@@ -64,6 +74,9 @@ def partial_distance_covariance(
         >>> dcor.partial_distance_covariance(b, b, c)
         0.4956241...
 
+    References:
+        .. footbibliography::
+
     """
     a = _u_distance_matrix(x)
     b = _u_distance_matrix(y)
@@ -85,6 +98,16 @@ def partial_distance_correlation(
     Compute the estimator for the partial distance correlation of the
     random vectors corresponding to :math:`x` and :math:`y` with respect
     to the random variable corresponding to :math:`z`.
+
+    Warning: 
+        Partial distance correlation should be used carefully as it presents
+        some undesirable or counterintuitive properties. In particular, the
+        reader cannot assume that :math:`\mathcal{R}^{*}` characterizes 
+        independence, i.e., :math:`\mathcal{R}^{*}(X, Y; Z)=0` does not always
+        implies that :math:`X` and :math:`Y` are conditionally independent 
+        given :math:`Z` and vice versa. A more detailed discussion and some 
+        counter examples can be found in Sec. 4.2 of 
+        :footcite:t:`partial_distance_correlation`.
 
     Parameters:
         x: First random vector. The columns correspond with the individual
@@ -118,6 +141,9 @@ def partial_distance_correlation(
         1.0
         >>> dcor.partial_distance_correlation(a, c, c)
         0.0
+
+    References:
+        .. footbibliography::
 
     """
     a = _u_distance_matrix(x)
