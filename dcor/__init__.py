@@ -13,6 +13,7 @@ import pathlib as _pathlib
 from . import distances, homogeneity, independence
 from ._dcor import (
     DistanceCovarianceMethod as DistanceCovarianceMethod,
+    Stats as Stats,
     distance_correlation as distance_correlation,
     distance_correlation_af_inv as distance_correlation_af_inv,
     distance_correlation_af_inv_sqr as distance_correlation_af_inv_sqr,
@@ -37,6 +38,7 @@ from ._energy import (
     EstimationStatistic as EstimationStatistic,
     energy_distance as energy_distance,
 )
+from ._hypothesis import HypothesisTest as HypothesisTest
 from ._partial_dcor import (
     partial_distance_correlation,
     partial_distance_covariance as partial_distance_covariance,

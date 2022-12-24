@@ -12,6 +12,13 @@ https://github.com/vnmabus/dcor/blob/develop/CONTRIBUTING.md.
 Building the documentation
 --------------------------
 
+In order to build the documentation, please first install the necessary
+packages listed in ``readthedocs-requirements.txt``:
+
+.. code-block:: bash
+
+	pip install -r readthedocs-requirements.txt
+
 The documentation and its configuration is stored in the ``docs`` subfolder.
 In order to build the documentation using Sphinx, execute the following
 commands in that folder:
