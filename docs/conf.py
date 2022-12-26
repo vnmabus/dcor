@@ -86,7 +86,7 @@ sphinx_gallery_conf = {
         'repo': 'dcor',
         'branch': branch,
         'binderhub_url': 'https://mybinder.org',
-        'dependencies': ['../pyproject.toml', '../binder/requirements.txt'],
+        'dependencies': ['../binder/runtime.txt', '../binder/requirements.txt'],
         'notebooks_dir': '../examples',
     },
 }
