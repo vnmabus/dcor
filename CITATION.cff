@@ -6,7 +6,7 @@ authors:
     orcid: "https://orcid.org/0000-0003-2566-7058"
     affiliation: "Universidad Autónoma de Madrid"
     email: vnmabus@gmail.com
-title: "dcor: distance correlation and related E-statistics in Python"
+title: "dcor: distance correlation and energy statistics in Python"
 date-released: 2022-03-24
 doi: 10.5281/zenodo.3468124
 url: "https://github.com/vnmabus/dcor"

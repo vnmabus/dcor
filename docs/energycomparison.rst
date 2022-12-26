@@ -1,5 +1,7 @@
-Comparison between Python's 'dcor' and R's 'energy'
-===================================================
+:html_theme.sidebar_secondary.remove:
+
+Comparison with R's 'energy'
+============================
 
 The `'energy' <https://github.com/mariarizzo/energy>`_ package for R provides an implementation of the E-statistics in
 this package programmed by the original authors of these statistics.
@@ -16,7 +18,9 @@ Table of energy-dcor equivalents
 .. default-role:: py:obj
 
 .. list-table::
+    :widths: 25 25 100
     :header-rows: 1
+    :class: comparison-table
     
     * - energy (R)
       - dcor (Python)
@@ -105,7 +109,11 @@ Table of energy-dcor equivalents
             
       - .. code-block:: python
             
-            dcor.distance_covariance(x, y, exponent = 0.5)
+            dcor.distance_covariance(
+                x,
+                y,
+                exponent = 0.5,
+            )
               
       - In 'energy', the distance matrix can be computed
         beforehand. That is not currently possible in 'dcor'
@@ -125,7 +133,11 @@ Table of energy-dcor equivalents
             
       - .. code-block:: python
             
-            dcor.distance_correlation(x, y, exponent = 0.5)
+            dcor.distance_correlation(
+                x,
+                y,
+                exponent = 0.5,
+            )
               
       - In 'energy', the distance matrix can be computed
         beforehand. That is not currently possible in 'dcor'
@@ -145,7 +157,11 @@ Table of energy-dcor equivalents
             
       - .. code-block:: python
             
-            dcor.distance_stats(x, y, exponent = 0.5)
+            dcor.distance_stats(
+                x,
+                y,
+                exponent = 0.5,
+            )
               
       - In 'energy', the distance matrix can be computed
         beforehand. That is not currently possible in 'dcor'
@@ -165,7 +181,11 @@ Table of energy-dcor equivalents
             
       - .. code-block:: python
             
-            dcor.u_distance_covariance_sqr(x, y, exponent = 0.5)
+            dcor.u_distance_covariance_sqr(
+                x,
+                y,
+                exponent = 0.5,
+            )
               
       -
     * - .. code-block:: R
@@ -184,7 +204,11 @@ Table of energy-dcor equivalents
             
       - .. code-block:: python
             
-            dcor.u_distance_correlation_sqr(x, y, exponent = 0.5)
+            dcor.u_distance_correlation_sqr(
+                x,
+                y,
+                exponent = 0.5,
+            )
               
       -
     * - .. code-block:: R
@@ -208,7 +232,11 @@ Table of energy-dcor equivalents
             
       - .. code-block:: python
             
-            dcor.u_distance_stats_sqr(x, y, exponent = 0.5) 
+            dcor.u_distance_stats_sqr(
+                x,
+                y,
+                exponent = 0.5,
+            ) 
               
       - 
     * - .. code-block:: R
@@ -242,11 +270,17 @@ Table of energy-dcor equivalents
         beforehand. That is not currently possible in 'dcor'
     * - .. code-block:: R
         
-            edist(rbind(x, y), c(nrow(x), nrow(y)))
+            edist(
+                rbind(x, y),
+                c(nrow(x), nrow(y))
+            )
             
       - .. code-block:: python
             
-            dcor.homogeneity.energy_test_statistic(x, y)
+            dcor.homogeneity.energy_test_statistic(
+                x,
+                y,
+            )
               
       - In spite of its name, 'energy' function 'edist' is not the energy distance,
         but a test statistic.
@@ -257,12 +291,20 @@ Table of energy-dcor equivalents
         The only method supported in 'dcor' is 'cluster'. 
     * - .. code-block:: R
         
-            edist(rbind(x, y), c(nrow(x), nrow(y)), 
-                  alpha = 0.5, method="cluster")
+            edist(
+                rbind(x, y),
+                c(nrow(x), nrow(y)), 
+                alpha = 0.5,
+                method="cluster"
+            )
             
       - .. code-block:: python
             
-            dcor.homogeneity.energy_test_statistic(x, y, exponent=0.5)
+            dcor.homogeneity.energy_test_statistic(
+                x,
+                y,
+                exponent=0.5,
+            )
               
       - In spite of its name, 'energy' function 'edist' is not the energy distance,
         but a test statistic.
@@ -282,25 +324,39 @@ Table of energy-dcor equivalents
       - 
     * - .. code-block:: R
         
-            eqdist.etest(rbind(x, y, z), 
-                         c(nrow(x), nrow(y), nrow(z)), 
-                         R=10)
+            eqdist.etest(
+                rbind(x, y, z), 
+                c(nrow(x), nrow(y), nrow(z)), 
+                R=10
+            )
             
       - .. code-block:: python
             
-            dcor.homogeneity.energy_test(x, y, z, 
-                                         num_resamples=10)
+            dcor.homogeneity.energy_test(
+                x,
+                y,
+                z, 
+                num_resamples=10,
+            )
               
       - Only the default method is implemented
     * - .. code-block:: R
         
-            dcov.test(x, y, index = 0.5, R = 10)
+            dcov.test(
+                x,
+                y,
+                index = 0.5,
+                R = 10
+            )
             
       - .. code-block:: python
             
-             dcor.independence.distance_covariance_test(x, y, 
-                                                        exponent=0.5, 
-                                                        num_resamples=10)
+             dcor.independence.distance_covariance_test(
+                 x,
+                 y, 
+                 exponent=0.5, 
+                 num_resamples=10,
+             )
               
       -
     * - .. code-block:: R
@@ -309,7 +365,10 @@ Table of energy-dcor equivalents
             
       - .. code-block:: python
             
-             dcor.independence.distance_correlation_t_statistic(x, y)
+             dcor.independence.distance_correlation_t_statistic(
+                 x,
+                 y,
+             )
               
       -
     * - .. code-block:: R
@@ -318,6 +377,9 @@ Table of energy-dcor equivalents
             
       - .. code-block:: python
             
-             dcor.independence.distance_correlation_t_test(x, y)
+             dcor.independence.distance_correlation_t_test(
+                 x,
+                 y,
+             )
               
       -

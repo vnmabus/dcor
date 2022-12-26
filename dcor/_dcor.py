@@ -17,46 +17,186 @@ from __future__ import annotations
 from dataclasses import astuple, dataclass
 from enum import Enum
 from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
     Generic,
     Iterator,
+    Literal,
+    Protocol,
+    Tuple,
     TypeVar,
     Union,
+    overload,
 )
 
 import numpy as np
 
 from dcor._dcor_internals import _af_inv_scaled
 
-from ._dcor_internals import (
-    MatrixCentered,
-    _distance_matrix,
-    _u_distance_matrix,
-    mean_product,
-    u_product,
-)
-from ._fast_dcov_avl import _distance_covariance_sqr_avl_generic
-from ._fast_dcov_mergesort import _distance_covariance_sqr_mergesort_generic
+from ._dcor_internals import _dcov_from_terms, _dcov_terms_naive
+from ._fast_dcov_avl import _distance_covariance_sqr_terms_avl
+from ._fast_dcov_mergesort import _distance_covariance_sqr_terms_mergesort
 from ._utils import ArrayType, CompileMode, _sqrt, get_namespace
 
-T = TypeVar("T", bound=ArrayType)
+Array = TypeVar("Array", bound=ArrayType)
 
-if TYPE_CHECKING:
-    try:
-        from typing import Protocol
-    except ImportError:
-        from typing_extensions import Protocol
-else:
-    Protocol = object
+
+@dataclass(frozen=True)
+class Stats(Generic[Array]):
+    """Distance covariance related stats."""
+    covariance_xy: Array
+    correlation_xy: Array
+    variance_x: Array
+    variance_y: Array
+
+    def __iter__(self) -> Iterator[Array]:
+        return iter(astuple(self))
 
 
 class DCovFunction(Protocol):
-    """Callback protocol for centering method."""
+    """Callback protocol for dcov method."""
 
-    def __call__(self, __x: T, __y: T, *, compile_mode: CompileMode) -> T:
+    def __call__(
+        self,
+        __x: Array,
+        __y: Array,
+        *,
+        compile_mode: CompileMode,
+    ) -> Array:
         ...
+
+
+class DCovTermsFunction(Protocol):
+    """Callback protocol for dcov terms method."""
+
+    @overload
+    def __call__(
+        self,
+        __x: Array,
+        __y: Array,
+        *,
+        exponent: float,
+        compile_mode: CompileMode = CompileMode.AUTO,
+        return_var_terms: Literal[False] = False,
+    ) -> Tuple[
+        Array,
+        Array,
+        Array,
+        Array,
+        Array,
+        None,
+        None,
+    ]:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        __x: Array,
+        __y: Array,
+        *,
+        exponent: float,
+        compile_mode: CompileMode = CompileMode.AUTO,
+        return_var_terms: Literal[True],
+    ) -> Tuple[
+        Array,
+        Array,
+        Array,
+        Array,
+        Array,
+        Array,
+        Array,
+    ]:
+        ...
+
+    def __call__(
+        self,
+        __x: Array,
+        __y: Array,
+        *,
+        exponent: float,
+        compile_mode: CompileMode = CompileMode.AUTO,
+        return_var_terms: bool = False,
+    ) -> Tuple[
+        Array,
+        Array,
+        Array,
+        Array,
+        Array,
+        Array | None,
+        Array | None,
+    ]:
+        ...
+
+
+@overload
+def _dcov_terms_auto(
+    __x: Array,
+    __y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: Literal[False] = False,
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    None,
+    None,
+]:
+    ...
+
+
+@overload
+def _dcov_terms_auto(
+    __x: Array,
+    __y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: Literal[True],
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+]:
+    ...
+
+
+def _dcov_terms_auto(
+    x: Array,
+    y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: bool = False,
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array | None,
+    Array | None,
+]:
+    xp = get_namespace(x, y)
+
+    dcov_terms = _dcov_terms_naive
+
+    if xp == np and _can_use_fast_algorithm(x, y, exponent):
+        dcov_terms = _distance_covariance_sqr_terms_avl
+
+    return dcov_terms(
+        x,
+        y,
+        exponent=exponent,
+        compile_mode=compile_mode,
+        return_var_terms=return_var_terms,
+    )
 
 
 class _DcovAlgorithmInternals():
@@ -64,279 +204,110 @@ class _DcovAlgorithmInternals():
     def __init__(
         self,
         *,
-        dcov_sqr=None,
-        u_dcov_sqr=None,
-        dcor_sqr=None,
-        u_dcor_sqr=None,
-        stats_sqr=None,
-        u_stats_sqr=None,
-        dcov_generic=None,
-        stats_generic=None,
+        terms: DCovTermsFunction | None = None,
     ):
+        self.terms = terms
 
-        # Dcov and U-Dcov
-        if dcov_generic is not None:
-            self.dcov_sqr = (
-                lambda *args, **kwargs: dcov_generic(
-                    *args,
-                    **kwargs,
-                    unbiased=False,
-                )
-            )
-            self.u_dcov_sqr = (
-                lambda *args, **kwargs: dcov_generic(
-                    *args,
-                    **kwargs,
-                    unbiased=True,
-                )
-            )
-        else:
-            self.dcov_sqr = dcov_sqr
-            self.u_dcov_sqr = u_dcov_sqr
-
-        # Stats
-        if stats_sqr is not None:
-            self.stats_sqr = stats_sqr
-        else:
-            if stats_generic is None:
-                self.stats_sqr = (
-                    lambda *args, **kwargs: _distance_stats_sqr_generic(
-                        *args,
-                        **kwargs,
-                        dcov_function=self.dcov_sqr,
-                    )
-                )
-            else:
-                self.stats_sqr = (
-                    lambda *args, **kwargs: stats_generic(
-                        *args,
-                        **kwargs,
-                        matrix_centered=_distance_matrix,
-                        product=mean_product,
-                    )
-                )
-
-        # U-Stats
-        if u_stats_sqr is not None:
-            self.u_stats_sqr = u_stats_sqr
-        else:
-            if stats_generic is None:
-                self.u_stats_sqr = (
-                    lambda *args, **kwargs: _distance_stats_sqr_generic(
-                        *args,
-                        **kwargs,
-                        dcov_function=self.u_dcov_sqr,
-                    )
-                )
-            else:
-                self.u_stats_sqr = (
-                    lambda *args, **kwargs: stats_generic(
-                        *args,
-                        **kwargs,
-                        matrix_centered=_u_distance_matrix,
-                        product=u_product,
-                    )
-                )
-
-        # Dcor
-        if dcor_sqr is not None:
-            self.dcor_sqr = dcor_sqr
-        else:
-            self.dcor_sqr = lambda *args, **kwargs: self.stats_sqr(
-                *args,
-                **kwargs,
-            ).correlation_xy
-
-        # U-Dcor
-        if u_dcor_sqr is not None:
-            self.u_dcor_sqr = u_dcor_sqr
-        else:
-            self.u_dcor_sqr = lambda *args, **kwargs: self.u_stats_sqr(
-                *args,
-                **kwargs,
-            ).correlation_xy
-
-
-class _DcovAlgorithmInternalsAuto():
-    def _dispatch(
+    def dcov_sqr(
         self,
-        x: T,
-        y: T,
+        x: Array,
+        y: Array,
         *,
-        method: str,
-        exponent: float,
-        **kwargs: Any,
-    ) -> Any:
+        exponent: float = 1,
+        compile_mode: CompileMode = CompileMode.AUTO,
+        bias_corrected=False,
+    ) -> Array:
+        """Generic estimator for distance covariance."""
+        terms = self.terms(
+            x,
+            y,
+            exponent=exponent,
+            compile_mode=compile_mode,
+        )
+
+        return _dcov_from_terms(
+            *terms[:-2],
+            n_samples=x.shape[0],
+            bias_corrected=bias_corrected,
+        )
+
+    def stats_sqr(
+        self,
+        x: Array,
+        y: Array,
+        *,
+        bias_corrected: bool = False,
+        exponent: float = 1,
+        compile_mode: CompileMode = CompileMode.AUTO,
+    ) -> Stats[Array]:
+        """Compute generic squared stats."""
+        n_samples = x.shape[0]
+
+        (
+            mean_prod,
+            a_axis_sum,
+            a_total_sum,
+            b_axis_sum,
+            b_total_sum,
+            a_mean_prod,
+            b_mean_prod,
+        ) = self.terms(
+            x,
+            y,
+            exponent=exponent,
+            compile_mode=compile_mode,
+            return_var_terms=True,
+        )
+
+        covariance_xy_sqr = _dcov_from_terms(
+            mean_prod=mean_prod,
+            a_axis_sum=a_axis_sum,
+            a_total_sum=a_total_sum,
+            b_axis_sum=b_axis_sum,
+            b_total_sum=b_total_sum,
+            n_samples=n_samples,
+            bias_corrected=bias_corrected,
+        )
+        variance_x_sqr = _dcov_from_terms(
+            mean_prod=a_mean_prod,
+            a_axis_sum=a_axis_sum,
+            a_total_sum=a_total_sum,
+            b_axis_sum=a_axis_sum,
+            b_total_sum=a_total_sum,
+            n_samples=n_samples,
+            bias_corrected=bias_corrected,
+        )
+        variance_y_sqr = _dcov_from_terms(
+            mean_prod=b_mean_prod,
+            a_axis_sum=b_axis_sum,
+            a_total_sum=b_total_sum,
+            b_axis_sum=b_axis_sum,
+            b_total_sum=b_total_sum,
+            n_samples=n_samples,
+            bias_corrected=bias_corrected,
+        )
+
         xp = get_namespace(x, y)
 
-        if xp == np and _can_use_fast_algorithm(x, y, exponent):
-            return getattr(DistanceCovarianceMethod.AVL.value, method)(
-                x,
-                y,
-                exponent=exponent,
-                **kwargs,
-            )
+        denominator_sqr = xp.abs(variance_x_sqr * variance_y_sqr)
+        denominator = _sqrt(denominator_sqr)
+
+        # Comparisons using a tolerance can change results if the
+        # covariance has a similar order of magnitude
+        if denominator == 0.0:
+            correlation_xy_sqr = xp.zeros_like(covariance_xy_sqr)
         else:
-            return getattr(
-                DistanceCovarianceMethod.NAIVE.value, method)(
-                    x,
-                    y,
-                    exponent=exponent,
-                    **kwargs,
-            )
+            correlation_xy_sqr = covariance_xy_sqr / denominator
 
-    def __getattr__(self, method: str) -> Any:
-        if method[0] != '_':
-            return lambda *args, **kwargs: self._dispatch(
-                *args,
-                **kwargs,
-                method=method,
-            )
-        else:
-            raise AttributeError(
-                f"{self.__class__.__name__!r} object has no "
-                f"attribute {method!r}",
-            )
-
-
-@dataclass(frozen=True)
-class Stats(Generic[T]):
-    """Distance covariance related stats."""
-    covariance_xy: T
-    correlation_xy: T
-    variance_x: T
-    variance_y: T
-
-    def __iter__(self) -> Iterator[T]:
-        return iter(astuple(self))
-
-
-def _naive_check_compile_mode(compile_mode: CompileMode) -> None:
-    """Check that compile mode is AUTO or NO_COMPILE and raises otherwise."""
-
-    if compile_mode not in (CompileMode.AUTO, CompileMode.NO_COMPILE):
-        raise NotImplementedError(
-            f"Compile mode {compile_mode} not implemented.",
+        return Stats(
+            covariance_xy=covariance_xy_sqr,
+            correlation_xy=correlation_xy_sqr,
+            variance_x=variance_x_sqr,
+            variance_y=variance_y_sqr,
         )
 
 
-def _distance_covariance_sqr_naive(
-    x: T,
-    y: T,
-    exponent: float = 1,
-    compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
-    """
-    Naive biased estimator for distance covariance.
-
-    Computes the unbiased estimator for distance covariance between two
-    matrices, using an :math:`O(N^2)` algorithm.
-
-    """
-    _naive_check_compile_mode(compile_mode)
-
-    a = _distance_matrix(x, exponent=exponent)
-    b = _distance_matrix(y, exponent=exponent)
-
-    return mean_product(a, b)
-
-
-def _u_distance_covariance_sqr_naive(
-    x: T,
-    y: T,
-    exponent: float = 1,
-    compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
-    """
-    Naive unbiased estimator for distance covariance.
-
-    Computes the unbiased estimator for distance covariance between two
-    matrices, using an :math:`O(N^2)` algorithm.
-
-    """
-    _naive_check_compile_mode(compile_mode)
-
-    a = _u_distance_matrix(x, exponent=exponent)
-    b = _u_distance_matrix(y, exponent=exponent)
-
-    return u_product(a, b)
-
-
-def _distance_sqr_stats_naive_generic(
-    x: T,
-    y: T,
-    matrix_centered: MatrixCentered,
-    product: Callable[[T, T], T],
-    exponent: float = 1,
-    compile_mode: CompileMode = CompileMode.AUTO,
-) -> Stats[T]:
-    """Compute generic squared stats."""
-    _naive_check_compile_mode(compile_mode)
-
-    a = matrix_centered(x, exponent=exponent)
-    b = matrix_centered(y, exponent=exponent)
-
-    covariance_xy_sqr = product(a, b)
-    variance_x_sqr = product(a, a)
-    variance_y_sqr = product(b, b)
-
-    xp = get_namespace(x, y)
-
-    denominator_sqr = xp.abs(variance_x_sqr * variance_y_sqr)
-    denominator = _sqrt(denominator_sqr)
-
-    # Comparisons using a tolerance can change results if the
-    # covariance has a similar order of magnitude
-    if denominator == 0.0:
-        correlation_xy_sqr = xp.zeros_like(covariance_xy_sqr)
-    else:
-        correlation_xy_sqr = covariance_xy_sqr / denominator
-
-    return Stats(
-        covariance_xy=covariance_xy_sqr,
-        correlation_xy=correlation_xy_sqr,
-        variance_x=variance_x_sqr,
-        variance_y=variance_y_sqr,
-    )
-
-
-def _distance_correlation_sqr_naive(
-    x: T,
-    y: T,
-    exponent: float = 1,
-    compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
-    """Biased distance correlation estimator between two matrices."""
-    _naive_check_compile_mode(compile_mode)
-
-    return _distance_sqr_stats_naive_generic(
-        x,
-        y,
-        matrix_centered=_distance_matrix,
-        product=mean_product,
-        exponent=exponent,
-    ).correlation_xy
-
-
-def _u_distance_correlation_sqr_naive(
-    x: T,
-    y: T,
-    exponent: float = 1,
-    compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
-    """Bias-corrected distance correlation estimator between two matrices."""
-    _naive_check_compile_mode(compile_mode)
-
-    return _distance_sqr_stats_naive_generic(
-        x,
-        y,
-        matrix_centered=_u_distance_matrix,
-        product=u_product,
-        exponent=exponent,
-    ).correlation_xy
-
-
-def _is_random_variable(x: T) -> bool:
+def _is_random_variable(x: Array) -> bool:
     """
     Check if the matrix x correspond to a random variable.
 
@@ -347,7 +318,7 @@ def _is_random_variable(x: T) -> bool:
     return len(x.shape) == 1 or x.shape[1] == 1
 
 
-def _can_use_fast_algorithm(x: T, y: T, exponent: float = 1) -> bool:
+def _can_use_fast_algorithm(x: Array, y: Array, exponent: float = 1) -> bool:
     """
     Check if the fast algorithm for distance stats can be used.
 
@@ -365,13 +336,13 @@ def _can_use_fast_algorithm(x: T, y: T, exponent: float = 1) -> bool:
 
 
 def _distance_stats_sqr_generic(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     dcov_function: DCovFunction,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> Stats[T]:
+) -> Stats[Array]:
     """Compute the distance stats using a dcov algorithm."""
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
@@ -401,40 +372,40 @@ def _distance_stats_sqr_generic(
 
 
 class DistanceCovarianceMethod(Enum):
-    """
-    Method used for computing the distance covariance.
+    """Method used for computing the distance covariance."""
 
+    AUTO = _DcovAlgorithmInternals(
+        terms=_dcov_terms_auto,
+    )
     """
-    AUTO = _DcovAlgorithmInternalsAuto()
+    Try to select the best algorithm.
+
+    It will try to use a fast algorithm if possible.
+    Otherwise it will use the naive implementation.
     """
-    Try to select the best algorithm. It will try to use a fast
-    algorithm if possible. Otherwise it will use the naive
-    implementation.
-    """
+
     NAIVE = _DcovAlgorithmInternals(
-        dcov_sqr=_distance_covariance_sqr_naive,
-        u_dcov_sqr=_u_distance_covariance_sqr_naive,
-        dcor_sqr=_distance_correlation_sqr_naive,
-        u_dcor_sqr=_u_distance_correlation_sqr_naive,
-        stats_generic=_distance_sqr_stats_naive_generic,
+        terms=_dcov_terms_naive,
     )
-    r"""
-    Use the usual estimator of the distance covariance, which is
-    :math:`O(n^2)`
-    """
+    r"""Usual estimator of the distance covariance, which is :math:`O(n^2)`"""
+
     AVL = _DcovAlgorithmInternals(
-        dcov_generic=_distance_covariance_sqr_avl_generic,
+        terms=_distance_covariance_sqr_terms_avl,
     )
     r"""
-    Use the fast implementation from
+    Use the AVL fast implementation.
+
+    This is the implementation described in
     :cite:`b-fast_distance_correlation_avl` which is
     :math:`O(n\log n)`
     """
     MERGESORT = _DcovAlgorithmInternals(
-        dcov_generic=_distance_covariance_sqr_mergesort_generic,
+        terms=_distance_covariance_sqr_terms_mergesort,
     )
     r"""
-    Use the fast implementation from
+    Use the mergesort fast implementation.
+
+    This is the implementation described in
     :cite:`b-fast_distance_correlation_mergesort` which is
     :math:`O(n\log n)`
     """
@@ -443,7 +414,11 @@ class DistanceCovarianceMethod(Enum):
         return '%s.%s' % (self.__class__.__name__, self.name)
 
 
-DistanceCovarianceMethodLike = Union[DistanceCovarianceMethod, str]
+_DistanceCovarianceMethodName = Literal["auto", "naive", "avl", "mergesort"]
+DistanceCovarianceMethodLike = Union[
+    DistanceCovarianceMethod,
+    _DistanceCovarianceMethodName,
+]
 
 
 def _to_algorithm(
@@ -457,13 +432,13 @@ def _to_algorithm(
 
 
 def distance_covariance_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Usual (biased) estimator for the squared distance covariance.
 
@@ -517,13 +492,13 @@ def distance_covariance_sqr(
 
 
 def u_distance_covariance_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Unbiased estimator for the squared distance covariance.
 
@@ -568,22 +543,23 @@ def u_distance_covariance_sqr(
     """
     method = _to_algorithm(method)
 
-    return method.value.u_dcov_sqr(
+    return method.value.dcov_sqr(
         x,
         y,
         exponent=exponent,
         compile_mode=compile_mode,
+        bias_corrected=True,
     )
 
 
 def distance_covariance(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Usual (biased) estimator for the distance covariance.
 
@@ -638,13 +614,13 @@ def distance_covariance(
 
 
 def distance_stats_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> Stats[T]:
+) -> Stats[Array]:
     """
     Usual (biased) statistics related with the squared distance covariance.
 
@@ -714,13 +690,13 @@ def distance_stats_sqr(
 
 
 def u_distance_stats_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Stats[Array]:
     """
     Unbiased statistics related with the squared distance covariance.
 
@@ -770,7 +746,7 @@ def u_distance_stats_sqr(
         variance_x=42.6666666..., variance_y=42.6666666...)
         >>> dcor.u_distance_stats_sqr(a, b) # doctest: +ELLIPSIS
         ...                     # doctest: +NORMALIZE_WHITESPACE
-        Stats(covariance_xy=-2.6666666..., correlation_xy=-0.5,
+        Stats(covariance_xy=-2.6666666..., correlation_xy=-0.4999999...,
         variance_x=42.6666666..., variance_y=0.6666666...)
         >>> dcor.u_distance_stats_sqr(b, b) # doctest: +ELLIPSIS
         ...                     # doctest: +NORMALIZE_WHITESPACE
@@ -784,22 +760,23 @@ def u_distance_stats_sqr(
     """
     method = _to_algorithm(method)
 
-    return method.value.u_stats_sqr(
+    return method.value.stats_sqr(
         x,
         y,
         exponent=exponent,
         compile_mode=compile_mode,
+        bias_corrected=True,
     )
 
 
 def distance_stats(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> Stats[T]:
+) -> Stats[Array]:
     """
     Usual (biased) statistics related with the distance covariance.
 
@@ -874,13 +851,13 @@ def distance_stats(
 
 
 def distance_correlation_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Usual (biased) estimator for the squared distance correlation.
 
@@ -925,22 +902,22 @@ def distance_correlation_sqr(
     """
     method = _to_algorithm(method)
 
-    return method.value.dcor_sqr(
+    return method.value.stats_sqr(
         x,
         y,
         exponent=exponent,
         compile_mode=compile_mode,
-    )
+    ).correlation_xy
 
 
 def u_distance_correlation_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Bias-corrected estimator for the squared distance correlation.
 
@@ -977,7 +954,7 @@ def u_distance_correlation_sqr(
         >>> dcor.u_distance_correlation_sqr(a, a)
         1.0
         >>> dcor.u_distance_correlation_sqr(a, b)
-        -0.5
+        -0.4999999...
         >>> dcor.u_distance_correlation_sqr(b, b)
         1.0
         >>> dcor.u_distance_correlation_sqr(a, b, exponent=0.5)
@@ -987,22 +964,23 @@ def u_distance_correlation_sqr(
     """
     method = _to_algorithm(method)
 
-    return method.value.u_dcor_sqr(
+    return method.value.stats_sqr(
         x,
         y,
         exponent=exponent,
         compile_mode=compile_mode,
-    )
+        bias_corrected=True,
+    ).correlation_xy
 
 
 def distance_correlation(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Usual (biased) estimator for the distance correlation.
 
@@ -1057,11 +1035,11 @@ def distance_correlation(
 
 
 def distance_correlation_af_inv_sqr(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Square of the affinely invariant distance correlation.
 
@@ -1127,11 +1105,11 @@ def distance_correlation_af_inv_sqr(
 
 
 def distance_correlation_af_inv(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
     """
     Affinely invariant distance correlation.
 

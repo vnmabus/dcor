@@ -4,34 +4,37 @@ Functions to compute fast distance covariance using mergesort.
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Literal,
+    Tuple,
+    TypeVar,
+    overload,
+)
 
 import numba
 import numpy as np
 from numba import boolean, float64
-from numba.types import Array
+from numba.types import Tuple as NumbaTuple
 
+from ._dcor_internals_numba import (
+    NumbaMatrix,
+    NumbaMatrixReadOnly,
+    NumbaVector,
+    NumbaVectorReadOnly,
+    NumbaVectorReadOnlyNonContiguous,
+    _generate_distance_covariance_sqr_from_terms_impl,
+)
 from ._utils import CompileMode, _transform_to_1d
 
 if TYPE_CHECKING:
     NumpyArrayType = np.typing.NDArray[np.number[Any]]
-    from typing import Literal
 else:
     NumpyArrayType = np.ndarray
-    Literal = str
 
-T = TypeVar("T", bound=NumpyArrayType)
-
-NumbaVector = Array(dtype=float64, ndim=1, layout="C")
-NumbaVectorReadOnly = Array(dtype=float64, ndim=1, layout="C", readonly=True)
-NumbaVectorReadOnlyNonContiguous = Array(
-    dtype=float64,
-    ndim=1,
-    layout="A",
-    readonly=True,
-)
-NumbaMatrix = Array(dtype=float64, ndim=2, layout="C")
-NumbaMatrixReadOnly = Array(dtype=float64, ndim=2, layout="C", readonly=True)
+Array = TypeVar("Array", bound=NumpyArrayType)
 
 
 def _compute_weight_sums(
@@ -205,15 +208,15 @@ _compute_row_sums_compiled = numba.njit(
     cache=True)(_compute_row_sums)
 
 
-def _generate_distance_covariance_sqr_mergesort_generic_impl(
+def _generate_distance_covariance_sqr_terms_mergesort_impl(
     compiled: bool,
-) -> Callable[..., np.typing.NDArray[np.float64]]:
+) -> Callable[..., Any]:
 
-    def _distance_covariance_sqr_mergesort_generic_impl(
+    def _distance_covariance_sqr_terms_mergesort_impl(
         x: np.typing.NDArray[np.float64],
         y: np.typing.NDArray[np.float64],
-        unbiased: bool,
-    ) -> np.typing.NDArray[np.float64]:
+        return_var_terms: bool = False,
+    ) -> Any:
 
         x = np.ascontiguousarray(x)
         y = np.ascontiguousarray(y)
@@ -247,30 +250,54 @@ def _generate_distance_covariance_sqr_mergesort_generic_impl(
         a_dot_dot = np.sum(a_i)
         b_dot_dot = np.sum(b_i)
 
-        sum_ab = a_i @ b_i
+        if return_var_terms:
+            return (
+                aijbij,
+                a_i,
+                a_dot_dot,
+                b_i,
+                b_dot_dot,
+                2 * n**2 * np.var(x),
+                2 * n**2 * np.var(y),
+            )
 
-        if unbiased:
-            d3 = (n - 3)
-            d2 = (n - 2)
-            d1 = (n - 1)
-        else:
-            d3 = n
-            d2 = n
-            d1 = n
+        return aijbij, a_i, a_dot_dot, b_i, b_dot_dot, None, None
 
-        d_cov = (
-            aijbij / n / d3 - 2 * sum_ab / n / d2 / d3
-            + a_dot_dot / n * b_dot_dot / d1 / d2 / d3
-        )
+    return _distance_covariance_sqr_terms_mergesort_impl
 
-        return d_cov
 
-    return _distance_covariance_sqr_mergesort_generic_impl
+_distance_covariance_sqr_terms_mergesort_impl = (
+    _generate_distance_covariance_sqr_terms_mergesort_impl(
+        compiled=False,
+    )
+)
+_distance_covariance_sqr_terms_mergesort_impl_compiled = numba.njit(
+    NumbaTuple((
+        float64,
+        NumbaVector,
+        float64,
+        NumbaVector,
+        float64,
+        numba.optional(float64),
+        numba.optional(float64),
+    ))(
+        NumbaVectorReadOnlyNonContiguous,
+        NumbaVectorReadOnlyNonContiguous,
+        boolean,
+    ),
+    cache=True,
+)(
+    _generate_distance_covariance_sqr_terms_mergesort_impl(
+        compiled=True,
+    ),
+)
 
 
 _distance_covariance_sqr_mergesort_generic_impl = (
-    _generate_distance_covariance_sqr_mergesort_generic_impl(
+    _generate_distance_covariance_sqr_from_terms_impl(
         compiled=False,
+        terms_compiled=_distance_covariance_sqr_terms_mergesort_impl_compiled,
+        terms_uncompiled=_distance_covariance_sqr_terms_mergesort_impl,
     )
 )
 _distance_covariance_sqr_mergesort_generic_impl_compiled = numba.njit(
@@ -281,33 +308,83 @@ _distance_covariance_sqr_mergesort_generic_impl_compiled = numba.njit(
     ),
     cache=True,
 )(
-    _generate_distance_covariance_sqr_mergesort_generic_impl(
+    _generate_distance_covariance_sqr_from_terms_impl(
         compiled=True,
+        terms_compiled=_distance_covariance_sqr_terms_mergesort_impl_compiled,
+        terms_uncompiled=_distance_covariance_sqr_terms_mergesort_impl,
     ),
 )
 
 impls_dict = {
     CompileMode.AUTO: (
-        _distance_covariance_sqr_mergesort_generic_impl_compiled,
-        _distance_covariance_sqr_mergesort_generic_impl,
+        _distance_covariance_sqr_terms_mergesort_impl_compiled,
+        _distance_covariance_sqr_terms_mergesort_impl,
     ),
     CompileMode.NO_COMPILE: (
-        _distance_covariance_sqr_mergesort_generic_impl,
+        _distance_covariance_sqr_terms_mergesort_impl,
     ),
     CompileMode.COMPILE_CPU: (
-        _distance_covariance_sqr_mergesort_generic_impl_compiled,
+        _distance_covariance_sqr_terms_mergesort_impl_compiled,
     ),
 }
 
 
-def _distance_covariance_sqr_mergesort_generic(
-    x: T,
-    y: T,
+@overload
+def _distance_covariance_sqr_terms_mergesort(
+    __x: Array,
+    __y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: Literal[False] = False,
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    None,
+    None,
+]:
+    ...
+
+
+@overload
+def _distance_covariance_sqr_terms_mergesort(
+    __x: Array,
+    __y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: Literal[True],
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+]:
+    ...
+
+
+def _distance_covariance_sqr_terms_mergesort(
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
-    unbiased: bool = False,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+    return_var_terms: bool = False,
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array | None,
+    Array | None,
+]:
 
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
@@ -326,7 +403,7 @@ def _distance_covariance_sqr_mergesort_generic(
 
         try:
 
-            return impl(x, y, unbiased)
+            return impl(x, y, return_var_terms)
 
         except TypeError as e:
 

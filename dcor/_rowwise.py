@@ -1,12 +1,17 @@
 """
 Functions to compute a pairwise dependency measure.
 """
+from __future__ import annotations
+
+from typing import Any, Callable, TypeVar
 
 import numpy as np
 
 from . import _dcor
 from ._fast_dcov_avl import _rowwise_distance_covariance_sqr_avl_generic
-from ._utils import RowwiseMode as RowwiseMode, _sqrt
+from ._utils import ArrayType, RowwiseMode as RowwiseMode, _sqrt, get_namespace
+
+Array = TypeVar("Array", bound=ArrayType)
 
 
 def _generate_rowwise_distance_covariance_sqr(unbiased):
@@ -97,82 +102,78 @@ def _rowwise_distance_correlation(*args, **kwargs):
 _dcor.distance_correlation.rowwise_function = _rowwise_distance_correlation
 
 
-def rowwise(function, x, y, *, rowwise_mode=False,
-            **kwargs):
+def rowwise(
+    function: Callable[..., Array],
+    x: Array,
+    y: Array,
+    *,
+    rowwise_mode: RowwiseMode = RowwiseMode.AUTO,
+    **kwargs: Any,
+) -> Array:
     """
-    Computes a dependency measure between pairs of elements.
+    Compute a dependency measure between pairs of elements.
 
     It will use an optimized implementation if one is available.
 
-    Parameters
-    ----------
-    function: callable
-        Dependency measure function.
-    x: iterable of array_like
-        First list of random vectors. The columns of each vector correspond
-        with the individual random variables while the rows are individual
-        instances of the random vector.
-    y: array_like
-        Second list of random vectors. The columns of each vector correspond
-        with the individual random variables while the rows are individual
-        instances of the random vector.
-    rowwise_mode: RowwiseMode
-        Mode of rowwise computations.
-    kwargs: dictionary
-        Additional options necessary.
+    Parameters:
+        function: Dependency measure function.
+        x: First list of random vectors. The columns of each vector correspond
+            with the individual random variables while the rows are individual
+            instances of the random vector.
+        y: Second list of random vectors. The columns of each vector correspond
+            with the individual random variables while the rows are individual
+            instances of the random vector.
+        rowwise_mode: Mode of rowwise computations.
+        kwargs: Additional options necessary.
 
-    Returns
-    -------
-    numpy ndarray
+    Returns:
         A length :math:`n` vector where the :math:`i`-th entry is the
         dependency between :math:`x[i]` and :math:`y[i]`.
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import dcor
+    Examples:
+        >>> import numpy as np
+        >>> import dcor
 
-    The following example shows two computations of distance covariance
-    between random variables. This has an optimized implementation using
-    multiple cores if available.
+        The following example shows two computations of distance covariance
+        between random variables. This has an optimized implementation using
+        multiple cores if available.
 
-    >>> a = [np.array([1., 2., 3., 4., 5. ,6.]),
-    ...      np.array([7., 8., 9., 10., 11., 12.])
-    ...     ]
-    >>> b = [np.array([1., 4., 9., 16., 25., 36.]),
-    ...      np.array([1., 3., 6., 8., 10., 12.])
-    ...     ]
-    >>> dcor.rowwise(dcor.distance_covariance, a, b)
-    array([3.45652005, 1.95789002])
+        >>> a = [np.array([1., 2., 3., 4., 5. ,6.]),
+        ...      np.array([7., 8., 9., 10., 11., 12.])
+        ...     ]
+        >>> b = [np.array([1., 4., 9., 16., 25., 36.]),
+        ...      np.array([1., 3., 6., 8., 10., 12.])
+        ...     ]
+        >>> dcor.rowwise(dcor.distance_covariance, a, b)
+        array([3.45652005, 1.95789002])
 
-    The following example shows two computations of distance correlation
-    between random vectors of length 2. Currently there is no optimized
-    implementation for the random vector case, so it will be equivalent to
-    calling map.
+        The following example shows two computations of distance correlation
+        between random vectors of length 2. Currently there is no optimized
+        implementation for the random vector case, so it will be equivalent to
+        calling map.
 
-    >>> a = [np.array([[1., 1.],
-    ...                [2., 4.],
-    ...                [3., 8.],
-    ...                [4., 16.]]),
-    ...      np.array([[9., 10.],
-    ...                [11., 12.],
-    ...                [13., 14.],
-    ...                [15., 16.]])
-    ...     ]
-    >>> b = [np.array([[0., 1.],
-    ...                [3., 1.],
-    ...                [6., 2.],
-    ...                [9., 3.]]),
-    ...      np.array([[5., 1.],
-    ...                [8., 1.],
-    ...                [13., 1.],
-    ...                [21., 1.]])
-    ...     ]
-    >>> dcor.rowwise(dcor.distance_correlation, a, b)
-    array([0.98182263, 0.98320103])
+        >>> a = [np.array([[1., 1.],
+        ...                [2., 4.],
+        ...                [3., 8.],
+        ...                [4., 16.]]),
+        ...      np.array([[9., 10.],
+        ...                [11., 12.],
+        ...                [13., 14.],
+        ...                [15., 16.]])
+        ...     ]
+        >>> b = [np.array([[0., 1.],
+        ...                [3., 1.],
+        ...                [6., 2.],
+        ...                [9., 3.]]),
+        ...      np.array([[5., 1.],
+        ...                [8., 1.],
+        ...                [13., 1.],
+        ...                [21., 1.]])
+        ...     ]
+        >>> dcor.rowwise(dcor.distance_correlation, a, b)
+        array([0.98182263, 0.98320103])
 
     """
-
     if rowwise_mode is not RowwiseMode.NAIVE:
 
         rowwise_function = getattr(function, 'rowwise_function', None)
@@ -185,5 +186,8 @@ def rowwise(function, x, y, *, rowwise_mode=False,
         raise NotImplementedError(
             "There is not an optimized rowwise implementation")
 
-    return np.array([function(x_elem, y_elem, **kwargs)
-                     for x_elem, y_elem in zip(x, y)])
+    xp = get_namespace(x, y)
+
+    return xp.asarray(
+        [function(x_elem, y_elem, **kwargs) for x_elem, y_elem in zip(x, y)],
+    )

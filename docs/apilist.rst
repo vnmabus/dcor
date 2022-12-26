@@ -128,12 +128,12 @@ List of classes
 ---------------
 A complete list of all classes provided by dcor.
 
-Methods for computing distance covariance
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The following enum lists the methods that can be used for computing distance
-covariance.
-
 .. autosummary::
    :toctree: functions
    
+   dcor.CompileMode
    dcor.DistanceCovarianceMethod
+   dcor.EstimationStatistic
+   dcor.HypothesisTest
+   dcor.RowwiseMode
+   dcor.Stats

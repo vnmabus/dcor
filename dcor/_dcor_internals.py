@@ -7,33 +7,25 @@ distance covariance and correlation.
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Callable, TypeVar
+from typing import Callable, Literal, Protocol, Tuple, TypeVar, overload
 
 from . import distances
-from ._utils import ArrayType, _transform_to_2d, get_namespace
+from ._utils import ArrayType, CompileMode, _transform_to_2d, get_namespace
 
-T = TypeVar("T", bound=ArrayType)
-
-if TYPE_CHECKING:
-    try:
-        from typing import Protocol
-    except ImportError:
-        from typing_extensions import Protocol
-else:
-    Protocol = object
+Array = TypeVar("Array", bound=ArrayType)
 
 
 class Centering(Protocol):
     """Callback protocol for centering method."""
 
-    def __call__(self, __a: T, *, out: T | None) -> T:
+    def __call__(self, __a: Array, *, out: Array | None) -> Array:
         ...
 
 
 class MatrixCentered(Protocol):
     """Callback protocol for centering method."""
 
-    def __call__(self, __a: T, *, exponent: float) -> T:
+    def __call__(self, __a: Array, *, exponent: float) -> Array:
         ...
 
 
@@ -49,7 +41,7 @@ def _check_valid_dcov_exponent(exponent: float) -> None:
         warnings.warn(warning_msg)
 
 
-def _check_same_n_elements(x: T, y: T) -> None:
+def _check_same_n_elements(x: Array, y: Array) -> None:
     xp = get_namespace(x, y)
 
     x = xp.asarray(x)
@@ -63,7 +55,7 @@ def _check_same_n_elements(x: T, y: T) -> None:
         )
 
 
-def _float_copy_to_out(out: T | None, origin: T) -> T:
+def _float_copy_to_out(out: Array | None, origin: Array) -> Array:
     """
     Copy origin to out and return it.
 
@@ -80,7 +72,134 @@ def _float_copy_to_out(out: T | None, origin: T) -> T:
     return out
 
 
-def double_centered(a: T, *, out: T | None = None) -> T:
+def _symmetric_matrix_sums(a: Array) -> Tuple[Array, Array]:
+    """Compute row, column and total sums of a symmetric matrix."""
+    # Currently there is no portable way to check the order (Fortran/C)
+    # across different array libraries.
+    # Thus, we assume data is C-contiguous and then the faster array is 1.
+    fast_axis = 1
+
+    xp = get_namespace(a)
+
+    axis_sum = xp.sum(a, axis=fast_axis)
+    total_sum = xp.sum(axis_sum)
+
+    return axis_sum, total_sum
+
+
+@overload
+def _dcov_terms_naive(
+    x: Array,
+    y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: Literal[False] = False,
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    None,
+    None,
+]:
+    pass
+
+
+@overload
+def _dcov_terms_naive(
+    x: Array,
+    y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: Literal[True],
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+]:
+    pass
+
+
+def _dcov_terms_naive(
+    x: Array,
+    y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: bool = False,
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array | None,
+    Array | None,
+]:
+    """Return terms used in dcov."""
+    if compile_mode not in {CompileMode.AUTO, CompileMode.NO_COMPILE}:
+        raise NotImplementedError(
+            f"Compile mode {compile_mode} not implemented.",
+        )
+
+    xp = get_namespace(x, y)
+    a, b = _compute_distances(
+        x,
+        y,
+        exponent=exponent,
+    )
+
+    a_vec = xp.reshape(a, -1)
+    b_vec = xp.reshape(b, -1)
+
+    mean_prod = a_vec @ b_vec
+    a_sums = _symmetric_matrix_sums(a)
+    b_sums = _symmetric_matrix_sums(b)
+
+    mean_prod_a = None
+    mean_prod_b = None
+
+    if return_var_terms:
+        mean_prod_a = a_vec @ a_vec
+        mean_prod_b = b_vec @ b_vec
+
+    return mean_prod, *a_sums, *b_sums, mean_prod_a, mean_prod_b
+
+
+def _dcov_from_terms(
+    mean_prod: Array,
+    a_axis_sum: Array,
+    a_total_sum: Array,
+    b_axis_sum: Array,
+    b_total_sum: Array,
+    n_samples: int,
+    bias_corrected: bool = False,
+) -> Array:
+    """Compute distance covariance WITHOUT centering first."""
+    first_term = mean_prod / n_samples
+    second_term = a_axis_sum @ b_axis_sum / n_samples
+    third_term = a_total_sum * b_total_sum / n_samples
+
+    if bias_corrected:
+        first_term /= (n_samples - 3)
+        second_term /= (n_samples - 2) * (n_samples - 3)
+        third_term /= (n_samples - 1) * (n_samples - 2) * (n_samples - 3)
+    else:
+        first_term /= n_samples
+        second_term /= n_samples**2
+        third_term /= n_samples**3
+
+    return first_term - 2 * second_term + third_term
+
+
+def double_centered(a: Array, *, out: Array | None = None) -> Array:
     r"""
     Return a copy of the matrix :math:`a` which is double centered.
 
@@ -99,7 +218,7 @@ def double_centered(a: T, *, out: T | None = None) -> T:
         \frac{1}{N}\sum_{k=1}^N a_{kj} + \frac{1}{N^2}\sum_{k=1}^N a_{kj}.
 
     Args:
-        a: Original square matrix.
+        a: Original symmetric square matrix.
         out: If not None, specifies where to return the resulting array. This
             array should allow non integer numbers.
 
@@ -112,10 +231,10 @@ def double_centered(a: T, *, out: T | None = None) -> T:
     Examples:
         >>> import numpy as np
         >>> import dcor
-        >>> a = np.array([[1, 2], [3, 4]])
+        >>> a = np.array([[1, 2], [2, 4]])
         >>> dcor.double_centered(a)
-        array([[0., 0.],
-               [0., 0.]])
+        array([[ 0.25, -0.25],
+               [-0.25,  0.25]])
         >>> b = np.array([[1, 2, 3], [2, 4, 5], [3, 5, 6]])
         >>> dcor.double_centered(b)
         array([[ 0.44444444, -0.22222222, -0.22222222],
@@ -134,21 +253,21 @@ def double_centered(a: T, *, out: T | None = None) -> T:
     """
     out = _float_copy_to_out(out, a)
 
-    xp = get_namespace(a)
+    dim = a.shape[0]
+    axis_sum, total_sum = _symmetric_matrix_sums(a)
 
-    mu = xp.mean(a)
-    mu_cols = xp.mean(a, axis=0, keepdims=True)
-    mu_rows = xp.mean(a, axis=1, keepdims=True)
+    total_mean = total_sum / dim**2
+    axis_mean = axis_sum / dim
 
     # Do one operation at a time, to improve broadcasting memory usage.
-    out -= mu_rows
-    out -= mu_cols
-    out += mu
+    out -= axis_mean[None, :]
+    out -= axis_mean[:, None]
+    out += total_mean
 
     return out
 
 
-def u_centered(a: T, *, out: T | None = None) -> T:
+def u_centered(a: Array, *, out: Array | None = None) -> Array:
     r"""
     Return a copy of the matrix :math:`a` which is :math:`U`-centered.
 
@@ -168,7 +287,7 @@ def u_centered(a: T, *, out: T | None = None) -> T:
         \end{cases}
 
     Args:
-        a: Original square matrix.
+        a: Original symmetric square matrix.
         out: If not None, specifies where to return the resulting array. This
             array should allow non integer numbers.
 
@@ -212,26 +331,24 @@ def u_centered(a: T, *, out: T | None = None) -> T:
 
     dim = a.shape[0]
 
-    xp = get_namespace(a)
+    axis_sum, total_sum = _symmetric_matrix_sums(a)
 
-    u_mu = xp.sum(a) / ((dim - 1) * (dim - 2))
-    sum_cols = xp.sum(a, axis=0, keepdims=True)
-    sum_rows = xp.sum(a, axis=1, keepdims=True)
-    u_mu_cols = sum_cols / (dim - 2)
-    u_mu_rows = sum_rows / (dim - 2)
+    total_u_mean = total_sum / ((dim - 1) * (dim - 2))
+    axis_u_mean = axis_sum / (dim - 2)
 
     # Do one operation at a time, to improve broadcasting memory usage.
-    out -= u_mu_rows
-    out -= u_mu_cols
-    out += u_mu
+    out -= axis_u_mean[None, :]
+    out -= axis_u_mean[:, None]
+    out += total_u_mean
 
     # The diagonal is zero
+    xp = get_namespace(a)
     out[xp.eye(dim, dtype=xp.bool)] = 0
 
     return out
 
 
-def mean_product(a: T, b: T) -> T:
+def mean_product(a: Array, b: Array) -> Array:
     r"""
     Average of the elements for an element-wise product of two matrices.
 
@@ -272,7 +389,7 @@ def mean_product(a: T, b: T) -> T:
     return xp.mean(a * b)
 
 
-def u_product(a: T, b: T) -> T:
+def u_product(a: Array, b: Array) -> Array:
     r"""
     Inner product in the Hilbert space of :math:`U`-centered distance matrices.
 
@@ -343,7 +460,7 @@ def u_product(a: T, b: T) -> T:
     return xp.sum(a * b) / (n * (n - 3))
 
 
-def u_projection(a: T) -> Callable[[T], T]:
+def u_projection(a: Array) -> Callable[[Array], Array]:
     r"""
     Return the orthogonal projection function over :math:`a`.
 
@@ -451,7 +568,7 @@ def u_projection(a: T) -> Callable[[T], T]:
     return projection
 
 
-def u_complementary_projection(a: T) -> Callable[[T], T]:
+def u_complementary_projection(a: Array) -> Callable[[Array], Array]:
     r"""
     Return the orthogonal projection function over :math:`a^{\perp}`.
 
@@ -520,7 +637,7 @@ def u_complementary_projection(a: T) -> Callable[[T], T]:
     """
     proj = u_projection(a)
 
-    def projection(a: T) -> T:
+    def projection(a: Array) -> Array:
         """
         Orthogonal projection over the complementary space.
 
@@ -537,11 +654,29 @@ def u_complementary_projection(a: T) -> Callable[[T], T]:
     return projection
 
 
+def _compute_distances(
+    x: Array,
+    y: Array,
+    *,
+    exponent: float = 1,
+) -> Tuple[Array, Array]:
+    """Compute a centered distance matrix given a matrix."""
+    _check_valid_dcov_exponent(exponent)
+
+    x, y = _transform_to_2d(x, y)
+
+    # Calculate distance matrices
+    a = distances.pairwise_distances(x, exponent=exponent)
+    b = distances.pairwise_distances(y, exponent=exponent)
+
+    return a, b
+
+
 def _distance_matrix_generic(
-    x: T,
+    x: Array,
     centering: Centering,
     exponent: float = 1,
-) -> T:
+) -> Array:
     """Compute a centered distance matrix given a matrix."""
     _check_valid_dcov_exponent(exponent)
 
@@ -556,16 +691,7 @@ def _distance_matrix_generic(
     return a
 
 
-def _distance_matrix(x: T, *, exponent: float = 1) -> T:
-    """Compute the double centered distance matrix given a matrix."""
-    return _distance_matrix_generic(
-        x,
-        centering=double_centered,
-        exponent=exponent,
-    )
-
-
-def _u_distance_matrix(x: T, *, exponent: float = 1) -> T:
+def _u_distance_matrix(x: Array, *, exponent: float = 1) -> Array:
     """Compute the :math:`U`-centered distance matrices given a matrix."""
     return _distance_matrix_generic(
         x,
@@ -574,7 +700,7 @@ def _u_distance_matrix(x: T, *, exponent: float = 1) -> T:
     )
 
 
-def _mat_sqrt_inv(matrix: T) -> T:
+def _mat_sqrt_inv(matrix: Array) -> Array:
     xp = get_namespace(matrix)
 
     eigenvalues, eigenvectors = xp.linalg.eigh(matrix)
@@ -586,7 +712,7 @@ def _mat_sqrt_inv(matrix: T) -> T:
     return eigenvectors * eigenvalues_sqrt_inv @ eigenvectors.T
 
 
-def _cov(x: T) -> T:
+def _cov(x: Array) -> Array:
     """Equivalent to np.cov(x, rowvar=False)."""
     x, = _transform_to_2d(x)
 
@@ -598,7 +724,7 @@ def _cov(x: T) -> T:
     return (x_centered.T @ x_centered) / (x.shape[0] - 1)
 
 
-def _af_inv_scaled(x: T) -> T:
+def _af_inv_scaled(x: Array) -> Array:
     """Scale a random vector for using the affinely invariant measures."""
     x, = _transform_to_2d(x)
 

@@ -17,10 +17,10 @@ from dcor._utils import ArrayType, _sqrt, _transform_to_2d, get_namespace
 
 from ._utils import _can_be_numpy_double
 
-T = TypeVar("T", bound=ArrayType)
+Array = TypeVar("Array", bound=ArrayType)
 
 
-def _cdist_naive(x: T, y: T, exponent: float = 1) -> T:
+def _cdist_naive(x: Array, y: Array, exponent: float = 1) -> Array:
     """Pairwise distance, custom implementation."""
     xp = get_namespace(x, y)
 
@@ -48,8 +48,8 @@ def _pdist_scipy(
     if exponent != 1:
         metric = 'sqeuclidean'
 
-    distances = spatial.distance.pdist(x, metric=metric)
-    distances = spatial.distance.squareform(distances)
+    # cdist is actually FASTER than pdist + squareform
+    distances = spatial.distance.cdist(x, x, metric=metric)
 
     if exponent != 1:
         distances **= exponent / 2
@@ -76,7 +76,7 @@ def _cdist_scipy(
     return distances
 
 
-def _pdist(x: T, exponent: float = 1) -> T:
+def _pdist(x: Array, exponent: float = 1) -> Array:
     """
     Pairwise distance between points in a set.
 
@@ -91,7 +91,7 @@ def _pdist(x: T, exponent: float = 1) -> T:
     return _cdist_naive(x, x, exponent)
 
 
-def _cdist(x: T, y: T, exponent: float = 1) -> T:
+def _cdist(x: Array, y: Array, exponent: float = 1) -> Array:
     """
     Pairwise distance between points in two sets.
 
@@ -107,11 +107,11 @@ def _cdist(x: T, y: T, exponent: float = 1) -> T:
 
 
 def pairwise_distances(
-    x: T,
-    y: T | None = None,
+    x: Array,
+    y: Array | None = None,
     *,
     exponent: float = 1,
-) -> T:
+) -> Array:
     r"""
     Pairwise distance between points.
 

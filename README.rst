@@ -3,7 +3,7 @@ dcor
 
 |tests| |docs| |coverage| |pypi| |conda| |zenodo|
 
-dcor: distance correlation and related E-statistics in Python.
+dcor: distance correlation and energy statistics in Python.
 
 E-statistics are functions of distances between statistical observations
 in metric spaces.
@@ -48,7 +48,13 @@ use the :code:`conda-forge` channel.
 Requirements
 ------------
 
-dcor is available in Python 3.5 or above and in Python 2.7, in all operating systems.
+dcor is available in Python 3.8 or above in all operating systems.
+The package dcor depends on the following libraries:
+
+- numpy
+- numba >= 0.51
+- scipy
+- joblib
 
 Documentation
 =============
@@ -92,10 +98,10 @@ References
     :scale: 100%
     :target: https://pypi.python.org/pypi/dcor/
     
-.. |conda| image:: https://anaconda.org/conda-forge/dcor/badges/installer/conda.svg   
+.. |conda| image:: https://img.shields.io/conda/vn/conda-forge/dcor
     :alt: Available in Conda
     :scale: 100%
-    :target: https://conda.anaconda.org/conda-forge
+    :target: https://anaconda.org/conda-forge/dcor
     
 .. |zenodo| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3468124.svg
     :alt: Zenodo DOI

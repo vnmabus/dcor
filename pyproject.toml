@@ -1,6 +1,6 @@
 [project]
 name = "dcor"
-description = "dcor: distance correlation and related E-statistics in Python."
+description = "dcor: distance correlation and energy statistics in Python."
 readme = "README.rst"
 requires-python = ">=3.8"
 license = {file = "LICENSE"}
@@ -47,7 +47,7 @@ test = [
   "pytest-cov",
   "pytest-subtests",
   "numpy>=1.22",  # Requires array_api module
-  "numba<=0.53.1",  # Greater versions don't support numpy>=1.22
+  "numba>=0.56",  # Older versions don't support numpy>=1.22
 ]
 
 [project.urls]

@@ -58,11 +58,11 @@ The distance covariance has the following properties:
 
 The distance correlation has the following properties:
 
-  * :math:`0 \leq \mathcal{R}(X, Y) \leq 1`.
-  * :math:`\mathcal{R}(X, Y) = 0` if and only if :math:`X` and :math:`Y` are independent.
-  * If :math:`\mathcal{R}(X, Y) = 1` then there exists a vector :math:`\mathbf{a}`, a
-    nonzero real number :math:`b` and an orthogonal matrix :math:`\mathbf{C}` such that :math:`Y =
-    \mathbf{a} + b\mathbf{C}X`.
+* :math:`0 \leq \mathcal{R}(X, Y) \leq 1`.
+* :math:`\mathcal{R}(X, Y) = 0` if and only if :math:`X` and :math:`Y` are independent.
+* If :math:`\mathcal{R}(X, Y) = 1` then there exists a vector :math:`\mathbf{a}`, a
+  nonzero real number :math:`b` and an orthogonal matrix :math:`\mathbf{C}` such that :math:`Y =
+  \mathbf{a} + b\mathbf{C}X`.
   
 Estimators
 ^^^^^^^^^^
@@ -72,7 +72,7 @@ Distance covariance has an estimator with a simple form. Suppose that we have
 We denote as :math:`x_i` the 
 :math:`i`-th observation of :math:`x`, and :math:`y_i` the :math:`i`-th observation of
 :math:`y`. If we define :math:`a_{ij} = | x_i - x_j |_p` and :math:`b_{ij} = | y_i - y_j |_q`,
-the corresponding double centered matrices are defined by :math:`(A_{i, j})_{i,j=1}^n`
+the corresponding double centered matrices (:func:`~dcor.double_centered`) are defined by :math:`(A_{i, j})_{i,j=1}^n`
 and :math:`(B_{i, j})_{i,j=1}^n`
 
 .. math::
@@ -86,9 +86,12 @@ Then
 .. math::
    \mathcal{V}_n^2(x, y) = \frac{1}{n^2} \sum_{i,j=1}^n A_{i, j} B_{i, j}
 
-is called the squared sample distance covariance, and it is an estimator of
-:math:`\mathcal{V}^2(X, Y)`. The sample distance correlation :math:`\mathcal{R}_n(x, y)`
-can be obtained as the standardized sample covariance 
+is called the squared sample distance covariance (:func:`~dcor.distance_covariance_sqr`),
+and it is an estimator of :math:`\mathcal{V}^2(X, Y)`. Its square root
+(:func:`~dcor.distance_covariance`) is thus an estimator of the distance covariance.
+The sample distance correlation
+:math:`\mathcal{R}_n(x, y)` (:func:`~dcor.distance_correlation`) can be obtained as the
+standardized sample covariance 
 
 .. math::
    \mathcal{R}_n^2(x, y) = \begin{cases}
@@ -102,10 +105,11 @@ These estimators have the following properties:
 * :math:`\mathcal{V}_n^2(x, y) \geq 0`
 * :math:`0 \leq \mathcal{R}_n^2(x, y) \leq 1`
 
-In a similar way one can define an unbiased estimator :math:`\Omega_n(x, y)` of the
+In a similar way one can define an unbiased estimator :math:`\Omega_n(x, y)`
+(:func:`~dcor.u_distance_covariance_sqr`) of the
 squared distance covariance :math:`\mathcal{V}^2(X, Y)`. Given the
 previous definitions of :math:`a_{ij}` and :math:`b_{ij}`, we define the :math:`U`-centered
-matrices :math:`(\widetilde{A}_{i, j})_{i,j=1}^n` and :math:`(\widetilde{B}_{i, j})_{i,j=1}^n`
+matrices (:func:`~dcor.u_centered`) :math:`(\widetilde{A}_{i, j})_{i,j=1}^n` and :math:`(\widetilde{B}_{i, j})_{i,j=1}^n`
 
 .. math::
    :label: ucentering
@@ -125,7 +129,8 @@ Then, :math:`\Omega_n(x, y)` is defined as
    \Omega_n(x, y) = \frac{1}{n(n-3)} \sum_{i,j=1}^n \widetilde{A}_{i, j}
    \widetilde{B}_{i, j}.
 
-We can also obtain an estimator of :math:`\mathcal{R}^2(X, Y)` using :math:`\Omega_n(x, y)`,
+We can also obtain an estimator of :math:`\mathcal{R}^2(X, Y)`
+(:func:`~dcor.u_distance_correlation_sqr`) using :math:`\Omega_n(x, y)`,
 as we did with :math:`\mathcal{V}_n^2(x, y)`. :math:`\Omega_n(x, y)` does not verify that
 :math:`\Omega_n(x, y) \geq 0`, because sometimes could take negative values near :math:`0`.
 
@@ -179,32 +184,33 @@ distance matrices :math:`\widetilde{A}_{i, j}`, :math:`\widetilde{B}_{i, j}` and
 :math:`z` taken from the random vectors :math:`X`, :math:`Y` and
 :math:`Z` can be computed using using :eq:`ucentering`.
 
-The set of all :math:`U`-centered distance matrices is a Hilbert space with the inner product
+The set of all :math:`U`-centered distance matrices is a Hilbert space with the inner product (:func:`~dcor.u_product`)
 
 .. math::
    \langle \widetilde{A}, \widetilde{B} \rangle = \frac{1}{n(n-3)} \sum_{i,j=1}^n 
    \widetilde{A}_{i, j} \widetilde{B}_{i, j}.
    
-Then, the projection of a sample :math:`x` over :math:`z` can be taken in this
-Hilbert space using the associated matrices, as
+Then, the projection of a sample :math:`x` over :math:`z` (:func:`~dcor.u_projection`) can be taken
+in this Hilbert space using the associated matrices, as
 
 .. math::
    P_z(x) = \frac{\langle \widetilde{A}, \widetilde{C} \rangle}{\langle \widetilde{C}, 
    \widetilde{C} \rangle}\widetilde{C}.
    
-The complementary projection is then
+The complementary projection (:func:`~dcor.u_complementary_projection`) is then
 
 .. math::
    P_{z^{\perp}}(x) = \widetilde{A} - P_z(x) = \widetilde{A} - \frac{\langle \widetilde{A},
    \widetilde{C} \rangle}{\langle \widetilde{C}, \widetilde{C} \rangle}\widetilde{C}.
    
-We can now define the sample partial distance covariance as
+We can now define the sample partial distance covariance
+(:func:`~dcor.partial_distance_covariance`) as
 
 .. math::
    \mathcal{V}_n^{*}(x, y; z) = \langle P_{z^{\perp}}(x), P_{z^{\perp}}(y) \rangle
    
-The sample distance correlation is defined as the cosine of the angle between the vectors
-:math:`P_{z^{\perp}}(x)` and :math:`P_{z^{\perp}}(y)`
+The sample distance correlation (:func:`~dcor.partial_distance_correlation`) is defined as
+the cosine of the angle between the vectors :math:`P_{z^{\perp}}(x)` and :math:`P_{z^{\perp}}(y)`
 
 .. math::
    \mathcal{R}_n^{*}(x, y; z) = \begin{cases} 
@@ -243,7 +249,7 @@ Estimator
 Suppose that we have :math:`n_1` observations of :math:`X` and :math:`n_2` observations of 
 :math:`Y`, denoted by :math:`x` and :math:`y`. We denote as :math:`x_i` the 
 :math:`i`-th observation of :math:`x`, and :math:`y_i` the :math:`i`-th observation of
-:math:`y`. Then, an estimator of the energy distance is
+:math:`y`. Then, an estimator of the energy distance (:func:`~dcor.energy_distance`) is
 
 .. math::
    \mathcal{E_{n_1, n_2}}(x, y) = \frac{2}{n_1 n_2}\sum_{i=1}^{n_1}\sum_{j=1}^{n_2}|| x_i - y_j ||

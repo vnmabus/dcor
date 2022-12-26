@@ -21,17 +21,24 @@
 # import sys
 # sys.path.insert(0, '/home/carlos/git/dcor/dcor')
 
+
+import os
 import sys
 
 import pkg_resources
+# Patch sphinx_gallery.binder.gen_binder_rst so as to point to .py file in
+# repository
+import sphinx_gallery.binder
 
 try:
     release = pkg_resources.get_distribution('dcor').version
 except pkg_resources.DistributionNotFound:
-    print('To build the documentation, The distribution information of dcor\n'
-          'Has to be available.  Either install the package into your\n'
-          'development environment or run "setup.py develop" to setup the\n'
-          'metadata.  A virtualenv is recommended!\n')
+    print(
+        'To build the documentation, The distribution information of dcor\n'
+        'Has to be available.  Either install the package into your\n'
+        'development environment or run "setup.py develop" to setup the\n'
+        'metadata.  A virtualenv is recommended!\n',
+    )
     sys.exit(1)
 del pkg_resources
 
@@ -46,17 +53,55 @@ version = '.'.join(release.split('.')[:2])
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.autosummary',
-              'sphinx.ext.todo',
-              'sphinx.ext.viewcode',
-              'sphinx.ext.napoleon',
-              'sphinx.ext.mathjax',
-              'sphinxcontrib.bibtex',
-              'jupyter_sphinx']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.todo',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.mathjax',
+    'sphinxcontrib.bibtex',
+    'sphinx_gallery.gen_gallery',
+    'sphinx.ext.intersphinx',
+    'jupyter_sphinx',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+
+rtd_version = os.environ.get("READTHEDOCS_VERSION", "latest")
+branch = "master" if rtd_version == "stable" else "develop"
+
+sphinx_gallery_conf = {
+    'examples_dirs': '../examples',
+    'gallery_dirs': 'auto_examples',
+    'reference_url': {
+        # The module you locally document uses None
+        'dcor': None,
+    },
+    'backreferences_dir': 'backreferences',
+    'doc_module': 'dcor',
+    'binder': {
+        'org': 'VNMabus',
+        'repo': 'dcor',
+        'branch': branch,
+        'binderhub_url': 'https://mybinder.org',
+        'dependencies': ['../binder/runtime.txt', '../binder/requirements.txt'],
+        'notebooks_dir': '../examples',
+    },
+}
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/{.major}'.format(
+        sys.version_info),
+        None,
+    ),
+    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
+    'sklearn': ('https://scikit-learn.org/stable', None),
+    'matplotlib': ('https://matplotlib.org/', None),
+    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
+}
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -109,12 +154,7 @@ autosummary_generate = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
-
-
-def setup(app):
-    app.add_css_file('css/wide.css')
-
+html_theme = "pydata_sphinx_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -127,27 +167,37 @@ def setup(app):
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-# Custom sidebar templates, must be a dictionary that maps document names
-# to template names.
-#
-# This is required for the alabaster theme
-# refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
-html_sidebars = {
-    '**': [
-        'about.html',
-        'navigation.html',
-        'relations.html',  # needs 'show_related': True theme option to display
-        'searchbox.html',
-        'donate.html',
-    ]
-}
-
 
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'dcordoc'
 
+html_theme_options = {
+    "use_edit_page_button": True,
+    "github_url": "https://github.com/vnmabus/dcor",
+    "icon_links": [
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/dcor",
+            "icon": "https://avatars.githubusercontent.com/u/2964877",
+            "type": "url",
+        },
+        {
+            "name": "Anaconda",
+            "url": "https://anaconda.org/conda-forge/dcor",
+            "icon": "https://avatars.githubusercontent.com/u/3571983",
+            "type": "url",
+        },
+    ],
+}
+
+html_context = {
+    "github_user": "vnmabus",
+    "github_repo": "dcor",
+    "github_version": "develop",
+    "doc_path": "docs",
+}
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -223,3 +273,24 @@ epub_exclude_files = ['search.html']
 bibtex_bibfiles = ['refs.bib']
 
 autodoc_typehints = "description"
+
+# Binder integration
+# Taken from
+# https://stanczakdominik.github.io/posts/simple-binder-usage-with-sphinx-gallery-through-jupytext/
+original_gen_binder_rst = sphinx_gallery.binder.gen_binder_rst
+
+
+def patched_gen_binder_rst(*args, **kwargs):
+    return original_gen_binder_rst(*args, **kwargs).replace(
+        "../examples/auto_",
+        "",
+    ).replace(
+        ".ipynb",
+        ".py",
+    )
+
+
+#  # And then we finish our monkeypatching misdeed by redirecting
+
+# sphinx-gallery to use our function:
+sphinx_gallery.binder.gen_binder_rst = patched_gen_binder_rst

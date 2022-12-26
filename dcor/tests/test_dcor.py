@@ -35,6 +35,7 @@ class TestDistanceCorrelation(unittest.TestCase):
         """
         for i in range(1, self.test_max_size + 1):
             matrix = np.random.RandomState(i).rand(i, i)
+            matrix = matrix @ matrix.T
 
             centered_matrix = dcor.double_centered(matrix)
 

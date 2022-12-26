@@ -22,7 +22,7 @@ from ._energy import (
 from ._hypothesis import HypothesisTest, _permutation_test_with_sym_matrix
 from ._utils import ArrayType, RandomLike, _transform_to_2d, get_namespace
 
-T = TypeVar("T", bound=ArrayType)
+Array = TypeVar("Array", bound=ArrayType)
 
 
 def _energy_test_statistic_coefficient(
@@ -34,14 +34,14 @@ def _energy_test_statistic_coefficient(
 
 
 def _energy_test_statistic_from_distance_matrices(
-    distance_xx: T,
-    distance_yy: T,
-    distance_xy: T,
+    distance_xx: Array,
+    distance_yy: Array,
+    distance_xy: Array,
     n: int,
     m: int,
-    average: Callable[[T], T] | None = None,
+    average: Callable[[Array], Array] | None = None,
     estimation_stat: EstimationStatisticLike = EstimationStatistic.V_STATISTIC,
-) -> T:
+) -> Array:
     """Test statistic with precomputed distance matrices."""
     energy_distance = _energy_distance_from_distance_matrices(
         distance_xx=distance_xx,
@@ -55,13 +55,13 @@ def _energy_test_statistic_from_distance_matrices(
 
 
 def energy_test_statistic(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
-    average: Callable[[T], T] | None = None,
+    average: Callable[[Array], Array] | None = None,
     estimation_stat: EstimationStatisticLike = EstimationStatistic.V_STATISTIC,
-) -> T:
+) -> Array:
     """
     Homogeneity statistic.
 
@@ -126,12 +126,12 @@ def energy_test_statistic(
 
 
 def _energy_test_statistic_multivariate_from_distance_matrix(
-    distance: T,
+    distance: Array,
     indexes: Sequence[int],
     sizes: Sequence[int],
-    average: Callable[[T], T] | None = None,
+    average: Callable[[Array], Array] | None = None,
     estimation_stat: EstimationStatisticLike = EstimationStatistic.V_STATISTIC,
-) -> T:
+) -> Array:
     """Statistic for several random vectors given the distance matrix."""
     first_iter = True
 
@@ -171,10 +171,10 @@ def energy_test(
     num_resamples: int = 0,
     exponent: float = 1,
     random_state: RandomLike = None,
-    average: Callable[[T], T] | None = None,
+    average: Callable[[Array], Array] | None = None,
     estimation_stat: EstimationStatisticLike = EstimationStatistic.V_STATISTIC,
     n_jobs: int | None = 1,
-) -> HypothesisTest[T]:
+) -> HypothesisTest[Array]:
     """
     Test of homogeneity based on the energy distance.
 
@@ -269,7 +269,7 @@ def energy_test(
     )
 
     # Use the energy statistic with appropiate values
-    def statistic_function(distance_matrix: T) -> T:
+    def statistic_function(distance_matrix: Array) -> Array:
         return _energy_test_statistic_multivariate_from_distance_matrix(
             distance=distance_matrix,
             indexes=sample_indexes,
