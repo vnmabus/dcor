@@ -4,12 +4,20 @@ Functions to compute fast distance covariance using mergesort.
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Literal,
+    Tuple,
+    TypeVar,
+    overload,
+)
 
 import numba
 import numpy as np
 from numba import boolean, float64
-from numba.types import Tuple
+from numba.types import Tuple as NumbaTuple
 
 from ._dcor_internals_numba import (
     NumbaMatrix,
@@ -26,7 +34,7 @@ if TYPE_CHECKING:
 else:
     NumpyArrayType = np.ndarray
 
-T = TypeVar("T", bound=NumpyArrayType)
+Array = TypeVar("Array", bound=NumpyArrayType)
 
 
 def _compute_weight_sums(
@@ -264,7 +272,7 @@ _distance_covariance_sqr_terms_mergesort_impl = (
     )
 )
 _distance_covariance_sqr_terms_mergesort_impl_compiled = numba.njit(
-    Tuple((
+    NumbaTuple((
         float64,
         NumbaVector,
         float64,
@@ -272,7 +280,11 @@ _distance_covariance_sqr_terms_mergesort_impl_compiled = numba.njit(
         float64,
         numba.optional(float64),
         numba.optional(float64),
-    ))(NumbaVectorReadOnlyNonContiguous, NumbaVectorReadOnlyNonContiguous, boolean),
+    ))(
+        NumbaVectorReadOnlyNonContiguous,
+        NumbaVectorReadOnlyNonContiguous,
+        boolean,
+    ),
     cache=True,
 )(
     _generate_distance_covariance_sqr_terms_mergesort_impl(
@@ -317,14 +329,62 @@ impls_dict = {
 }
 
 
+@overload
 def _distance_covariance_sqr_terms_mergesort(
-    x: T,
-    y: T,
+    __x: Array,
+    __y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: Literal[False] = False,
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    None,
+    None,
+]:
+    ...
+
+
+@overload
+def _distance_covariance_sqr_terms_mergesort(
+    __x: Array,
+    __y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: Literal[True],
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+]:
+    ...
+
+
+def _distance_covariance_sqr_terms_mergesort(
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     compile_mode: CompileMode = CompileMode.AUTO,
     return_var_terms: bool = False,
-) -> T:
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array | None,
+    Array | None,
+]:
 
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")

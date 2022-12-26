@@ -5,12 +5,20 @@ from __future__ import annotations
 
 import math
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Literal,
+    Tuple,
+    TypeVar,
+    overload,
+)
 
 import numba
 import numpy as np
 from numba import boolean, float64, int64
-from numba.types import Tuple
+from numba.types import Tuple as NumbaTuple
 
 from ._dcor_internals_numba import (
     NumbaIntVectorReadOnly,
@@ -29,7 +37,7 @@ else:
     NumpyArrayType = np.ndarray
 
 
-T = TypeVar("T", bound=NumpyArrayType)
+Array = TypeVar("Array", bound=NumpyArrayType)
 
 
 def _dyad_update(
@@ -278,7 +286,7 @@ def _get_impl_args(
 
 
 _get_impl_args_compiled = numba.njit(
-    Tuple((
+    NumbaTuple((
         NumbaVectorReadOnly,
         NumbaVectorReadOnly,
         NumbaIntVectorReadOnly,
@@ -412,7 +420,7 @@ _distance_covariance_sqr_terms_avl_impl = _generate_distance_covariance_sqr_term
     compiled=False,
 )
 _distance_covariance_sqr_terms_avl_impl_compiled = numba.njit(
-    Tuple((
+    NumbaTuple((
         float64,
         NumbaVector,
         float64,
@@ -462,14 +470,62 @@ impls_dict = {
 }
 
 
+@overload
 def _distance_covariance_sqr_terms_avl(
-    x: T,
-    y: T,
+    __x: Array,
+    __y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: Literal[False] = False,
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    None,
+    None,
+]:
+    ...
+
+
+@overload
+def _distance_covariance_sqr_terms_avl(
+    __x: Array,
+    __y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: Literal[True],
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+]:
+    ...
+
+
+def _distance_covariance_sqr_terms_avl(
+    x: Array,
+    y: Array,
     *,
     exponent: float = 1,
     compile_mode: CompileMode = CompileMode.AUTO,
     return_var_terms: bool = False,
-) -> T:
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    None,
+    None,
+]:
     """Fast algorithm for the squared distance covariance terms."""
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
@@ -509,11 +565,11 @@ def _generate_rowwise_internal(
 ) -> Callable[..., NumpyArrayType]:
 
     def _rowwise_distance_covariance_sqr_avl_generic_internal(
-        x: T,
-        y: T,
+        x: Array,
+        y: Array,
         unbiased: bool,
-        res: T,
-    ) -> T:
+        res: Array,
+    ) -> Array:
 
         res[0] = _distance_covariance_sqr_avl_impl_compiled(x, y, unbiased)
 
@@ -549,12 +605,12 @@ rowwise_impls_dict = {
 
 
 def _rowwise_distance_covariance_sqr_avl_generic(
-    x: T,
-    y: T,
+    x: Array,
+    y: Array,
     exponent: float = 1,
     unbiased: bool = False,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> T:
+) -> Array:
 
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")

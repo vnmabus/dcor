@@ -127,6 +127,46 @@ class DCovTermsFunction(Protocol):
         ...
 
 
+@overload
+def _dcov_terms_auto(
+    __x: Array,
+    __y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: Literal[False] = False,
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    None,
+    None,
+]:
+    ...
+
+
+@overload
+def _dcov_terms_auto(
+    __x: Array,
+    __y: Array,
+    *,
+    exponent: float,
+    compile_mode: CompileMode = CompileMode.AUTO,
+    return_var_terms: Literal[True],
+) -> Tuple[
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+    Array,
+]:
+    ...
+
+
 def _dcov_terms_auto(
     x: Array,
     y: Array,
@@ -656,7 +696,7 @@ def u_distance_stats_sqr(
     exponent: float = 1,
     method: DistanceCovarianceMethodLike = DistanceCovarianceMethod.AUTO,
     compile_mode: CompileMode = CompileMode.AUTO,
-) -> Array:
+) -> Stats[Array]:
     """
     Unbiased statistics related with the squared distance covariance.
 

@@ -20,14 +20,14 @@ def partial_distance_covariance(
     y: ArrayType,
     z: ArrayType,
 ) -> ArrayType:
-    """
+    r"""
     Partial distance covariance estimator.
 
     Compute the estimator for the partial distance covariance of the
     random vectors corresponding to :math:`x` and :math:`y` with respect
     to the random variable corresponding to :math:`z`.
 
-    Warning: 
+    Warning:
         Partial distance covariance should be used carefully as it presents
         some undesirable or counterintuitive properties. In particular, the
         reader cannot assume that :math:`\mathcal{V}^{*}` characterizes 
@@ -92,14 +92,14 @@ def partial_distance_correlation(
     y: ArrayType,
     z: ArrayType,
 ) -> ArrayType:  # pylint:disable=too-many-locals
-    """
+    r"""
     Partial distance correlation estimator.
 
     Compute the estimator for the partial distance correlation of the
     random vectors corresponding to :math:`x` and :math:`y` with respect
     to the random variable corresponding to :math:`z`.
 
-    Warning: 
+    Warning:
         Partial distance correlation should be used carefully as it presents
         some undesirable or counterintuitive properties. In particular, the
         reader cannot assume that :math:`\mathcal{R}^{*}` characterizes 
