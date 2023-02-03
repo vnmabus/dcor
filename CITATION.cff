@@ -29,6 +29,9 @@ identifiers:
   - description: "This is the archived snapshot of version 0.5 of dcor"
     type: doi
     value: 10.5281/zenodo.3996697
+  - description: "This is the archived snapshot of version 0.6 of dcor"
+    type: doi
+    value: 10.5281/zenodo.7484447
 preferred-citation:
   type: article
   title: "dcor: Distance correlation and energy statistics in Python"
