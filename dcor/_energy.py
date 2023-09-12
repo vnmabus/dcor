@@ -7,7 +7,7 @@ from enum import Enum, auto
 from typing import Callable, Literal, TypeVar, Union
 
 from . import distances
-from ._utils import ArrayType, _transform_to_2d, get_namespace
+from ._utils import ArrayType, _transform_to_2d, array_namespace
 
 Array = TypeVar("Array", bound=ArrayType)
 
@@ -77,7 +77,7 @@ def _check_valid_energy_exponent(exponent: float) -> None:
 
 def _get_flat_upper_matrix(x: Array, k: int) -> Array:
     """Get flat upper matrix from diagonal k."""
-    xp = get_namespace(x)
+    xp = array_namespace(x)
     x_mask = xp.triu(xp.ones_like(x, dtype=xp.bool), k=k)
     x_mask_flat = xp.reshape(x_mask, -1)
     x_flat = xp.reshape(x, -1)
@@ -108,7 +108,7 @@ def _energy_distance_from_distance_matrices(
             an EstimationStatistic enum instance.
 
     """
-    xp = get_namespace(distance_xx, distance_yy, distance_xy)
+    xp = array_namespace(distance_xx, distance_yy, distance_xy)
 
     if isinstance(estimation_stat, str):
         estimation_stat = EstimationStatistic.from_string(estimation_stat)

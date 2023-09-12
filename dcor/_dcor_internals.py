@@ -10,7 +10,7 @@ import warnings
 from typing import Callable, Literal, Protocol, Tuple, TypeVar, overload
 
 from . import distances
-from ._utils import ArrayType, CompileMode, _transform_to_2d, get_namespace
+from ._utils import ArrayType, CompileMode, _transform_to_2d, array_namespace
 
 Array = TypeVar("Array", bound=ArrayType)
 
@@ -42,7 +42,7 @@ def _check_valid_dcov_exponent(exponent: float) -> None:
 
 
 def _check_same_n_elements(x: Array, y: Array) -> None:
-    xp = get_namespace(x, y)
+    xp = array_namespace(x, y)
 
     x = xp.asarray(x)
     y = xp.asarray(y)
@@ -79,7 +79,7 @@ def _symmetric_matrix_sums(a: Array) -> Tuple[Array, Array]:
     # Thus, we assume data is C-contiguous and then the faster array is 1.
     fast_axis = 1
 
-    xp = get_namespace(a)
+    xp = array_namespace(a)
 
     axis_sum = xp.sum(a, axis=fast_axis)
     total_sum = xp.sum(axis_sum)
@@ -149,7 +149,7 @@ def _dcov_terms_naive(
             f"Compile mode {compile_mode} not implemented.",
         )
 
-    xp = get_namespace(x, y)
+    xp = array_namespace(x, y)
     a, b = _compute_distances(
         x,
         y,
@@ -342,7 +342,7 @@ def u_centered(a: Array, *, out: Array | None = None) -> Array:
     out += total_u_mean
 
     # The diagonal is zero
-    xp = get_namespace(a)
+    xp = array_namespace(a)
     out[xp.eye(dim, dtype=xp.bool)] = 0
 
     return out
@@ -385,7 +385,7 @@ def mean_product(a: Array, b: Array) -> Array:
         2.5
 
     """
-    xp = get_namespace(a, b)
+    xp = array_namespace(a, b)
     return xp.mean(a * b)
 
 
@@ -455,7 +455,7 @@ def u_product(a: Array, b: Array) -> Array:
     """
     n = a.shape[0]
 
-    xp = get_namespace(a, b)
+    xp = array_namespace(a, b)
 
     return xp.sum(a * b) / (n * (n - 3))
 
@@ -552,7 +552,7 @@ def u_projection(a: Array) -> Callable[[Array], Array]:
         u_projection
     """
 
-    xp = get_namespace(a)
+    xp = array_namespace(a)
 
     if denominator == 0:
 
@@ -701,7 +701,7 @@ def _u_distance_matrix(x: Array, *, exponent: float = 1) -> Array:
 
 
 def _mat_sqrt_inv(matrix: Array) -> Array:
-    xp = get_namespace(matrix)
+    xp = array_namespace(matrix)
 
     eigenvalues, eigenvectors = xp.linalg.eigh(matrix)
 
@@ -716,7 +716,7 @@ def _cov(x: Array) -> Array:
     """Equivalent to np.cov(x, rowvar=False)."""
     x, = _transform_to_2d(x)
 
-    xp = get_namespace(x)
+    xp = array_namespace(x)
 
     mean = xp.mean(x, axis=0, keepdims=True)
     x_centered = x - mean

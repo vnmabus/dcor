@@ -34,7 +34,13 @@ from dcor._dcor_internals import _af_inv_scaled
 from ._dcor_internals import _dcov_from_terms, _dcov_terms_naive
 from ._fast_dcov_avl import _distance_covariance_sqr_terms_avl
 from ._fast_dcov_mergesort import _distance_covariance_sqr_terms_mergesort
-from ._utils import ArrayType, CompileMode, _sqrt, get_namespace
+from ._utils import (
+    ArrayType,
+    CompileMode,
+    _sqrt,
+    array_namespace,
+    numpy_namespace,
+)
 
 Array = TypeVar("Array", bound=ArrayType)
 
@@ -183,11 +189,11 @@ def _dcov_terms_auto(
     Array | None,
     Array | None,
 ]:
-    xp = get_namespace(x, y)
+    xp = array_namespace(x, y)
 
     dcov_terms = _dcov_terms_naive
 
-    if xp == np and _can_use_fast_algorithm(x, y, exponent):
+    if xp == numpy_namespace and _can_use_fast_algorithm(x, y, exponent):
         dcov_terms = _distance_covariance_sqr_terms_avl
 
     return dcov_terms(
@@ -287,10 +293,10 @@ class _DcovAlgorithmInternals():
             bias_corrected=bias_corrected,
         )
 
-        xp = get_namespace(x, y)
+        xp = array_namespace(x, y)
 
         denominator_sqr = xp.abs(variance_x_sqr * variance_y_sqr)
-        denominator = _sqrt(denominator_sqr)
+        denominator = _sqrt(xp.asarray(denominator_sqr))
 
         # Comparisons using a tolerance can change results if the
         # covariance has a similar order of magnitude
@@ -347,7 +353,7 @@ def _distance_stats_sqr_generic(
     if exponent != 1:
         raise ValueError(f"Exponent should be 1 but is {exponent} instead.")
 
-    xp = get_namespace(x, y)
+    xp = array_namespace(x, y)
 
     covariance_xy_sqr = dcov_function(x, y, compile_mode=compile_mode)
     variance_x_sqr = dcov_function(x, x, compile_mode=compile_mode)
@@ -1095,7 +1101,7 @@ def distance_correlation_af_inv_sqr(
         compile_mode=compile_mode,
     )
 
-    xp = get_namespace(x, y)
+    xp = array_namespace(x, y)
 
     return (
         xp.zeros_like(correlation)

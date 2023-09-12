@@ -20,7 +20,7 @@ from ._energy import (
     energy_distance,
 )
 from ._hypothesis import HypothesisTest, _permutation_test_with_sym_matrix
-from ._utils import ArrayType, RandomLike, _transform_to_2d, get_namespace
+from ._utils import ArrayType, RandomLike, _transform_to_2d, array_namespace
 
 Array = TypeVar("Array", bound=ArrayType)
 
@@ -249,7 +249,7 @@ def energy_test(
 
     sample_sizes = tuple(a.shape[0] for a in samples)
 
-    xp = get_namespace(*samples)
+    xp = array_namespace(*samples)
 
     # NumPy namespace has no concat function yet
     try:

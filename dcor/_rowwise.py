@@ -9,7 +9,7 @@ import numpy as np
 
 from . import _dcor
 from ._fast_dcov_avl import _rowwise_distance_covariance_sqr_avl_generic
-from ._utils import ArrayType, RowwiseMode as RowwiseMode, _sqrt, get_namespace
+from ._utils import ArrayType, RowwiseMode as RowwiseMode, _sqrt, array_namespace
 
 Array = TypeVar("Array", bound=ArrayType)
 
@@ -186,7 +186,7 @@ def rowwise(
         raise NotImplementedError(
             "There is not an optimized rowwise implementation")
 
-    xp = get_namespace(x, y)
+    xp = array_namespace(x, y)
 
     return xp.asarray(
         [function(x_elem, y_elem, **kwargs) for x_elem, y_elem in zip(x, y)],
