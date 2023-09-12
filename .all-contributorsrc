@@ -52,6 +52,15 @@
         "doc",
         "test"
       ]
+    },
+    {
+      "login": "darchstar",
+      "name": "Ameer Ghouse",
+      "avatar_url": "https://avatars.githubusercontent.com/u/201515?v=4",
+      "profile": "https://github.com/darchstar",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
