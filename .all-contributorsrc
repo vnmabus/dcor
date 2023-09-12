@@ -1,0 +1,59 @@
+{
+  "projectName": "dcor",
+  "projectOwner": "vnmabus",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "CONTRIBUTORS.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "commitConvention": "none",
+  "contributors": [
+    {
+      "login": "vnmabus",
+      "name": "Carlos Ramos Carreño",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2364173?v=4",
+      "profile": "https://github.com/vnmabus",
+      "contributions": [
+        "bug",
+        "code",
+        "doc",
+        "example",
+        "ideas",
+        "infra",
+        "maintenance",
+        "projectManagement",
+        "question",
+        "research",
+        "review",
+        "test"
+      ]
+    },
+    {
+      "login": "jltorrecilla",
+      "name": "José Luis Torrecilla",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5597899?v=4",
+      "profile": "https://github.com/jltorrecilla",
+      "contributions": [
+        "doc",
+        "fundingFinding",
+        "ideas",
+        "research"
+      ]
+    },
+    {
+      "login": "multimeric",
+      "name": "Michael Milton",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5019367?v=4",
+      "profile": "https://github.com/multimeric",
+      "contributions": [
+        "code",
+        "doc",
+        "test"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "linkToUsage": true
+}
