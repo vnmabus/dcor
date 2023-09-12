@@ -1,5 +1,5 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 ## Contributors ✨
 
@@ -17,6 +17,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/lemiceterieux"><img src="https://avatars.githubusercontent.com/u/87031766?v=4?s=100" width="100px;" alt="Ameer G"/><br /><sub><b>Ameer G</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/commits?author=lemiceterieux" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://www.imperial.ac.uk/people/f.laumann18"><img src="https://avatars.githubusercontent.com/u/22920497?v=4?s=100" width="100px;" alt="Felix Laumann"/><br /><sub><b>Felix Laumann</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/commits?author=felix-laumann" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://comprhys.github.io/"><img src="https://avatars.githubusercontent.com/u/26601751?v=4?s=100" width="100px;" alt="Rhys Goodall"/><br /><sub><b>Rhys Goodall</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/issues?q=author%3ACompRhys" title="Bug reports">🐛</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ninamiolane"><img src="https://avatars.githubusercontent.com/u/8267869?v=4?s=100" width="100px;" alt="Nina Miolane"/><br /><sub><b>Nina Miolane</b></sub></a><br /><a href="#ideas-ninamiolane" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
   </tbody>
   <tfoot>
