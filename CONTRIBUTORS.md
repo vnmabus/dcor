@@ -1,5 +1,5 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-5-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 ## Contributors ✨
 
@@ -14,6 +14,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/jltorrecilla"><img src="https://avatars.githubusercontent.com/u/5597899?v=4?s=100" width="100px;" alt="José Luis Torrecilla"/><br /><sub><b>José Luis Torrecilla</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/commits?author=jltorrecilla" title="Documentation">📖</a> <a href="#fundingFinding-jltorrecilla" title="Funding Finding">🔍</a> <a href="#ideas-jltorrecilla" title="Ideas, Planning, & Feedback">🤔</a> <a href="#research-jltorrecilla" title="Research">🔬</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/multimeric"><img src="https://avatars.githubusercontent.com/u/5019367?v=4?s=100" width="100px;" alt="Michael Milton"/><br /><sub><b>Michael Milton</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/commits?author=multimeric" title="Code">💻</a> <a href="https://github.com/vnmabus/dcor/commits?author=multimeric" title="Documentation">📖</a> <a href="https://github.com/vnmabus/dcor/commits?author=multimeric" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/darchstar"><img src="https://avatars.githubusercontent.com/u/201515?v=4?s=100" width="100px;" alt="Ameer Ghouse"/><br /><sub><b>Ameer Ghouse</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/commits?author=darchstar" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/lemiceterieux"><img src="https://avatars.githubusercontent.com/u/87031766?v=4?s=100" width="100px;" alt="Ameer G"/><br /><sub><b>Ameer G</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/commits?author=lemiceterieux" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
