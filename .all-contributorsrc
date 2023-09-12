@@ -70,6 +70,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "felix-laumann",
+      "name": "Felix Laumann",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22920497?v=4",
+      "profile": "http://www.imperial.ac.uk/people/f.laumann18",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,

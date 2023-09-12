@@ -1,5 +1,5 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-5-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 ## Contributors ✨
 
@@ -15,6 +15,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/multimeric"><img src="https://avatars.githubusercontent.com/u/5019367?v=4?s=100" width="100px;" alt="Michael Milton"/><br /><sub><b>Michael Milton</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/commits?author=multimeric" title="Code">💻</a> <a href="https://github.com/vnmabus/dcor/commits?author=multimeric" title="Documentation">📖</a> <a href="https://github.com/vnmabus/dcor/commits?author=multimeric" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/darchstar"><img src="https://avatars.githubusercontent.com/u/201515?v=4?s=100" width="100px;" alt="Ameer Ghouse"/><br /><sub><b>Ameer Ghouse</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/commits?author=darchstar" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/lemiceterieux"><img src="https://avatars.githubusercontent.com/u/87031766?v=4?s=100" width="100px;" alt="Ameer G"/><br /><sub><b>Ameer G</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/commits?author=lemiceterieux" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://www.imperial.ac.uk/people/f.laumann18"><img src="https://avatars.githubusercontent.com/u/22920497?v=4?s=100" width="100px;" alt="Felix Laumann"/><br /><sub><b>Felix Laumann</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/commits?author=felix-laumann" title="Documentation">📖</a></td>
     </tr>
   </tbody>
   <tfoot>
