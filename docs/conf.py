@@ -28,7 +28,8 @@ import sys
 import pkg_resources
 # Patch sphinx_gallery.binder.gen_binder_rst so as to point to .py file in
 # repository
-import sphinx_gallery.binder
+import sphinx_gallery.gen_rst
+import sphinx_gallery.interactive_example
 
 try:
     release = pkg_resources.get_distribution('dcor').version
@@ -277,7 +278,7 @@ autodoc_typehints = "description"
 # Binder integration
 # Taken from
 # https://stanczakdominik.github.io/posts/simple-binder-usage-with-sphinx-gallery-through-jupytext/
-original_gen_binder_rst = sphinx_gallery.binder.gen_binder_rst
+original_gen_binder_rst = sphinx_gallery.interactive_example.gen_binder_rst
 
 
 def patched_gen_binder_rst(*args, **kwargs):
@@ -293,4 +294,5 @@ def patched_gen_binder_rst(*args, **kwargs):
 #  # And then we finish our monkeypatching misdeed by redirecting
 
 # sphinx-gallery to use our function:
-sphinx_gallery.binder.gen_binder_rst = patched_gen_binder_rst
+sphinx_gallery.interactive_example.gen_binder_rst = patched_gen_binder_rst
+sphinx_gallery.gen_rst.gen_binder_rst = patched_gen_binder_rst
