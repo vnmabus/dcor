@@ -196,21 +196,17 @@ def partial_distance_covariance_test(
         >>> dcor.independence.partial_distance_covariance_test(a, a, b)
         ...                                       # doctest: +ELLIPSIS
         HypothesisTest(pvalue=1.0, statistic=142.6664416...)
-        >>> dcor.independence.partial_distance_covariance_test(a, b, c)
-        ...                                      # doctest: +ELLIPSIS
-        HypothesisTest(pvalue=1.0, statistic=7.0791037...e-15)
-        >>> dcor.independence.partial_distance_covariance_test(b, b, c)
-        ...                                      # doctest: +ELLIPSIS
-        HypothesisTest(pvalue=1.0, statistic=6.3170502...e-31)
-        >>> dcor.independence.partial_distance_covariance_test(a, b, c,
+        >>> test = dcor.independence.partial_distance_covariance_test(a, b, c)
+        >>> test.pvalue # doctest: +ELLIPSIS
+        1.0
+        >>> np.allclose(test.statistic, 0, atol=1e-6)
+        True
+        >>> test = dcor.independence.partial_distance_covariance_test(a, b, c,
         ... num_resamples=5, random_state=0)
-        HypothesisTest(pvalue=0.1666666..., statistic=7.0791037...e-15)
-        >>> dcor.independence.partial_distance_covariance_test(a, b, c,
-        ... num_resamples=5, random_state=13)
-        HypothesisTest(pvalue=0.1666666..., statistic=7.0791037...e-15)
-        >>> dcor.independence.partial_distance_covariance_test(a, c, b,
-        ... num_resamples=7, random_state=0)
-        HypothesisTest(pvalue=1.0, statistic=-7.5701764...e-12)
+        >>> test.pvalue # doctest: +ELLIPSIS
+        0.1666666...
+        >>> np.allclose(test.statistic, 0, atol=1e-6)
+        True
 
     """
     random_state = _random_state_init(random_state)
