@@ -1,0 +1,122 @@
+{
+  "projectName": "dcor",
+  "projectOwner": "vnmabus",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "CONTRIBUTORS.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "commitConvention": "none",
+  "contributors": [
+    {
+      "login": "vnmabus",
+      "name": "Carlos Ramos Carreño",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2364173?v=4",
+      "profile": "https://github.com/vnmabus",
+      "contributions": [
+        "bug",
+        "code",
+        "doc",
+        "example",
+        "ideas",
+        "infra",
+        "maintenance",
+        "projectManagement",
+        "question",
+        "research",
+        "review",
+        "test"
+      ]
+    },
+    {
+      "login": "jltorrecilla",
+      "name": "José Luis Torrecilla",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5597899?v=4",
+      "profile": "https://github.com/jltorrecilla",
+      "contributions": [
+        "doc",
+        "fundingFinding",
+        "ideas",
+        "research"
+      ]
+    },
+    {
+      "login": "multimeric",
+      "name": "Michael Milton",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5019367?v=4",
+      "profile": "https://github.com/multimeric",
+      "contributions": [
+        "code",
+        "doc",
+        "test"
+      ]
+    },
+    {
+      "login": "darchstar",
+      "name": "Ameer Ghouse",
+      "avatar_url": "https://avatars.githubusercontent.com/u/201515?v=4",
+      "profile": "https://github.com/darchstar",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "lemiceterieux",
+      "name": "Ameer G",
+      "avatar_url": "https://avatars.githubusercontent.com/u/87031766?v=4",
+      "profile": "https://github.com/lemiceterieux",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "felix-laumann",
+      "name": "Felix Laumann",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22920497?v=4",
+      "profile": "http://www.imperial.ac.uk/people/f.laumann18",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "CompRhys",
+      "name": "Rhys Goodall",
+      "avatar_url": "https://avatars.githubusercontent.com/u/26601751?v=4",
+      "profile": "https://comprhys.github.io/",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "ninamiolane",
+      "name": "Nina Miolane",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8267869?v=4",
+      "profile": "https://github.com/ninamiolane",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "Palash123-4",
+      "name": "Aakash Chowdhury",
+      "avatar_url": "https://avatars.githubusercontent.com/u/74013966?v=4",
+      "profile": "https://github.com/Palash123-4",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "zihaozhu93",
+      "name": "zihaozhu93",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20263795?v=4",
+      "profile": "https://github.com/zihaozhu93",
+      "contributions": [
+        "bug"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "linkToUsage": true
+}
