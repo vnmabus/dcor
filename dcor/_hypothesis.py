@@ -7,7 +7,7 @@ from typing import Any, Callable, Generic, Iterator, TypeVar
 import numpy as np
 from joblib import Parallel, delayed
 
-from ._utils import ArrayType, RandomLike, _random_state_init, get_namespace
+from ._utils import ArrayType, RandomLike, _random_state_init, array_namespace
 
 T = TypeVar("T", bound=ArrayType)
 
@@ -51,7 +51,7 @@ def _permuted_statistic(
     permutation: np.typing.NDArray[int],
 ) -> T:
 
-    xp = get_namespace(matrix)
+    xp = array_namespace(matrix)
 
     # We implicitly convert to NumPy for permuting the array if we don't
     # have a take function.
@@ -92,7 +92,7 @@ def _permutation_test_with_sym_matrix(
         Results of the hypothesis test.
 
     """
-    xp = get_namespace(matrix)
+    xp = array_namespace(matrix)
     matrix = xp.asarray(matrix)
     random_state = _random_state_init(random_state)
 

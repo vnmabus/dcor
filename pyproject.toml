@@ -35,10 +35,11 @@ classifiers = [
 dynamic = ["version"]
 
 dependencies = [
-  "numpy",
-  "numba>=0.51",
-  "scipy",
+  "array-api-compat",
   "joblib",
+  "numba>=0.51",
+  "numpy",
+  "scipy",
 ]
 
 [project.optional-dependencies]
