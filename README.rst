@@ -58,6 +58,7 @@ The package dcor depends on the following libraries:
 
 Citing dcor
 ===========
+
 Please, if you find this software useful in your work, reference it citing the following paper:
 
 .. code-block::
