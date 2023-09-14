@@ -32,6 +32,7 @@ References
    apilist
    energycomparison
    Release Notes <https://github.com/vnmabus/dcor/releases>
+   citing
    development
    contributors
 
