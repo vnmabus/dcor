@@ -189,7 +189,7 @@ html_theme_options = {
     "use_edit_page_button": True,
     "github_url": "https://github.com/vnmabus/dcor",
     "switcher": {
-        "json_url": "https://mysite.org/en/latest/_static/switcher.json",
+        "json_url": "https://dcor.readthedocs.io/en/latest/_static/switcher.json",
         "version_match": switcher_version,
     },
     "show_version_warning_banner": True,
