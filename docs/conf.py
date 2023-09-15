@@ -31,6 +31,8 @@ import pkg_resources
 import sphinx_gallery.gen_rst
 import sphinx_gallery.interactive_example
 
+import dcor
+
 try:
     release = pkg_resources.get_distribution('dcor').version
 except pkg_resources.DistributionNotFound:
@@ -78,7 +80,7 @@ switcher_version = rtd_version
 if switcher_version == "latest":
     switcher_version = "dev"
 elif rtd_version_type not in ["branch", "tag"]:
-    switcher_version = version
+    switcher_version = dcor.__version__
 
 rtd_branch = os.environ.get(" READTHEDOCS_GIT_IDENTIFIER", "develop")
 
@@ -190,6 +192,7 @@ html_theme_options = {
         "json_url": "https://mysite.org/en/latest/_static/switcher.json",
         "version_match": switcher_version,
     },
+    "show_version_warning_banner": True,
     "navbar_start": ["navbar-logo", "version-switcher"],
     "icon_links": [
         {
