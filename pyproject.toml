@@ -43,6 +43,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+docs = [
+	"docutils==0.17.1",
+	"jupyter-sphinx",
+	"matplotlib",
+	"myst-parser",
+	"pygments>=2.4.1",
+	"pandas",
+	"pydata-sphinx-theme",
+	"sphinx>=3",
+	"sphinxcontrib-bibtex",
+	"sphinx-gallery",
+]
 test = [
   "pytest",
   "pytest-cov",
