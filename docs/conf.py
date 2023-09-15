@@ -71,8 +71,16 @@ extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-rtd_version = os.environ.get("READTHEDOCS_VERSION", "latest")
-branch = "master" if rtd_version == "stable" else "develop"
+rtd_version = os.environ.get("READTHEDOCS_VERSION")
+rtd_version_type = os.environ.get("READTHEDOCS_VERSION_TYPE")
+
+switcher_version = rtd_version
+if switcher_version == "latest":
+    switcher_version = "dev"
+elif rtd_version_type not in ["branch", "tag"]:
+    switcher_version = version
+
+rtd_branch = os.environ.get(" READTHEDOCS_GIT_IDENTIFIER", "develop")
 
 sphinx_gallery_conf = {
     'examples_dirs': '../examples',
@@ -86,7 +94,7 @@ sphinx_gallery_conf = {
     'binder': {
         'org': 'VNMabus',
         'repo': 'dcor',
-        'branch': branch,
+        'branch': rtd_branch,
         'binderhub_url': 'https://mybinder.org',
         'dependencies': ['../binder/runtime.txt', '../binder/requirements.txt'],
         'notebooks_dir': '../examples',
@@ -180,7 +188,7 @@ html_theme_options = {
     "github_url": "https://github.com/vnmabus/dcor",
     "switcher": {
         "json_url": "https://mysite.org/en/latest/_static/switcher.json",
-        "version_match": version,
+        "version_match": switcher_version,
     },
     "navbar_start": ["navbar-logo", "version-switcher"],
     "icon_links": [
