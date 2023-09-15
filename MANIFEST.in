@@ -1,3 +1,23 @@
-include MANIFEST.in
 include LICENSE
+include CITATION.cff
 include *.txt
+include *.md
+global-include py.typed
+global-include *.py
+global-include *.rst
+
+graft binder
+graft docs
+
+exclude .all-contributorsrc
+exclude readthedocs.yml
+global-exclude .coverage
+
+prune .eggs
+prune build
+prune dist
+prune docs/_build
+prune docs/auto_examples
+prune docs/auto_tutorial
+prune docs/backreferences
+prune docs/functions
