@@ -47,13 +47,8 @@ import pathlib
 
 from setuptools import find_packages, setup
 
-version = (
-    pathlib.Path(os.path.dirname(__file__)) / 'dcor' / 'VERSION'
-).read_text().strip()
-
 setup(
     name="dcor",
-    version=version,
     include_package_data=True,
     packages=find_packages(),
 )
