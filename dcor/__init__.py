@@ -6,10 +6,6 @@ distance correlation and other e-statistics, such as
 energy distance.
 """
 
-import errno as _errno
-import os as _os
-import pathlib as _pathlib
-
 from . import distances, homogeneity, independence
 from ._dcor import (
     DistanceCovarianceMethod as DistanceCovarianceMethod,
@@ -46,9 +42,4 @@ from ._partial_dcor import (
 from ._rowwise import RowwiseMode as RowwiseMode, rowwise as rowwise
 from ._utils import CompileMode as CompileMode
 
-try:
-    __version__ = (
-        _pathlib.Path(_os.path.dirname(__file__)) / 'VERSION'
-    ).read_text().strip()
-except FileNotFoundError:
-    __version__ = "0.0"
+__version__ = "0.6"
