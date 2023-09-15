@@ -35,7 +35,7 @@ n_samples = 1000
 
 def plot_data(x, y, ax, xlim, ylim):
     """Plot the data without axis."""
-    ax.set_title(f"{correlation:.1f}")
+    ax.set_title(f"{correlation:.2f}")
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.scatter(x, y, s=1)
