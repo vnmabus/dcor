@@ -17,9 +17,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, '/home/carlos/git/dcor/dcor')
+# >>> import os
+# >>> import sys
+# >>> sys.path.insert(0, '/home/carlos/git/dcor/dcor')
 
 
 import os
@@ -172,24 +172,13 @@ html_theme = "pydata_sphinx_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
-
-
-# -- Options for HTMLHelp output ------------------------------------------
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = 'dcordoc'
-
 html_theme_options = {
     "use_edit_page_button": True,
     "github_url": "https://github.com/vnmabus/dcor",
     "switcher": {
-        "json_url": "https://dcor.readthedocs.io/en/latest/_static/switcher.json",
+        "json_url": (
+            "https://dcor.readthedocs.io/en/latest/_static/switcher.json"
+        ),
         "version_match": switcher_version,
     },
     "show_version_warning_banner": True,
@@ -209,6 +198,17 @@ html_theme_options = {
         },
     ],
 }
+
+# Add any paths that contain custom static files (such as style sheets) here,
+# relative to this directory. They are copied after the builtin static files,
+# so a file named "default.css" will overwrite the builtin "default.css".
+html_static_path = ['_static']
+
+
+# -- Options for HTMLHelp output ------------------------------------------
+
+# Output file base name for HTML help builder.
+htmlhelp_basename = 'dcordoc'
 
 html_context = {
     "github_user": "vnmabus",

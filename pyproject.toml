@@ -57,8 +57,11 @@ documentation = "https://dcor.readthedocs.io"
 repository = "https://github.com/vnmabus/dcor"
 
 [build-system]
-# Minimum requirements for the build system to execute.
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["skfda*"]
 
 [tool.setuptools.dynamic]
 version = {attr = "dcor.__version__"}
