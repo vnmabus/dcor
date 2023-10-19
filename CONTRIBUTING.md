@@ -4,7 +4,7 @@ Thank you for considering contributing to dcor! You can contribute to dcor in se
 
 ## Opening issues
 
-Open a new issue if you find some bug or you want to propose a new feature. Please first check that nobody has asked that first!
+Open a new issue if you find some bug or you want to propose a new feature. Please first check that nobody has asked that already!
 
 Make sure that your proposal is clearly written, preferably in English. In case you are reporting a bug, please include all relevant information, such as the software version and machine information.
 
