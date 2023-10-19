@@ -48,7 +48,7 @@ class HypothesisTest(Generic[T]):
 def _permuted_statistic(
     matrix: T,
     statistic_function: Callable[[T], T],
-    permutation: np.typing.NDArray[int],
+    permutation: T,
 ) -> T:
 
     xp = array_namespace(matrix)
@@ -99,7 +99,9 @@ def _permutation_test_with_sym_matrix(
     statistic = statistic_function(matrix)
 
     permutations = (
-        random_state.permutation(matrix.shape[0])
+        xp.asarray(
+            random_state.permutation(matrix.shape[0])
+        )
         for _ in range(num_resamples)
     )
 
