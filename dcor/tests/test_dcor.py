@@ -523,14 +523,17 @@ class TestDistanceCorrelation(unittest.TestCase):
         int_int = dcor.distance_correlation(
             arr1,
             arr2,
+            compile_mode=dcor.CompileMode.NO_COMPILE,
         )
         float_int = dcor.distance_correlation(
             arr1.astype(float),
             arr2,
+            compile_mode=dcor.CompileMode.NO_COMPILE,
         )
         int_float = dcor.distance_correlation(
             arr1,
             arr2.astype(float),
+            compile_mode=dcor.CompileMode.NO_COMPILE,
         )
         float_float = dcor.distance_correlation(
             arr1.astype(float),
