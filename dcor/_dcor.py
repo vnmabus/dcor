@@ -41,6 +41,11 @@ from ._utils import (
     array_namespace,
     numpy_namespace,
 )
+##Additional module for Multivariate dcov test--------------------------------------------------------------
+from scipy.special import gammaln
+from numba import njit, prange
+import math
+##-------------------------------------------------------------------------------------
 
 Array = TypeVar("Array", bound=ArrayType)
 
@@ -1169,3 +1174,128 @@ def distance_correlation_af_inv(
             compile_mode=compile_mode,
         ),
     )
+''' 
+A Statistically and Numerically Efficient Independence Test Based on Random Projections and Distance Covariance
+
+url: https://www.frontiersin.org/articles/10.3389/fams.2021.779841/full
+'''
+
+# During implementing u_dustance_covariance_sqr I found this error---------------------------
+# AttributeError: module 'numpy' has no attribute 'bool'.
+# `np.bool` was a deprecated alias for the builtin `bool`. To avoid this error in existing code, use `bool` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.bool_` here.
+# The aliases was originally deprecated in NumPy 1.20; for more details and guidance see the original release note at:
+#     https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
+np.bool = np.bool_
+
+
+def gamma_ratio(p): return np.exp(gammaln((p+1)/2) - gammaln(p/2))  # For Calculating C_p and C_q
+
+
+@njit(fastmath=True, parallel=True, cache=True)
+def dist_sum(X):  # It is nothing but the parallelized version of pdist function-----------------------
+    '''
+    Parameters
+    ----------
+    X : 1D array.
+
+    Returns
+    -------
+    res : sum of distinct Euclidean distances corresponding to the elements of X.
+
+    Note: To implement numba, one needs to consider "numpy==1.25" or less. 
+    '''
+    res = 0
+    for i in prange(len(X)):
+        for j in prange(len(X)):
+            if i < j:
+                res += np.abs(X[i] - X[j])
+                pass
+            pass
+        pass
+    return res
+
+
+
+def rndm_projection(X, dim_X):
+    '''
+    Parameters
+    ----------
+    X : N x D, array of arrays
+    where D: number of dimensions (D >= 1) and N: number of samples        
+
+    Returns
+    -------
+    X_new : an array of size N
+    DESCRIPTION: Random projection of multivariate array
+    '''
+
+    # X_std = multivariate_normal.rvs( np.zeros(dim_X), np.identity(dim_X), size = 1)
+    X_std = np.random.standard_normal(dim_X)
+    X_norm = np.sum([i**2 for i in X_std])
+    U_sphere = np.array(X_std / np.sqrt(X_norm))
+    if dim_X > 1:
+        X_new = U_sphere.T @ X.T
+        pass
+    else:
+        X_new = U_sphere*X
+        pass
+    return X_new
+
+
+def u_dist_cov_sqr_mv(X, Y, p, q, n_projs= 500, fast_method='mergesort', func=u_distance_covariance_sqr):
+    '''
+    Parameters
+    ----------
+    X : N x D_x, array of arrays, where D_x > 1
+    Y : N x D_y, array of arrays, where D_y >= 1
+    where D_{}: number of dimensions of variable {} and N: number of samples
+
+    p : dimension of X
+    q : dimension of Y
+    n_projs : Number of projections (integer type), optional
+        DESCRIPTION. The default is 500.
+    fast_method : fast computation method either 'mergesort' or 'avl', optional
+        DESCRIPTION. The default is 'mergesort'.
+    func : either u_distance_covariance_sqr(bias-corrected) or distance_covariance_sqr, optional
+        DESCRIPTION. The default is u_distance_covariance_sqr.
+
+    Returns
+    -------
+    omega_bar : Float type
+        DESCRIPTION: Produce fastly computed unbiased distance covariance between X and Y
+    
+    
+    Examples:
+        >>> import numpy as np
+        >>> import dcor
+        >>> from scipy.stats import multivariate_normal
+        >>> mean_vector = [2, 3, 5, 3, 2, 1]
+        >>> matrixSize = 6
+        >>> A = 0.5*np.random.rand(matrixSize, matrixSize)
+        >>> B = np.dot(A, A.transpose())
+        >>> n_samples = 3000
+        >>> X = multivariate_normal.rvs(mean_vector, B, size=n_samples)
+        >>> X1 = X.T[:4]
+        >>> X2 = X.T[4:] 
+        >>> dim_X1 = np.shape(X1)[0]
+        >>> dim_X2 = np.shape(X2)[0]
+        >>> print("Computing fast distance covariance = {}".format(u_dist_cov_sqr_mv(X1.T, X2.T, dim_X1, dim_X2)))
+    '''
+
+    sqrt_pi_value = math.sqrt(math.pi)
+    # C_p = (math.sqrt(pi_value)*gamma((p+1)/2))/ gamma(p/2)
+    # C_q = (math.sqrt(pi_value)*gamma((q+1)/2))/ gamma(q/2)
+    C_p = sqrt_pi_value*gamma_ratio(p)
+    C_q = sqrt_pi_value*gamma_ratio(q)
+
+    omega_n = 0
+
+    # for i in tqdm(range(n_projs)):
+    for i in range(n_projs):
+        X_proj = rndm_projection(X, p)
+        Y_proj = rndm_projection(Y, q)
+        omega_n += func(X_proj, Y_proj, method=fast_method)
+        pass
+    omega_bar = (C_p*C_q*omega_n)/n_projs
+
+    return omega_bar
