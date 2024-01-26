@@ -517,8 +517,8 @@ class TestDistanceCorrelation(unittest.TestCase):
         n_samples = 10000
 
         # some simple data
-        arr1 = np.array([1, 2, 3] * n_samples)
-        arr2 = np.array([10, 20, 5] * n_samples)
+        arr1 = np.array([1, 2, 3] * n_samples, dtype=np.int32)
+        arr2 = np.array([10, 20, 5] * n_samples, dtype=np.int32)
 
         int_int = dcor.distance_correlation(
             arr1,
