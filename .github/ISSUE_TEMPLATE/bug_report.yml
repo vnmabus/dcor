@@ -54,7 +54,7 @@ body:
               5 b = np.array([5, 6, 7, 8], dtype=np.float64)
         ----> 7 dcor.distance_correlation(a, b, method="default")
         
-        File ~/git/dcor/dcor/_dcor.py:1033, in distance_correlation(x, y, exponent, method, compile_mode)
+        File .../dcor/_dcor.py:1033, in distance_correlation(x, y, exponent, method, compile_mode)
             982 def distance_correlation(
             983     x: Array,
             984     y: Array,
@@ -77,7 +77,7 @@ body:
            1039         ),
            1040     )
         
-        File ~/git/dcor/dcor/_dcor.py:909, in distance_correlation_sqr(x, y, exponent, method, compile_mode)
+        File .../dcor/_dcor.py:909, in distance_correlation_sqr(x, y, exponent, method, compile_mode)
             859 def distance_correlation_sqr(
             860     x: Array,
             861     y: Array,
@@ -98,12 +98,12 @@ body:
             915         compile_mode=compile_mode,
             916     ).correlation_xy
         
-        File ~/git/dcor/dcor/_dcor.py:437, in _to_algorithm(algorithm)
+        File .../dcor/_dcor.py:437, in _to_algorithm(algorithm)
             434 if isinstance(algorithm, DistanceCovarianceMethod):
             435     return algorithm
         --> 437 return DistanceCovarianceMethod[algorithm.upper()]
         
-        File ~/Programas/Utilidades/Lenguajes/miniconda3/envs/fda311/lib/python3.11/enum.py:790, in EnumType.__getitem__(cls, name)
+        File .../lib/python3.11/enum.py:790, in EnumType.__getitem__(cls, name)
             786 def __getitem__(cls, name):
             787     """
             788     Return the member matching `name`.
