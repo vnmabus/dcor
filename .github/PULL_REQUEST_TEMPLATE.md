@@ -27,5 +27,5 @@ Example: Fixes #42. See also #123.
 
 - [ ] I have performed a self-review of my code
 - [ ] The code conforms to the style used in this package
-- [ ] The code is fully documented and typed (type-checked with Mypy)
+- [ ] The code is fully documented and typed (type-checked with [Mypy](https://mypy-lang.org/))
 - [ ] I have added thorough tests for the new/changed functionality
