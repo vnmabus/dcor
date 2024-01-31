@@ -15,6 +15,8 @@ import scipy.spatial as spatial
 
 from dcor._utils import ArrayType, _sqrt, _transform_to_2d, array_namespace
 
+from numba import njit, prange # Additional repo for dist_sum
+
 from ._utils import _can_be_numpy_double
 
 Array = TypeVar("Array", bound=ArrayType)
@@ -159,3 +161,34 @@ def pairwise_distances(
 
     x, y = _transform_to_2d(x, y)
     return _cdist(x, y, exponent=exponent)
+
+
+
+
+
+@njit(fastmath=True, parallel=True, cache=True)
+def dist_sum(X):  # It is nothing but the parallelized version of pdist function-----------------------
+    """
+    Parameters
+    ----------
+    X : 1D array.
+
+    Returns
+    -------
+    res : sum of distinct Euclidean distances corresponding to the elements of X.
+
+    Note: To implement numba, one needs to consider "numpy==1.25" or less. 
+    """
+    res = 0
+    for i in prange(len(X)):
+        for j in prange(len(X)):
+            if i < j:
+                res += np.abs(X[i] - X[j])
+                pass
+            pass
+        pass
+    return res
+
+
+
+
