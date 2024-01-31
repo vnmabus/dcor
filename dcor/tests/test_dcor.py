@@ -512,6 +512,38 @@ class TestDistanceCorrelation(unittest.TestCase):
         corr_af_inv = dcor.distance_correlation_af_inv(a, a)
         self.assertAlmostEqual(corr_af_inv, 0)
 
+    def test_integer_overflow(self) -> None:
+        """Tests int overflow behavior detected in issue #59."""
+        n_samples = 10000
+
+        # some simple data
+        arr1 = np.array([1, 2, 3] * n_samples, dtype=np.int64)
+        arr2 = np.array([10, 20, 5] * n_samples, dtype=np.int64)
+
+        int_int = dcor.distance_correlation(
+            arr1,
+            arr2,
+            compile_mode=dcor.CompileMode.NO_COMPILE,
+        )
+        float_int = dcor.distance_correlation(
+            arr1.astype(float),
+            arr2,
+            compile_mode=dcor.CompileMode.NO_COMPILE,
+        )
+        int_float = dcor.distance_correlation(
+            arr1,
+            arr2.astype(float),
+            compile_mode=dcor.CompileMode.NO_COMPILE,
+        )
+        float_float = dcor.distance_correlation(
+            arr1.astype(float),
+            arr2.astype(float),
+        )
+
+        self.assertAlmostEqual(int_int, float_float)
+        self.assertAlmostEqual(float_int, float_float)
+        self.assertAlmostEqual(int_float, float_float)
+
 
 class TestDcorArrayAPI(unittest.TestCase):
     """Check that the energy distance works with the Array API standard."""
