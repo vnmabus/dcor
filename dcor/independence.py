@@ -16,9 +16,11 @@ from ._dcor import u_distance_correlation_sqr
 ## Additional modules for Multivariate dcov-based test of independence------------
 import math
 from ._dcor import u_distance_covariance_sqr, dist_sum, gamma_ratio, rndm_projection  
-from mpmath import*
-# from tqdm import tqdm
-##--------------------------------------------------------------------------------
+from _rowise import rowwise
+from scipy.special import gammainc
+# from mpmath import*
+
+
 
 
 from ._dcor_internals import (
@@ -358,33 +360,38 @@ def distance_correlation_t_test(
     return HypothesisTest(pvalue=p_value, statistic=t_test)
 
 
-##-----------------------------------------------------------------------------------------------------------------------
-''' 
+
+"""
 A Statistically and Numerically Efficient Independence Test Based on Random Projections and Distance Covariance
 
-url: https://www.frontiersin.org/articles/10.3389/fams.2021.779841/full
-'''
+:cite:`b-dcov_random_projection`.
 
-mp.dps = 25; mp.pretty = True
+References
+----------
+.. bibliography:: ../refs.bib
+   :labelprefix: B
+   :keyprefix: b-
+"""
+
+
 def gamma_cdf(x, shape,  scale):
-    return gammainc(shape, a = 0, b = float(x/scale))/np.exp(gammaln(shape))
+    # mp.dps = 25; mp.pretty = True
+    # return gammainc(shape, a = 0, b = float(x/scale))/np.exp(gammaln(shape))
+    return gammainc(shape, float(x/scale))
 
-def u_dist_cov_sqr_mv_test(X, Y, p, q, n_projs=500, fast_method='mergesort'):
-    '''
+def u_dist_cov_sqr_mv_test(X, Y, n_projs= 800, method='mergesort'):
+    """
 
-    Parameters
-    ----------
-    X : N x D, array of arrays, where D_x > 1
-    Y : N x D, array of arrays, where D_y >= 1
-    where D_{}: number of dimensions of variable {} and N: number of samples
+     Parameters
+     ----------
+     X : N x p, array of arrays, where p > 1
+     Y : N x q, array of arrays, where q >= 1
+     where p and q are the number of dimensions of X and Y, respectively and N: number of samples
 
-    p : dimension of X
-    q : dimension of Y
-    n_projs : Number of projections (integer type), optional
-        DESCRIPTION. The default is 500.
-    fast_method : fast computation method either 'mergesort' or 'avl', optional
-        DESCRIPTION. The default is 'mergesort'.
-    a_ : level of significance of the test of independence
+     n_projs : Number of projections (integer type), optional
+         DESCRIPTION. The default is 500. (paper suggested to consider: n_projs < N/logN, larger n_projs provides better results)
+     method : fast computation method either 'mergesort' or 'avl', optional
+         DESCRIPTION. The default is 'mergesort'.
 
     Returns
     -------
@@ -399,62 +406,65 @@ def u_dist_cov_sqr_mv_test(X, Y, p, q, n_projs=500, fast_method='mergesort'):
         >>> A = 0.5*np.random.rand(matrixSize, matrixSize)
         >>> B = np.dot(A, A.transpose())
         >>> n_samples = 3000
-        >>> X = multivariate_normal.rvs(mean_vector, B, size=n_samples)
+        >>> X = multivariate_normal.rvs(mean_vector, B, size = n_samples)
         >>> X1 = X.T[:4]
         >>> X2 = X.T[4:] 
-        >>> dim_X1 = np.shape(X1)[0]
-        >>> dim_X2 = np.shape(X2)[0]
-        >>> print("Test of independence using fast distance covariance = {}".format(u_dist_cov_sqr_mv_test(X1.T, X2.T, dim_X1, dim_X2)))
+        >>> print(f"Test of independence using fast distance covariance = {u_dist_cov_sqr_mv_test(X1.T, X2.T)}")
         
-    '''
+    """
 
     n_samples = np.shape(X)[0]
-
+    p = np.shape(X)[1]
+    q = np.shape(Y)[1]
+      
+      
     sqrt_pi_value = math.sqrt(math.pi)
     C_p = sqrt_pi_value*gamma_ratio(p)
     C_q = sqrt_pi_value*gamma_ratio(q)
 
-    omega1_n = 0
-    S1_n = 0
+    X_proj_1 = np.empty(( n_projs, n_samples))    
+    Y_proj_1 = np.empty(( n_projs, n_samples))
+    X_proj_2 = np.empty(( n_projs, n_samples))    
+    Y_proj_2 = np.empty(( n_projs, n_samples))
     S2_n = 0
     S3_n = 0
-    omega2_n = 0
-    omega3_n = 0
-
-    # for i in tqdm(range(n_projs)):
+    
     for i in range(n_projs):
-        Tr_proj_1 = rndm_projection(X, p)
-        pred_proj_1 = rndm_projection(Y, q)
-        omega1_n += u_distance_covariance_sqr(Tr_proj_1,
-                                              pred_proj_1, method=fast_method)
-        S1_n += (u_distance_covariance_sqr(Tr_proj_1, Tr_proj_1, method=fast_method) *
-                 u_distance_covariance_sqr(pred_proj_1, pred_proj_1, method=fast_method))
-        S2_n += (2*dist_sum(Tr_proj_1))
-        S3_n += (2*dist_sum(pred_proj_1))
-        Tr_proj_2 = rndm_projection(X, p)
-        pred_proj_2 = rndm_projection(Y, q)
-        omega2_n += u_distance_covariance_sqr(Tr_proj_1,
-                                              Tr_proj_2, method=fast_method)
-        omega3_n += u_distance_covariance_sqr(pred_proj_1,
-                                              pred_proj_2, method=fast_method)
-        pass
-
-    omega1_bar = (C_p*C_q*omega1_n)/n_projs
-    S1_bar = (((C_p*C_q)**2)*S1_n)/n_projs
+        X_proj_1[ i, :] = rndm_projection(X, p)
+        Y_proj_1[ i, :] = rndm_projection(Y, q)
+        S2_n += (2*dist_sum(X_proj_1[ i, :]))
+        S3_n += (2*dist_sum(Y_proj_1[ i, :]))
+        X_proj_2[ i, :] = rndm_projection(X, p)
+        Y_proj_2[ i, :] = rndm_projection(Y, q)
+        
+    omega1_ = rowwise(u_distance_covariance_sqr, X_proj_1, Y_proj_1, rowwise_mode= method)
+    omega1_bar = C_p*C_q*np.mean(omega1_)
+    
+    S11_ =  np.array(rowwise(u_distance_covariance_sqr, X_proj_1, X_proj_1, rowwise_mode= method))
+    S12_ =  np.array(rowwise(u_distance_covariance_sqr, Y_proj_1, Y_proj_1, rowwise_mode= method))   
+    S1_bar = C_p*C_q*np.mean(S11_* S12_)
+    
     S2_bar = (C_p*S2_n)/(n_projs*n_samples*(n_samples-1))
     S3_bar = (C_q*S3_n)/(n_projs*n_samples*(n_samples-1))
-    omega2_bar = ((C_p**2) * omega2_n)/n_projs
-    omega3_bar = ((C_q**2) * omega3_n)/n_projs
-
+    
+    omega2_ = rowwise(u_distance_covariance_sqr, X_proj_1, X_proj_2, rowwise_mode= method)
+    omega2_bar = (C_p**2)*np.mean(omega2_)
+    
+    omega3_ = rowwise(u_distance_covariance_sqr, Y_proj_1, Y_proj_2, rowwise_mode= method)
+    omega3_bar = (C_q**2)*np.mean(omega3_)
+    
     # calculate alpha and beta--------------------------------------
     denom = (((n_projs-1)*omega2_bar*omega3_bar) + S1_bar)/n_projs
     alpha = (0.5*((S2_bar*S3_bar)**2))/denom
     beta = (0.5*S2_bar*S3_bar)/denom
 
-    # calculate test statistic and the critical value/p_value--------------
+    # calculate test statistic and the p-value--------------
     Test_statistic = ((n_samples*omega1_bar) + (S2_bar*S3_bar))
-    p_val = 1 - gamma_cdf( Test_statistic, a = alpha, scale = float(1/beta))
-
-    # return Test_statistic, cutoff
+    
+    p_val = 1- gamma_cdf(Test_statistic, shape = alpha,  scale = float(1/beta))
+    
+    if p_val <0: p_val = 0 # Adjust the output of numerical integration as produced by gammainc
+    
+    
     return HypothesisTest(pvalue = p_val, statistic = Test_statistic)
 
