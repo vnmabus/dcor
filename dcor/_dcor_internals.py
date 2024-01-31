@@ -184,8 +184,8 @@ def _dcov_from_terms(
 ) -> Array:
     """Compute distance covariance WITHOUT centering first."""
     first_term = mean_prod / n_samples
-    second_term = a_axis_sum @ b_axis_sum / n_samples
-    third_term = a_total_sum * b_total_sum / n_samples
+    second_term = a_axis_sum / n_samples @ b_axis_sum
+    third_term = a_total_sum / n_samples * b_total_sum
 
     if bias_corrected:
         first_term /= (n_samples - 3)

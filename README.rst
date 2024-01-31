@@ -1,7 +1,7 @@
 dcor
 ====
 
-|tests| |docs| |coverage| |pypi| |conda| |zenodo|
+|tests| |docs| |coverage| |repostatus| |versions| |pypi| |conda| |zenodo|
 
 dcor: distance correlation and energy statistics in Python.
 
@@ -125,6 +125,14 @@ References
     :alt: Coverage Status
     :scale: 100%
     :target: https://codecov.io/gh/vnmabus/dcor/branch/develop
+    
+.. |repostatus| image:: https://www.repostatus.org/badges/latest/active.svg
+   :alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
+   :target: https://www.repostatus.org/#active
+   
+.. |versions| image:: https://img.shields.io/pypi/pyversions/dcor
+   :alt: PyPI - Python Version
+   :scale: 100%
     
 .. |pypi| image:: https://badge.fury.io/py/dcor.svg
     :alt: Pypi version
