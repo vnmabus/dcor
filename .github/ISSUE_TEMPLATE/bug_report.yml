@@ -18,7 +18,7 @@ body:
   attributes:
     label: Code to reproduce the bug
     description: |
-      Please add a minimal code example that can reproduce the error. If the bug does not require more code than loading a data file you can leave this empty. This will be automatically converted to a Python block.
+      Please add a minimal code example that can reproduce the error. This will be automatically converted to a Python block.
     placeholder: |
       import dcor
       import numpy as np
