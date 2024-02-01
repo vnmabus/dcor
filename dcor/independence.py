@@ -16,7 +16,7 @@ from ._dcor import u_distance_correlation_sqr
 ## Additional modules for Multivariate dcov-based test of independence------------
 import math
 from ._dcor import u_distance_covariance_sqr, dist_sum, gamma_ratio, rndm_projection  
-from ._rowise import rowwise
+from ._rowwise import rowwise
 from scipy.special import gammainc
 # from mpmath import*
 
