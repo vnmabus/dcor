@@ -44,8 +44,8 @@ from ._utils import (
 ##Additional module for Multivariate dcov test--------------------------------------------------------------
 from scipy.special import gammaln
 import math
-from distances import dist_sum
-from _rowise import rowwise
+from .distances import dist_sum
+from ._rowise import rowwise
 ##-------------------------------------------------------------------------------------
 
 Array = TypeVar("Array", bound=ArrayType)
