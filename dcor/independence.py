@@ -416,7 +416,10 @@ def u_dist_cov_sqr_mv_test(X, Y, n_projs= 500, method='mergesort'):
 
     n_samples = np.shape(X)[0]
     p = np.shape(X)[1]
-    q = np.shape(Y)[1]
+    if Y.T.ndim == 1:
+        q = 1
+    else:
+        q = np.shape(Y)[1]
       
       
     sqrt_pi_value = math.sqrt(math.pi)
