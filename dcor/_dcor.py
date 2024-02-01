@@ -1181,7 +1181,8 @@ def distance_correlation_af_inv(
 
 
 """
-A Statistically and Numerically Efficient Independence Test Based on Random Projections and Distance Covariance
+A Statistically and Numerically Efficient Independence Test Based on
+     Random Projections and Distance Covariance
 
 :cite:`b-dcov_random_projection`.
 
@@ -1193,7 +1194,22 @@ References
 """
 
 
-def gamma_ratio(p): return np.exp(gammaln((p+1)/2) - gammaln(p/2))  # For Calculating C_p and C_q
+def gamma_ratio(p):
+    """
+    Parameters
+    ----------
+    p : is the dimension of the data
+
+    Returns
+    -------
+    TYPE float
+    
+    This function evaluates the gamma ratio, which is 
+    required to calculate the constants C_p and C_q (in function u_dist_cov_sqr_mv())
+
+    """
+    
+    return np.exp(gammaln((p+1) / 2) - gammaln(p / 2))
 
 
 
@@ -1215,7 +1231,7 @@ def rndm_projection(X, p):
     X_std = np.random.standard_normal(p)
             
     X_norm = np.linalg.norm(X_std)
-    U_sphere = np.array(X_std)/X_norm  # Normalize X_std
+    U_sphere = np.array(X_std) / X_norm  # Normalize X_std
     
     if p > 1:
         X_new = U_sphere @ X.T
@@ -1224,7 +1240,7 @@ def rndm_projection(X, p):
     return X_new
 
 
-def u_dist_cov_sqr_mv(X, Y, n_projs=800, method='mergesort'):
+def u_dist_cov_sqr_mv(X, Y, n_projs = 500, method ='mergesort'):
     """
     Parameters
     ----------
@@ -1233,7 +1249,7 @@ def u_dist_cov_sqr_mv(X, Y, n_projs=800, method='mergesort'):
     where p and q: number of dimensions of variable X and Y, respectively and N: number of samples
 
     n_projs : Number of projections (integer type), optional
-        DESCRIPTION. The default is 500.(paper suggested to consider: n_projs < N/logN, larger n_projs provides better results)
+        DESCRIPTION. The default is 500.(paper suggests: n_projs < N/logN, larger n_projs provides better results)
     method : fast computation method either 'mergesort' or 'avl', optional
         DESCRIPTION. The default is 'mergesort'.
 
@@ -1251,10 +1267,10 @@ def u_dist_cov_sqr_mv(X, Y, n_projs=800, method='mergesort'):
         >>> from scipy.stats import multivariate_normal
         >>> mean_vector = [2, 3, 5, 3, 2, 1]
         >>> matrix_size = 6
-        >>> A = 0.5*np.random.rand(matrix_size, matrix_size)
+        >>> A = 0.5 * np.random.rand(matrix_size, matrix_size)
         >>> B = np.dot(A, A.transpose())
         >>> n_samples = 3000
-        >>> X = multivariate_normal.rvs(mean_vector, B, size=n_samples)
+        >>> X = multivariate_normal.rvs(mean_vector, B, size = n_samples)
         >>> X1 = X.T[:4]
         >>> X2 = X.T[4:] 
         >>> print(f"Computing fast distance covariance = {u_dist_cov_sqr_mv(X1.T, X2.T)}")
@@ -1265,8 +1281,8 @@ def u_dist_cov_sqr_mv(X, Y, n_projs=800, method='mergesort'):
     q = np.shape(Y)[1]
     
     sqrt_pi_value = math.sqrt(math.pi)
-    C_p = sqrt_pi_value*gamma_ratio(p)
-    C_q = sqrt_pi_value*gamma_ratio(q)
+    C_p = sqrt_pi_value * gamma_ratio(p)
+    C_q = sqrt_pi_value * gamma_ratio(q)
 
     
     X_proj = np.empty(( n_projs, n_samples))    
@@ -1277,7 +1293,8 @@ def u_dist_cov_sqr_mv(X, Y, n_projs=800, method='mergesort'):
         Y_proj[i, :] = rndm_projection(Y, q)    
         pass
           
-    omega_ = rowwise(u_distance_covariance_sqr, X_proj, Y_proj, rowwise_mode= method)
-    omega_bar = C_p*C_q*np.mean(omega_)
+    omega_ = rowwise(u_distance_covariance_sqr, 
+                     X_proj, Y_proj, rowwise_mode = method)
+    omega_bar = C_p * C_q * np.mean(omega_)
     
     return omega_bar
