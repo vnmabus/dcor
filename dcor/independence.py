@@ -359,7 +359,7 @@ def distance_correlation_t_test(
 
     return HypothesisTest(pvalue=p_value, statistic=t_test)
 
-
+#-----------------------------------------------------------------------------------------------------------------
 
 """
 A Statistically and Numerically Efficient Independence Test Based on Random Projections and Distance Covariance
@@ -376,10 +376,10 @@ References
 
 def gamma_cdf(x, shape,  scale):
     # mp.dps = 25; mp.pretty = True
-    # return gammainc(shape, a = 0, b = float(x/scale))/np.exp(gammaln(shape))
-    return gammainc(shape, float(x/scale))
+    # return gammainc(shape, a = 0, b = float(x / scale)) / np.exp(gammaln(shape))
+    return gammainc(shape, float(x / scale))
 
-def u_dist_cov_sqr_mv_test(X, Y, n_projs= 800, method='mergesort'):
+def u_dist_cov_sqr_mv_test(X, Y, n_projs= 500, method='mergesort'):
     """
 
      Parameters
@@ -402,8 +402,8 @@ def u_dist_cov_sqr_mv_test(X, Y, n_projs= 800, method='mergesort'):
         >>> import dcor
         >>> from scipy.stats import multivariate_normal
         >>> mean_vector = [2, 3, 5, 3, 2, 1]
-        >>> matrixSize = 6
-        >>> A = 0.5*np.random.rand(matrixSize, matrixSize)
+        >>> matrix_size = 6
+        >>> A = 0.5 * np.random.rand(matrixSize, matrix_size)
         >>> B = np.dot(A, A.transpose())
         >>> n_samples = 3000
         >>> X = multivariate_normal.rvs(mean_vector, B, size = n_samples)
@@ -419,8 +419,8 @@ def u_dist_cov_sqr_mv_test(X, Y, n_projs= 800, method='mergesort'):
       
       
     sqrt_pi_value = math.sqrt(math.pi)
-    C_p = sqrt_pi_value*gamma_ratio(p)
-    C_q = sqrt_pi_value*gamma_ratio(q)
+    C_p = sqrt_pi_value * gamma_ratio(p)
+    C_q = sqrt_pi_value * gamma_ratio(q)
 
     X_proj_1 = np.empty(( n_projs, n_samples))    
     Y_proj_1 = np.empty(( n_projs, n_samples))
@@ -432,38 +432,44 @@ def u_dist_cov_sqr_mv_test(X, Y, n_projs= 800, method='mergesort'):
     for i in range(n_projs):
         X_proj_1[ i, :] = rndm_projection(X, p)
         Y_proj_1[ i, :] = rndm_projection(Y, q)
-        S2_n += (2*dist_sum(X_proj_1[ i, :]))
-        S3_n += (2*dist_sum(Y_proj_1[ i, :]))
+        S2_n += (2 * dist_sum(X_proj_1[ i, :]))
+        S3_n += (2 * dist_sum(Y_proj_1[ i, :]))
         X_proj_2[ i, :] = rndm_projection(X, p)
         Y_proj_2[ i, :] = rndm_projection(Y, q)
         
-    omega1_ = rowwise(u_distance_covariance_sqr, X_proj_1, Y_proj_1, rowwise_mode= method)
-    omega1_bar = C_p*C_q*np.mean(omega1_)
+    omega1_ = rowwise(u_distance_covariance_sqr, 
+                      X_proj_1, Y_proj_1, rowwise_mode= method)
+    omega1_bar = C_p * C_q * np.mean(omega1_)
     
-    S11_ =  np.array(rowwise(u_distance_covariance_sqr, X_proj_1, X_proj_1, rowwise_mode= method))
-    S12_ =  np.array(rowwise(u_distance_covariance_sqr, Y_proj_1, Y_proj_1, rowwise_mode= method))   
-    S1_bar = C_p*C_q*np.mean(S11_* S12_)
+    S11_ =  np.array(rowwise(u_distance_covariance_sqr, 
+                             X_proj_1, X_proj_1, rowwise_mode= method))
+    S12_ =  np.array(rowwise(u_distance_covariance_sqr,
+                             Y_proj_1, Y_proj_1, rowwise_mode= method))   
+    S1_bar = C_p * C_q * np.mean(S11_* S12_)
     
-    S2_bar = (C_p*S2_n)/(n_projs*n_samples*(n_samples-1))
-    S3_bar = (C_q*S3_n)/(n_projs*n_samples*(n_samples-1))
+    S2_bar = (C_p * S2_n) / (n_projs * n_samples * (n_samples-1))
+    S3_bar = (C_q * S3_n) / (n_projs * n_samples * (n_samples-1))
     
-    omega2_ = rowwise(u_distance_covariance_sqr, X_proj_1, X_proj_2, rowwise_mode= method)
-    omega2_bar = (C_p**2)*np.mean(omega2_)
+    omega2_ = rowwise(u_distance_covariance_sqr, 
+                      X_proj_1, X_proj_2, rowwise_mode = method)
+    omega2_bar = (C_p ** 2) * np.mean(omega2_)
     
-    omega3_ = rowwise(u_distance_covariance_sqr, Y_proj_1, Y_proj_2, rowwise_mode= method)
-    omega3_bar = (C_q**2)*np.mean(omega3_)
+    omega3_ = rowwise(u_distance_covariance_sqr, 
+                      Y_proj_1, Y_proj_2, rowwise_mode = method)
+    omega3_bar = (C_q ** 2) * np.mean(omega3_)
     
     # calculate alpha and beta--------------------------------------
-    denom = (((n_projs-1)*omega2_bar*omega3_bar) + S1_bar)/n_projs
-    alpha = (0.5*((S2_bar*S3_bar)**2))/denom
-    beta = (0.5*S2_bar*S3_bar)/denom
+    denom = (((n_projs-1) * omega2_bar * omega3_bar) + S1_bar) / n_projs
+    alpha = (0.5 * ((S2_bar * S3_bar) ** 2)) / denom
+    beta = (0.5 * S2_bar * S3_bar) / denom
 
     # calculate test statistic and the p-value--------------
-    Test_statistic = ((n_samples*omega1_bar) + (S2_bar*S3_bar))
+    Test_statistic = ((n_samples * omega1_bar) + (S2_bar * S3_bar))
     
-    p_val = 1- gamma_cdf(Test_statistic, shape = alpha,  scale = float(1/beta))
+    p_val = 1 - gamma_cdf(Test_statistic, 
+                          shape = alpha,  scale = float(1 / beta))
     
-    if p_val <0: p_val = 0 # Adjust the output of numerical integration as produced by gammainc
+    if p_val < 0: p_val = 0 # Adjust the output of numerical integration as produced by gammainc
     
     
     return HypothesisTest(pvalue = p_val, statistic = Test_statistic)
