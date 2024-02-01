@@ -44,6 +44,7 @@ from ._utils import (
 ##Additional module for Multivariate dcov test--------------------------------------------------------------
 from scipy.special import gammaln
 import math
+
 from dcor._rowwise import rowwise
 ##-------------------------------------------------------------------------------------
 
@@ -1266,10 +1267,12 @@ def u_dist_cov_sqr_mv(X, Y, n_projs = 500, method ='mergesort'):
         >>> from scipy.stats import multivariate_normal
         >>> mean_vector = [2, 3, 5, 3, 2, 1]
         >>> matrix_size = 6
+        >>> np.random.seed(123)  # in order to achieve reproducible results 
         >>> A = 0.5 * np.random.rand(matrix_size, matrix_size)
         >>> B = np.dot(A, A.transpose())
         >>> n_samples = 3000
-        >>> X = multivariate_normal.rvs(mean_vector, B, size = n_samples)
+        >>> mv = multivariate_normal( mean = mean_vector, cov = B)
+        >>> X = mv.rvs(size = n_samples, random_state = 123)
         >>> X1 = X.T[:4]
         >>> X2 = X.T[4:] 
         >>> print(f"Computing fast distance covariance = {u_dist_cov_sqr_mv(X1.T, X2.T)}")
@@ -1277,7 +1280,10 @@ def u_dist_cov_sqr_mv(X, Y, n_projs = 500, method ='mergesort'):
 
     n_samples = np.shape(X)[0]
     p = np.shape(X)[1]
-    q = np.shape(Y)[1]
+    if Y.T.ndim == 1:
+        q = 1
+    else:
+        q = np.shape(Y)[1]
     
     sqrt_pi_value = math.sqrt(math.pi)
     C_p = sqrt_pi_value * gamma_ratio(p)
