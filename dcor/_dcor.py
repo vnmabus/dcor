@@ -45,7 +45,7 @@ from ._utils import (
 from scipy.special import gammaln
 import math
 from .distances import dist_sum
-from ._rowise import rowwise
+from ._rowwise import rowwise
 ##-------------------------------------------------------------------------------------
 
 Array = TypeVar("Array", bound=ArrayType)
