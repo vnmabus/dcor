@@ -167,7 +167,7 @@ def pairwise_distances(
 
 
 @njit(fastmath=True, parallel=True, cache=True)
-def dist_sum(X):  # It is nothing but the parallelized version of pdist function-----------------------
+def dist_sum(X): 
     """
     Parameters
     ----------
