@@ -41,10 +41,9 @@ from ._utils import (
     array_namespace,
     numpy_namespace,
 )
-##Additional module for Multivariate dcov test--------------------------------------------------------------
+##Additional module for Multivariate dcov test-----------------------------------------
 from scipy.special import gammaln
 import math
-
 from dcor._rowwise import rowwise
 ##-------------------------------------------------------------------------------------
 
@@ -1180,20 +1179,6 @@ def distance_correlation_af_inv(
 
 
 
-"""
-A Statistically and Numerically Efficient Independence Test Based on
-     Random Projections and Distance Covariance
-
-:cite:`b-dcov_random_projection`.
-
-References
-----------
-.. bibliography:: ../refs.bib
-   :labelprefix: B
-   :keyprefix: b-
-"""
-
-
 def gamma_ratio(p):
     """
     Parameters
@@ -1209,7 +1194,7 @@ def gamma_ratio(p):
 
     """
     
-    return np.exp(gammaln((p+1) / 2) - gammaln(p / 2))
+    return np.exp(gammaln((p + 1) / 2) - gammaln(p / 2))
 
 
 
@@ -1228,10 +1213,10 @@ def rndm_projection(X, p):
     """
 
     # X_std = multivariate_normal.rvs( np.zeros(p), np.identity(p), size = 1)
-    X_std = np.random.standard_normal(p)
+    X_standard = np.random.standard_normal(p)
             
-    X_norm = np.linalg.norm(X_std)
-    U_sphere = np.array(X_std) / X_norm  # Normalize X_std
+    X_norm = np.linalg.norm(X_standard)
+    U_sphere = np.array(X_standard) / X_norm  # Normalize X_std
     
     if p > 1:
         X_new = U_sphere @ X.T
@@ -1240,8 +1225,16 @@ def rndm_projection(X, p):
     return X_new
 
 
-def u_dist_cov_sqr_mv(X, Y, n_projs = 500, method ='mergesort'):
-    """
+def u_dist_cov_sqr_mv(X, Y, n_projs = 500, method = "mergesort"):
+    r"""
+    Numerically Efficient Multivariate Distance Covariance Based on
+         Random Projections, the computation complexity is
+    :math:`O(kn\log n)`, where k is the number of projections (n_projs)
+
+    For more details see,
+    :footcite:`b-dcov_random_projection`.
+        
+    
     Parameters
     ----------
     X : N x p, array of arrays, where p > 1
@@ -1250,8 +1243,8 @@ def u_dist_cov_sqr_mv(X, Y, n_projs = 500, method ='mergesort'):
 
     n_projs : Number of projections (integer type), optional
         DESCRIPTION. The default is 500.(paper suggests: n_projs < N/logN, larger n_projs provides better results)
-    method : fast computation method either 'mergesort' or 'avl', optional
-        DESCRIPTION. The default is 'mergesort'.
+    method : fast computation method either "mergesort" or "avl", optional
+        DESCRIPTION. The default is "mergesort".
 
     Returns
     -------

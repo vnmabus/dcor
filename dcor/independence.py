@@ -15,9 +15,8 @@ from ._dcor import u_distance_correlation_sqr
 
 ## Additional modules for Multivariate dcov-based test of independence------------
 import math
-from ._dcor import u_distance_covariance_sqr, gamma_ratio, rndm_projection  
+from ._dcor import u_distance_covariance_sqr, gamma_ratio, rndm_projection, rowwise  
 from .distances import dist_sum
-from ._rowwise import rowwise
 from scipy.special import gammainc
 # from mpmath import*
 
@@ -54,7 +53,7 @@ def distance_covariance_test(
     random_state: RandomLike = None,
     n_jobs: int = 1,
 ) -> HypothesisTest[Array]:
-    """
+    r"""
     Test of distance covariance independence.
 
     Compute the test of independence based on the distance
@@ -360,19 +359,7 @@ def distance_correlation_t_test(
 
     return HypothesisTest(pvalue=p_value, statistic=t_test)
 
-#-----------------------------------------------------------------------------------------------------------------
 
-"""
-A Statistically and Numerically Efficient Independence Test Based on Random Projections and Distance Covariance
-
-:cite:`b-dcov_random_projection`.
-
-References
-----------
-.. bibliography:: ../refs.bib
-   :labelprefix: B
-   :keyprefix: b-
-"""
 
 
 def gamma_cdf(x, shape,  scale):
@@ -380,9 +367,15 @@ def gamma_cdf(x, shape,  scale):
     # return gammainc(shape, a = 0, b = float(x / scale)) / np.exp(gammaln(shape))
     return gammainc(shape, float(x / scale))
 
-def u_dist_cov_sqr_mv_test(X, Y, n_projs= 500, method='mergesort'):
+def u_dist_cov_sqr_mv_test(X, Y, n_projs= 500, method= "mergesort"):
     """
+    A Statistically and Numerically Efficient Independence Test Based on Random Projections and Distance Covariance
 
+    For more details see,
+    :footcite:`b-dcov_random_projection`.
+     
+     
+     
      Parameters
      ----------
      X : N x p, array of arrays, where p > 1
@@ -391,8 +384,8 @@ def u_dist_cov_sqr_mv_test(X, Y, n_projs= 500, method='mergesort'):
 
      n_projs : Number of projections (integer type), optional
          DESCRIPTION. The default is 500. (paper suggested to consider: n_projs < N/logN, larger n_projs provides better results)
-     method : fast computation method either 'mergesort' or 'avl', optional
-         DESCRIPTION. The default is 'mergesort'.
+     method : fast computation method either "mergesort" or "avl", optional
+         DESCRIPTION. The default is "mergesort".
 
     Returns
     -------
@@ -451,8 +444,8 @@ def u_dist_cov_sqr_mv_test(X, Y, n_projs= 500, method='mergesort'):
                              Y_proj_1, Y_proj_1, rowwise_mode= method))   
     S1_bar = C_p * C_q * np.mean(S11_* S12_)
     
-    S2_bar = (C_p * S2_n) / (n_projs * n_samples * (n_samples-1))
-    S3_bar = (C_q * S3_n) / (n_projs * n_samples * (n_samples-1))
+    S2_bar = (C_p * S2_n) / (n_projs * n_samples * (n_samples - 1))
+    S3_bar = (C_q * S3_n) / (n_projs * n_samples * (n_samples - 1))
     
     omega2_ = rowwise(u_distance_covariance_sqr, 
                       X_proj_1, X_proj_2, rowwise_mode = method)
