@@ -1187,13 +1187,11 @@ def gamma_ratio(p):
 
     Returns
     -------
-    TYPE float
-    
-    This function evaluates the gamma ratio, which is 
+    This function evaluates the gamma ratio, which is
     required to calculate the constants C_p and C_q (in function u_dist_cov_sqr_mv())
 
-    """
-    
+   """
+
     return np.exp(gammaln((p + 1) / 2) - gammaln(p / 2))
 
 
@@ -1203,8 +1201,8 @@ def rndm_projection(X, p):
     Parameters
     ----------
     X : N x p, array of arrays
-    where, p: number of dimensions (p >= 1) and N: number of samples 
-    p : number of dimensions (p >= 1)      
+    where, p: number of dimensions (p >= 1) and N: number of samples
+    p : number of dimensions (p >= 1)
 
     Returns
     -------
@@ -1214,10 +1212,10 @@ def rndm_projection(X, p):
 
     # X_std = multivariate_normal.rvs( np.zeros(p), np.identity(p), size = 1)
     X_standard = np.random.standard_normal(p)
-            
+
     X_norm = np.linalg.norm(X_standard)
     U_sphere = np.array(X_standard) / X_norm  # Normalize X_std
-    
+
     if p > 1:
         X_new = U_sphere @ X.T
     else:
@@ -1233,8 +1231,8 @@ def u_dist_cov_sqr_mv(X, Y, n_projs = 500, method = "mergesort"):
 
     For more details see,
     :footcite:`b-dcov_random_projection`.
-        
-    
+
+
     Parameters
     ----------
     X : N x p, array of arrays, where p > 1
@@ -1251,23 +1249,23 @@ def u_dist_cov_sqr_mv(X, Y, n_projs = 500, method = "mergesort"):
     omega_bar : Float type
         DESCRIPTION: Produce fastly computed unbiased distance covariance between X and Y
 
-    
-    
-    
+
+
+
     Examples:
         >>> import numpy as np
         >>> import dcor
         >>> from scipy.stats import multivariate_normal
         >>> mean_vector = [2, 3, 5, 3, 2, 1]
         >>> matrix_size = 6
-        >>> np.random.seed(123)  # in order to achieve reproducible results 
+        >>> np.random.seed(123)  # in order to achieve reproducible results
         >>> A = 0.5 * np.random.rand(matrix_size, matrix_size)
         >>> B = np.dot(A, A.transpose())
         >>> n_samples = 3000
         >>> mv = multivariate_normal( mean = mean_vector, cov = B)
         >>> X = mv.rvs(size = n_samples, random_state = 123)
         >>> X1 = X.T[:4]
-        >>> X2 = X.T[4:] 
+        >>> X2 = X.T[4:]
         >>> print(f"Computing fast distance covariance = {u_dist_cov_sqr_mv(X1.T, X2.T)}")
     """
 
@@ -1277,22 +1275,22 @@ def u_dist_cov_sqr_mv(X, Y, n_projs = 500, method = "mergesort"):
         q = 1
     else:
         q = np.shape(Y)[1]
-    
+
     sqrt_pi_value = math.sqrt(math.pi)
     C_p = sqrt_pi_value * gamma_ratio(p)
     C_q = sqrt_pi_value * gamma_ratio(q)
 
-    
-    X_proj = np.empty(( n_projs, n_samples))    
+
+    X_proj = np.empty(( n_projs, n_samples))
     Y_proj = np.empty(( n_projs, n_samples))
-    
+
     for i in range(n_projs):
         X_proj[i, :] = rndm_projection(X, p)
-        Y_proj[i, :] = rndm_projection(Y, q)    
+        Y_proj[i, :] = rndm_projection(Y, q)
         pass
-          
-    omega_ = rowwise(u_distance_covariance_sqr, 
+
+    omega_ = rowwise(u_distance_covariance_sqr,
                      X_proj, Y_proj, rowwise_mode = method)
     omega_bar = C_p * C_q * np.mean(omega_)
-    
+
     return omega_bar

@@ -15,7 +15,7 @@ from ._dcor import u_distance_correlation_sqr
 
 ## Additional modules for Multivariate dcov-based test of independence------------
 import math
-from ._dcor import u_distance_covariance_sqr, gamma_ratio, rndm_projection, rowwise  
+from ._dcor import u_distance_covariance_sqr, gamma_ratio, rndm_projection, rowwise
 from .distances import dist_sum
 from scipy.special import gammainc
 # from mpmath import*
@@ -373,9 +373,9 @@ def u_dist_cov_sqr_mv_test(X, Y, n_projs= 500, method= "mergesort"):
 
     For more details see,
     :footcite:`b-dcov_random_projection`.
-     
-     
-     
+
+
+
      Parameters
      ----------
      X : N x p, array of arrays, where p > 1
@@ -390,7 +390,7 @@ def u_dist_cov_sqr_mv_test(X, Y, n_projs= 500, method= "mergesort"):
     Returns
     -------
     Results of the hypothesis test.
-    
+
     Examples:
         >>> import numpy as np
         >>> import dcor
@@ -402,9 +402,9 @@ def u_dist_cov_sqr_mv_test(X, Y, n_projs= 500, method= "mergesort"):
         >>> n_samples = 3000
         >>> X = multivariate_normal.rvs(mean_vector, B, size = n_samples)
         >>> X1 = X.T[:4]
-        >>> X2 = X.T[4:] 
+        >>> X2 = X.T[4:]
         >>> print(f"Test of independence using fast distance covariance = {u_dist_cov_sqr_mv_test(X1.T, X2.T)}")
-        
+
     """
 
     n_samples = np.shape(X)[0]
@@ -413,19 +413,19 @@ def u_dist_cov_sqr_mv_test(X, Y, n_projs= 500, method= "mergesort"):
         q = 1
     else:
         q = np.shape(Y)[1]
-      
-      
+
+
     sqrt_pi_value = math.sqrt(math.pi)
     C_p = sqrt_pi_value * gamma_ratio(p)
     C_q = sqrt_pi_value * gamma_ratio(q)
 
-    X_proj_1 = np.empty(( n_projs, n_samples))    
+    X_proj_1 = np.empty(( n_projs, n_samples))
     Y_proj_1 = np.empty(( n_projs, n_samples))
-    X_proj_2 = np.empty(( n_projs, n_samples))    
+    X_proj_2 = np.empty(( n_projs, n_samples))
     Y_proj_2 = np.empty(( n_projs, n_samples))
     S2_n = 0
     S3_n = 0
-    
+
     for i in range(n_projs):
         X_proj_1[ i, :] = rndm_projection(X, p)
         Y_proj_1[ i, :] = rndm_projection(Y, q)
@@ -433,28 +433,28 @@ def u_dist_cov_sqr_mv_test(X, Y, n_projs= 500, method= "mergesort"):
         S3_n += (2 * dist_sum(Y_proj_1[ i, :]))
         X_proj_2[ i, :] = rndm_projection(X, p)
         Y_proj_2[ i, :] = rndm_projection(Y, q)
-        
-    omega1_ = rowwise(u_distance_covariance_sqr, 
+
+    omega1_ = rowwise(u_distance_covariance_sqr,
                       X_proj_1, Y_proj_1, rowwise_mode= method)
     omega1_bar = C_p * C_q * np.mean(omega1_)
-    
-    S11_ =  np.array(rowwise(u_distance_covariance_sqr, 
+
+    S11_ =  np.array(rowwise(u_distance_covariance_sqr,
                              X_proj_1, X_proj_1, rowwise_mode= method))
     S12_ =  np.array(rowwise(u_distance_covariance_sqr,
-                             Y_proj_1, Y_proj_1, rowwise_mode= method))   
+                             Y_proj_1, Y_proj_1, rowwise_mode= method))
     S1_bar = C_p * C_q * np.mean(S11_* S12_)
-    
+
     S2_bar = (C_p * S2_n) / (n_projs * n_samples * (n_samples - 1))
     S3_bar = (C_q * S3_n) / (n_projs * n_samples * (n_samples - 1))
-    
-    omega2_ = rowwise(u_distance_covariance_sqr, 
+
+    omega2_ = rowwise(u_distance_covariance_sqr,
                       X_proj_1, X_proj_2, rowwise_mode = method)
     omega2_bar = (C_p ** 2) * np.mean(omega2_)
-    
-    omega3_ = rowwise(u_distance_covariance_sqr, 
+
+    omega3_ = rowwise(u_distance_covariance_sqr,
                       Y_proj_1, Y_proj_2, rowwise_mode = method)
     omega3_bar = (C_q ** 2) * np.mean(omega3_)
-    
+
     # calculate alpha and beta--------------------------------------
     denom = (((n_projs-1) * omega2_bar * omega3_bar) + S1_bar) / n_projs
     alpha = (0.5 * ((S2_bar * S3_bar) ** 2)) / denom
@@ -462,12 +462,12 @@ def u_dist_cov_sqr_mv_test(X, Y, n_projs= 500, method= "mergesort"):
 
     # calculate test statistic and the p-value--------------
     Test_statistic = ((n_samples * omega1_bar) + (S2_bar * S3_bar))
-    
-    p_val = 1 - gamma_cdf(Test_statistic, 
+
+    p_val = 1 - gamma_cdf(Test_statistic,
                           shape = alpha,  scale = float(1 / beta))
-    
+
     if p_val < 0: p_val = 0 # Adjust the output of numerical integration as produced by gammainc
-    
-    
+
+
     return HypothesisTest(pvalue = p_val, statistic = Test_statistic)
 
