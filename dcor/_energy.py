@@ -78,7 +78,7 @@ def _check_valid_energy_exponent(exponent: float) -> None:
 def _get_flat_upper_matrix(x: Array, k: int) -> Array:
     """Get flat upper matrix from diagonal k."""
     xp = array_namespace(x)
-    x_mask = xp.triu(xp.ones_like(x, dtype=xp.bool), k=k)
+    x_mask = xp.triu(xp.ones_like(x, dtype=bool), k=k)
     x_mask_flat = xp.reshape(x_mask, -1)
     x_flat = xp.reshape(x, -1)
 
