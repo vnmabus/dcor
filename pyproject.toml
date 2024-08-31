@@ -56,11 +56,10 @@ docs = [
 	"sphinx-gallery",
 ]
 test = [
+  "array-api-strict",
   "pytest",
   "pytest-cov",
   "pytest-subtests",
-  "numpy>=1.22",  # Requires array_api module
-  "numba>=0.56",  # Older versions don't support numpy>=1.22
 ]
 
 [project.urls]

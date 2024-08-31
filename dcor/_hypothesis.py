@@ -100,7 +100,7 @@ def _permutation_test_with_sym_matrix(
 
     permutations = (
         xp.asarray(
-            random_state.permutation(matrix.shape[0])
+            random_state.permutation(matrix.shape[0]),
         )
         for _ in range(num_resamples)
     )
@@ -112,13 +112,16 @@ def _permutation_test_with_sym_matrix(
             permutation,
         ) for permutation in permutations
     )
-    bootstrap_statistics = np.array(
+    bootstrap_statistics = xp.asarray(
         bootstrap_statistics,
         dtype=statistic.dtype,
     )
 
-    extreme_results = bootstrap_statistics > statistic
-    pvalue = (np.sum(extreme_results) + 1.0) / (num_resamples + 1)
+    extreme_results = xp.astype(
+        bootstrap_statistics > statistic,
+        xp.float64,
+    )
+    pvalue = float(xp.sum(extreme_results) + 1.0) / (num_resamples + 1)
 
     return HypothesisTest(
         pvalue=pvalue,
