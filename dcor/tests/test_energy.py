@@ -1,7 +1,7 @@
 import unittest
 
+import array_api_strict
 import numpy as np
-import numpy.array_api
 
 from dcor import EstimationStatistic, energy_distance
 from dcor._energy import _energy_distance_from_distance_matrices
@@ -72,22 +72,22 @@ class TestEnergyArrayAPI(unittest.TestCase):
 
     def setUp(self) -> None:
         """Initialize Array API arrays."""
-        self.a = numpy.array_api.asarray(
+        self.a = array_api_strict.asarray(
             [
                 [1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12],
                 [13, 14, 15, 16],
             ],
-            dtype=numpy.array_api.float64,
+            dtype=array_api_strict.float64,
         )
-        self.b = numpy.array_api.asarray(
+        self.b = array_api_strict.asarray(
             [
                 [1, 0, 0, 1],
                 [0, 1, 1, 1],
                 [1, 1, 1, 1],
             ],
-            dtype=numpy.array_api.float64,
+            dtype=array_api_strict.float64,
         )
 
     def test_basic(self) -> None:

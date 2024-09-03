@@ -7,13 +7,11 @@ from decimal import Decimal
 from fractions import Fraction
 from typing import Any, Callable, Tuple, Type, TypeVar
 
+import array_api_strict
 import numpy as np
-import numpy.array_api
 
 import dcor
 from dcor._fast_dcov_avl import _dyad_update
-from dcor._hypothesis import HypothesisTest
-from dcor._utils import ArrayType
 
 T = TypeVar("T")
 
@@ -550,23 +548,23 @@ class TestDcorArrayAPI(unittest.TestCase):
 
     def setUp(self) -> None:
         """Initialize Array API arrays."""
-        self.a = numpy.array_api.asarray(
+        self.a = array_api_strict.asarray(
             [
                 [1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12],
                 [13, 14, 15, 16],
             ],
-            dtype=numpy.array_api.float64,
+            dtype=array_api_strict.float64,
         )
-        self.b = numpy.array_api.asarray(
+        self.b = array_api_strict.asarray(
             [
                 [1],
                 [0],
                 [0],
                 [1],
             ],
-            dtype=numpy.array_api.float64,
+            dtype=array_api_strict.float64,
         )
 
     def _test_generic(
@@ -631,7 +629,7 @@ class TestDcorArrayAPI(unittest.TestCase):
 
     def test_dcor_constant(self) -> None:
         """Test that it works with constant random variables."""
-        a = np.array_api.ones(100)
+        a = array_api_strict.ones(100)
 
         cov = dcor.distance_covariance(a, a)
         self.assertIsInstance(cov, type(self.a))

@@ -2,7 +2,7 @@
 name = "dcor"
 description = "dcor: distance correlation and energy statistics in Python."
 readme = "README.rst"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 keywords = [
 	"distance correlation",
@@ -27,7 +27,9 @@ classifiers = [
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
@@ -56,11 +58,11 @@ docs = [
 	"sphinx-gallery",
 ]
 test = [
+  "array-api-strict",
+  "numpy<2", # NumPy 2 changes array repr, affecting doctests.
   "pytest",
   "pytest-cov",
   "pytest-subtests",
-  "numpy>=1.22",  # Requires array_api module
-  "numba>=0.56",  # Older versions don't support numpy>=1.22
 ]
 
 [project.urls]
