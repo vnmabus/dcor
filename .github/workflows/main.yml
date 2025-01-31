@@ -28,7 +28,7 @@ jobs:
     - name: Run tests
       run: |
         pip3 install ".[test]"
-        coverage run --source=dcor/ --omit=dcor/tests/ -m pytest
+        coverage run --source=dcor/ --omit=dcor/tests/ -m pytest --doctest-glob=""
     
     - name: Generate coverage XML
       run: |
