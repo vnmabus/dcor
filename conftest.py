@@ -1,4 +1,4 @@
-
+import re
 import doctest
 
 collect_ignore = ['setup.py']
@@ -6,20 +6,24 @@ collect_ignore = ['setup.py']
 pytest_plugins = ("pytest_cov", "subtests")
 
 
-doctest_normal_output_checker = doctest.OutputChecker
+OutputChecker = doctest.OutputChecker
+
+
 
 class Numpy1Numpy2AgnosticOutputChecker(doctest.OutputChecker):
 
+    numpy2_float64_pattern = r'np\.float64\((?P<num>inf|[+-]?\d*\.\d+)\)'
+    
+    def check_output(self, want, got, optionflags):
 
-    def numpy_doctest_output_fix(self, want, got, optionflags):
-        if want == got:
-            return True
-        if want == f'np.float64({got})':
-            return True
+        numpy_1_style_got = re.sub(
+                self.numpy2_float64_pattern,
+                lambda m: m['num'],
+                got,
+                )
 
+        return super().check_output(want, numpy_1_style_got, optionflags)
 
-
-        return False
 
 
 
@@ -33,7 +37,7 @@ def pytest_configure(config):
 def pytest_unconfigure(config):
     import sys
     del sys._called_from_test
-    doctest.OutputChecker = doctest_normal_output_checker
+    doctest.OutputChecker = OutputChecker
 
 
 
