@@ -42,4 +42,4 @@ from ._partial_dcor import (
 from ._rowwise import RowwiseMode as RowwiseMode, rowwise as rowwise
 from ._utils import CompileMode as CompileMode
 
-__version__ = "0.7"
+__version__ = "0.8.dev0"
