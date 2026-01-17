@@ -17,9 +17,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, '/home/carlos/git/dcor/dcor')
+# >>> import os
+# >>> import sys
+# >>> sys.path.insert(0, '/home/carlos/git/dcor/dcor')
 
 
 import os
@@ -28,7 +28,10 @@ import sys
 import pkg_resources
 # Patch sphinx_gallery.binder.gen_binder_rst so as to point to .py file in
 # repository
-import sphinx_gallery.binder
+import sphinx_gallery.gen_rst
+import sphinx_gallery.interactive_example
+
+import dcor
 
 try:
     release = pkg_resources.get_distribution('dcor').version
@@ -54,6 +57,7 @@ version = '.'.join(release.split('.')[:2])
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "myst_parser",
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.todo',
@@ -69,8 +73,16 @@ extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-rtd_version = os.environ.get("READTHEDOCS_VERSION", "latest")
-branch = "master" if rtd_version == "stable" else "develop"
+rtd_version = os.environ.get("READTHEDOCS_VERSION")
+rtd_version_type = os.environ.get("READTHEDOCS_VERSION_TYPE")
+
+switcher_version = rtd_version
+if switcher_version == "latest":
+    switcher_version = "dev"
+elif rtd_version_type not in ["branch", "tag"]:
+    switcher_version = dcor.__version__
+
+rtd_branch = os.environ.get(" READTHEDOCS_GIT_IDENTIFIER", "develop")
 
 sphinx_gallery_conf = {
     'examples_dirs': '../examples',
@@ -84,7 +96,7 @@ sphinx_gallery_conf = {
     'binder': {
         'org': 'VNMabus',
         'repo': 'dcor',
-        'branch': branch,
+        'branch': rtd_branch,
         'binderhub_url': 'https://mybinder.org',
         'dependencies': ['../binder/runtime.txt', '../binder/requirements.txt'],
         'notebooks_dir': '../examples',
@@ -160,22 +172,17 @@ html_theme = "pydata_sphinx_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
-
-
-# -- Options for HTMLHelp output ------------------------------------------
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = 'dcordoc'
-
 html_theme_options = {
     "use_edit_page_button": True,
     "github_url": "https://github.com/vnmabus/dcor",
+    "switcher": {
+        "json_url": (
+            "https://dcor.readthedocs.io/en/latest/_static/switcher.json"
+        ),
+        "version_match": switcher_version,
+    },
+    "show_version_warning_banner": True,
+    "navbar_start": ["navbar-logo", "version-switcher"],
     "icon_links": [
         {
             "name": "PyPI",
@@ -191,6 +198,17 @@ html_theme_options = {
         },
     ],
 }
+
+# Add any paths that contain custom static files (such as style sheets) here,
+# relative to this directory. They are copied after the builtin static files,
+# so a file named "default.css" will overwrite the builtin "default.css".
+html_static_path = ['_static']
+
+
+# -- Options for HTMLHelp output ------------------------------------------
+
+# Output file base name for HTML help builder.
+htmlhelp_basename = 'dcordoc'
 
 html_context = {
     "github_user": "vnmabus",
@@ -277,7 +295,7 @@ autodoc_typehints = "description"
 # Binder integration
 # Taken from
 # https://stanczakdominik.github.io/posts/simple-binder-usage-with-sphinx-gallery-through-jupytext/
-original_gen_binder_rst = sphinx_gallery.binder.gen_binder_rst
+original_gen_binder_rst = sphinx_gallery.interactive_example.gen_binder_rst
 
 
 def patched_gen_binder_rst(*args, **kwargs):
@@ -293,4 +311,5 @@ def patched_gen_binder_rst(*args, **kwargs):
 #  # And then we finish our monkeypatching misdeed by redirecting
 
 # sphinx-gallery to use our function:
-sphinx_gallery.binder.gen_binder_rst = patched_gen_binder_rst
+sphinx_gallery.interactive_example.gen_binder_rst = patched_gen_binder_rst
+sphinx_gallery.gen_rst.gen_binder_rst = patched_gen_binder_rst

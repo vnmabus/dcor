@@ -2,7 +2,7 @@
 name = "dcor"
 description = "dcor: distance correlation and energy statistics in Python."
 readme = "README.rst"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 keywords = [
 	"distance correlation",
@@ -27,7 +27,9 @@ classifiers = [
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
@@ -35,19 +37,32 @@ classifiers = [
 dynamic = ["version"]
 
 dependencies = [
-  "numpy",
-  "numba>=0.51",
-  "scipy",
+  "array-api-compat",
   "joblib",
+  "numba>=0.51",
+  "numpy",
+  "scipy",
 ]
 
 [project.optional-dependencies]
+docs = [
+	"docutils==0.17.1",
+	"jupyter-sphinx",
+	"matplotlib",
+	"myst-parser",
+	"pygments>=2.4.1",
+	"pandas",
+	"pydata-sphinx-theme",
+	"sphinx>=3",
+	"sphinxcontrib-bibtex",
+	"sphinx-gallery",
+]
 test = [
+  "array-api-strict",
+  "numpy<2", # NumPy 2 changes array repr, affecting doctests.
   "pytest",
   "pytest-cov",
   "pytest-subtests",
-  "numpy>=1.22",  # Requires array_api module
-  "numba>=0.56",  # Older versions don't support numpy>=1.22
 ]
 
 [project.urls]
@@ -56,5 +71,11 @@ documentation = "https://dcor.readthedocs.io"
 repository = "https://github.com/vnmabus/dcor"
 
 [build-system]
-# Minimum requirements for the build system to execute.
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["dcor*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "dcor.__version__"}

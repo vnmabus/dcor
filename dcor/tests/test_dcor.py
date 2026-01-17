@@ -7,13 +7,11 @@ from decimal import Decimal
 from fractions import Fraction
 from typing import Any, Callable, Tuple, Type, TypeVar
 
+import array_api_strict
 import numpy as np
-import numpy.array_api
 
 import dcor
 from dcor._fast_dcov_avl import _dyad_update
-from dcor._hypothesis import HypothesisTest
-from dcor._utils import ArrayType
 
 T = TypeVar("T")
 
@@ -512,29 +510,61 @@ class TestDistanceCorrelation(unittest.TestCase):
         corr_af_inv = dcor.distance_correlation_af_inv(a, a)
         self.assertAlmostEqual(corr_af_inv, 0)
 
+    def test_integer_overflow(self) -> None:
+        """Tests int overflow behavior detected in issue #59."""
+        n_samples = 10000
+
+        # some simple data
+        arr1 = np.array([1, 2, 3] * n_samples, dtype=np.int64)
+        arr2 = np.array([10, 20, 5] * n_samples, dtype=np.int64)
+
+        int_int = dcor.distance_correlation(
+            arr1,
+            arr2,
+            compile_mode=dcor.CompileMode.NO_COMPILE,
+        )
+        float_int = dcor.distance_correlation(
+            arr1.astype(float),
+            arr2,
+            compile_mode=dcor.CompileMode.NO_COMPILE,
+        )
+        int_float = dcor.distance_correlation(
+            arr1,
+            arr2.astype(float),
+            compile_mode=dcor.CompileMode.NO_COMPILE,
+        )
+        float_float = dcor.distance_correlation(
+            arr1.astype(float),
+            arr2.astype(float),
+        )
+
+        self.assertAlmostEqual(int_int, float_float)
+        self.assertAlmostEqual(float_int, float_float)
+        self.assertAlmostEqual(int_float, float_float)
+
 
 class TestDcorArrayAPI(unittest.TestCase):
     """Check that the energy distance works with the Array API standard."""
 
     def setUp(self) -> None:
         """Initialize Array API arrays."""
-        self.a = numpy.array_api.asarray(
+        self.a = array_api_strict.asarray(
             [
                 [1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12],
                 [13, 14, 15, 16],
             ],
-            dtype=numpy.array_api.float64,
+            dtype=array_api_strict.float64,
         )
-        self.b = numpy.array_api.asarray(
+        self.b = array_api_strict.asarray(
             [
                 [1],
                 [0],
                 [0],
                 [1],
             ],
-            dtype=numpy.array_api.float64,
+            dtype=array_api_strict.float64,
         )
 
     def _test_generic(
@@ -599,7 +629,7 @@ class TestDcorArrayAPI(unittest.TestCase):
 
     def test_dcor_constant(self) -> None:
         """Test that it works with constant random variables."""
-        a = np.array_api.ones(100)
+        a = array_api_strict.ones(100)
 
         cov = dcor.distance_covariance(a, a)
         self.assertIsInstance(cov, type(self.a))

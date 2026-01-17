@@ -7,7 +7,7 @@ from typing import Any, Callable, Generic, Iterator, TypeVar
 import numpy as np
 from joblib import Parallel, delayed
 
-from ._utils import ArrayType, RandomLike, _random_state_init, get_namespace
+from ._utils import ArrayType, RandomLike, _random_state_init, array_namespace
 
 T = TypeVar("T", bound=ArrayType)
 
@@ -48,10 +48,10 @@ class HypothesisTest(Generic[T]):
 def _permuted_statistic(
     matrix: T,
     statistic_function: Callable[[T], T],
-    permutation: np.typing.NDArray[int],
+    permutation: T,
 ) -> T:
 
-    xp = get_namespace(matrix)
+    xp = array_namespace(matrix)
 
     # We implicitly convert to NumPy for permuting the array if we don't
     # have a take function.
@@ -92,14 +92,16 @@ def _permutation_test_with_sym_matrix(
         Results of the hypothesis test.
 
     """
-    xp = get_namespace(matrix)
+    xp = array_namespace(matrix)
     matrix = xp.asarray(matrix)
     random_state = _random_state_init(random_state)
 
     statistic = statistic_function(matrix)
 
     permutations = (
-        random_state.permutation(matrix.shape[0])
+        xp.asarray(
+            random_state.permutation(matrix.shape[0]),
+        )
         for _ in range(num_resamples)
     )
 
@@ -110,13 +112,19 @@ def _permutation_test_with_sym_matrix(
             permutation,
         ) for permutation in permutations
     )
-    bootstrap_statistics = np.array(
+    if bootstrap_statistics:
+        bootstrap_statistics = xp.stack(bootstrap_statistics)
+
+    bootstrap_statistics = xp.asarray(
         bootstrap_statistics,
         dtype=statistic.dtype,
     )
 
-    extreme_results = bootstrap_statistics > statistic
-    pvalue = (np.sum(extreme_results) + 1.0) / (num_resamples + 1)
+    extreme_results = xp.astype(
+        bootstrap_statistics > statistic,
+        xp.float64,
+    )
+    pvalue = float(xp.sum(extreme_results) + 1.0) / (num_resamples + 1)
 
     return HypothesisTest(
         pvalue=pvalue,

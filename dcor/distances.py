@@ -13,7 +13,7 @@ from typing import TypeVar
 import numpy as np
 import scipy.spatial as spatial
 
-from dcor._utils import ArrayType, _sqrt, _transform_to_2d, get_namespace
+from dcor._utils import ArrayType, _sqrt, _transform_to_2d, array_namespace
 
 from ._utils import _can_be_numpy_double
 
@@ -22,7 +22,7 @@ Array = TypeVar("Array", bound=ArrayType)
 
 def _cdist_naive(x: Array, y: Array, exponent: float = 1) -> Array:
     """Pairwise distance, custom implementation."""
-    xp = get_namespace(x, y)
+    xp = array_namespace(x, y)
 
     x = xp.asarray(x)
     y = xp.asarray(y)

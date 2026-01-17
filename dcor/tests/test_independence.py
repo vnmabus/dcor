@@ -2,8 +2,8 @@
 
 import unittest
 
+import array_api_strict
 import numpy as np
-import numpy.array_api
 
 import dcor
 
@@ -174,14 +174,14 @@ class TestEnergyArrayAPI(unittest.TestCase):
 
         random_state = np.random.RandomState(0)
 
-        a = numpy.array_api.asarray(
+        a = array_api_strict.asarray(
             random_state.multivariate_normal(
                 mean=mean,
                 cov=cov,
                 size=num_samples,
             ),
         )
-        b = numpy.array_api.asarray(
+        b = array_api_strict.asarray(
             random_state.multivariate_normal(
                 mean=mean,
                 cov=cov,
@@ -219,7 +219,7 @@ class TestEnergyArrayAPI(unittest.TestCase):
 
         random_state = np.random.RandomState(0)
 
-        a = numpy.array_api.asarray(
+        a = array_api_strict.asarray(
             random_state.multivariate_normal(
                 mean=mean,
                 cov=cov,

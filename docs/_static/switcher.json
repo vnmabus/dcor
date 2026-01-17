@@ -1,0 +1,13 @@
+[
+    {
+        "name": "dev",
+        "version": "dev",
+        "url": "https://dcor.readthedocs.io/en/latest/"
+    },
+    {
+    	"name": "0.6 (stable)",
+        "version": "stable",
+        "url": "https://dcor.readthedocs.io/en/stable/",
+        "preferred": true
+    }
+]
