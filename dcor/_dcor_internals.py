@@ -343,7 +343,7 @@ def u_centered(a: Array, *, out: Array | None = None) -> Array:
 
     # The diagonal is zero
     xp = array_namespace(a)
-    out[xp.eye(dim, dtype=xp.bool)] = 0
+    out[xp.eye(dim, dtype=bool)] = 0
 
     return out
 
