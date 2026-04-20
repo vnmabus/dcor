@@ -113,17 +113,14 @@ References
 
 .. |tests| image:: https://github.com/vnmabus/dcor/actions/workflows/main.yml/badge.svg
     :alt: Tests
-    :scale: 100%
     :target: https://github.com/vnmabus/dcor/actions/workflows/main.yml
 
 .. |docs| image:: https://readthedocs.org/projects/dcor/badge/?version=latest
     :alt: Documentation Status
-    :scale: 100%
     :target: https://dcor.readthedocs.io/en/latest/?badge=latest
     
 .. |coverage| image:: http://codecov.io/github/vnmabus/dcor/coverage.svg?branch=develop
     :alt: Coverage Status
-    :scale: 100%
     :target: https://codecov.io/gh/vnmabus/dcor/branch/develop
     
 .. |repostatus| image:: https://www.repostatus.org/badges/latest/active.svg
@@ -132,19 +129,15 @@ References
    
 .. |versions| image:: https://img.shields.io/pypi/pyversions/dcor
    :alt: PyPI - Python Version
-   :scale: 100%
     
 .. |pypi| image:: https://badge.fury.io/py/dcor.svg
     :alt: Pypi version
-    :scale: 100%
     :target: https://pypi.python.org/pypi/dcor/
     
 .. |conda| image:: https://img.shields.io/conda/vn/conda-forge/dcor
     :alt: Available in Conda
-    :scale: 100%
     :target: https://anaconda.org/conda-forge/dcor
     
 .. |zenodo| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3468124.svg
     :alt: Zenodo DOI
-    :scale: 100%
     :target: https://doi.org/10.5281/zenodo.3468124

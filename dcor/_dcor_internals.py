@@ -156,8 +156,8 @@ def _dcov_terms_naive(
         exponent=exponent,
     )
 
-    a_vec = xp.reshape(a, -1)
-    b_vec = xp.reshape(b, -1)
+    a_vec = xp.reshape(a, (-1,))
+    b_vec = xp.reshape(b, (-1,))
 
     mean_prod = a_vec @ b_vec
     a_sums = _symmetric_matrix_sums(a)
