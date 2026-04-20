@@ -24,8 +24,8 @@
 
 import os
 import sys
+from importlib.metadata import version as get_version, PackageNotFoundError
 
-import pkg_resources
 # Patch sphinx_gallery.binder.gen_binder_rst so as to point to .py file in
 # repository
 import sphinx_gallery.gen_rst
@@ -34,8 +34,8 @@ import sphinx_gallery.interactive_example
 import dcor
 
 try:
-    release = pkg_resources.get_distribution('dcor').version
-except pkg_resources.DistributionNotFound:
+    release = get_version('dcor')
+except PackageNotFoundError:
     print(
         'To build the documentation, The distribution information of dcor\n'
         'Has to be available.  Either install the package into your\n'
@@ -43,7 +43,6 @@ except pkg_resources.DistributionNotFound:
         'metadata.  A virtualenv is recommended!\n',
     )
     sys.exit(1)
-del pkg_resources
 
 version = '.'.join(release.split('.')[:2])
 
