@@ -17,8 +17,11 @@ Array = TypeVar("Array", bound=ArrayType)
 def _generate_rowwise_distance_covariance_sqr(unbiased):
     def rowwise_distance_covariance_sqr(
             x, y, exponent=1, *,
-            method=_dcor.DistanceCovarianceMethod.AUTO,
+            method=None,
             **kwargs):
+
+        if method is None:
+            method = _dcor.DistanceCovarianceMethod.AUTO
 
         if not _dcor._can_use_fast_algorithm(x[0], y[0],
                                              exponent=exponent):
@@ -34,11 +37,13 @@ def _generate_rowwise_distance_covariance_sqr(unbiased):
     return rowwise_distance_covariance_sqr
 
 
-_dcor.distance_covariance_sqr.rowwise_function = (
-    _generate_rowwise_distance_covariance_sqr(unbiased=False))
+def _initialize_rowwise_functions():
+    """Initialize rowwise functions after _dcor module is fully loaded."""
+    _dcor.distance_covariance_sqr.rowwise_function = (
+        _generate_rowwise_distance_covariance_sqr(unbiased=False))
 
-_dcor.u_distance_covariance_sqr.rowwise_function = (
-    _generate_rowwise_distance_covariance_sqr(unbiased=True))
+    _dcor.u_distance_covariance_sqr.rowwise_function = (
+        _generate_rowwise_distance_covariance_sqr(unbiased=True))
 
 
 def _rowwise_distance_covariance(*args, **kwargs):
@@ -50,7 +55,15 @@ def _rowwise_distance_covariance(*args, **kwargs):
     return _sqrt(res_covs)
 
 
-_dcor.distance_covariance.rowwise_function = _rowwise_distance_covariance
+    _dcor.distance_covariance.rowwise_function = _rowwise_distance_covariance
+
+    _dcor.distance_correlation_sqr.rowwise_function = (
+        _generate_rowwise_distance_correlation_sqr(unbiased=False))
+
+    _dcor.u_distance_correlation_sqr.rowwise_function = (
+        _generate_rowwise_distance_correlation_sqr(unbiased=True))
+
+    _dcor.distance_correlation.rowwise_function = _rowwise_distance_correlation
 
 
 def _generate_rowwise_distance_correlation_sqr(unbiased):
@@ -82,13 +95,6 @@ def _generate_rowwise_distance_correlation_sqr(unbiased):
     return rowwise_distance_correlation_sqr
 
 
-_dcor.distance_correlation_sqr.rowwise_function = (
-    _generate_rowwise_distance_correlation_sqr(unbiased=False))
-
-_dcor.u_distance_correlation_sqr.rowwise_function = (
-    _generate_rowwise_distance_correlation_sqr(unbiased=True))
-
-
 def _rowwise_distance_correlation(*args, **kwargs):
 
     res_corrs = _dcor.distance_correlation_sqr.rowwise_function(
@@ -97,9 +103,6 @@ def _rowwise_distance_correlation(*args, **kwargs):
         return NotImplemented
 
     return _sqrt(res_corrs)
-
-
-_dcor.distance_correlation.rowwise_function = _rowwise_distance_correlation
 
 
 def rowwise(

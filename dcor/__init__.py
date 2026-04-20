@@ -36,10 +36,13 @@ from ._energy import (
 )
 from ._hypothesis import HypothesisTest as HypothesisTest
 from ._partial_dcor import (
-    partial_distance_correlation,
+    partial_distance_correlation as partial_distance_correlation,
     partial_distance_covariance as partial_distance_covariance,
 )
-from ._rowwise import RowwiseMode as RowwiseMode, rowwise as rowwise
+from ._rowwise import RowwiseMode as RowwiseMode, rowwise as rowwise, _initialize_rowwise_functions
 from ._utils import CompileMode as CompileMode
 
 __version__ = "0.6"
+
+# Initialize rowwise functions after all modules are loaded
+_initialize_rowwise_functions()
