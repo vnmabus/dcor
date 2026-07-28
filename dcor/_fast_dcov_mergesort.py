@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
     overload,
 )
+import os
 
 import numba
 import numpy as np
@@ -33,6 +34,8 @@ if TYPE_CHECKING:
     NumpyArrayType = np.typing.NDArray[np.number[Any]]
 else:
     NumpyArrayType = np.ndarray
+
+FS_CACHE = False if os.environ.get("DCOR_DISABLE_FS_CACHE") else True
 
 Array = TypeVar("Array", bound=NumpyArrayType)
 
@@ -132,7 +135,7 @@ def _compute_weight_sums(
 
 _compute_weight_sums_compiled = numba.njit(
     NumbaMatrix(NumbaVectorReadOnly, NumbaMatrixReadOnly),
-    cache=True,
+    cache=FS_CACHE,
 )(_compute_weight_sums)
 
 
@@ -179,7 +182,7 @@ def _generate_compute_aijbij_term(
 _compute_aijbij_term = _generate_compute_aijbij_term(compiled=False)
 _compute_aijbij_term_compiled = numba.njit(
     float64(NumbaVectorReadOnly, NumbaVectorReadOnly),
-    cache=True,
+    cache=FS_CACHE,
 )(
     _generate_compute_aijbij_term(
         compiled=True,
@@ -205,7 +208,7 @@ def _compute_row_sums(
 
 _compute_row_sums_compiled = numba.njit(
     NumbaVector(NumbaVectorReadOnly),
-    cache=True)(_compute_row_sums)
+    cache=FS_CACHE)(_compute_row_sums)
 
 
 def _generate_distance_covariance_sqr_terms_mergesort_impl(
@@ -285,7 +288,7 @@ _distance_covariance_sqr_terms_mergesort_impl_compiled = numba.njit(
         NumbaVectorReadOnlyNonContiguous,
         boolean,
     ),
-    cache=True,
+    cache=FS_CACHE,
 )(
     _generate_distance_covariance_sqr_terms_mergesort_impl(
         compiled=True,
@@ -306,7 +309,7 @@ _distance_covariance_sqr_mergesort_generic_impl_compiled = numba.njit(
         NumbaVectorReadOnlyNonContiguous,
         boolean,
     ),
-    cache=True,
+    cache=FS_CACHE,
 )(
     _generate_distance_covariance_sqr_from_terms_impl(
         compiled=True,
