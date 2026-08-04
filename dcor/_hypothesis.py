@@ -112,6 +112,9 @@ def _permutation_test_with_sym_matrix(
             permutation,
         ) for permutation in permutations
     )
+    if bootstrap_statistics:
+        bootstrap_statistics = xp.stack(bootstrap_statistics)
+
     bootstrap_statistics = xp.asarray(
         bootstrap_statistics,
         dtype=statistic.dtype,

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # dcor documentation build configuration file, created by
 # sphinx-quickstart on Thu Sep 14 14:53:09 2017.
@@ -16,16 +15,12 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# >>> import os
-# >>> import sys
-# >>> sys.path.insert(0, '/home/carlos/git/dcor/dcor')
 
-
+import importlib.metadata
 import os
 import sys
+from collections.abc import Mapping
 
-import pkg_resources
 # Patch sphinx_gallery.binder.gen_binder_rst so as to point to .py file in
 # repository
 import sphinx_gallery.gen_rst
@@ -33,19 +28,38 @@ import sphinx_gallery.interactive_example
 
 import dcor
 
+# General information about the project.
+project = "dcor"
+author = "Carlos Ramos Carreño"
+copyright = "2018, Carlos Ramos Carreño"  # noqa: A001
+github_url = "https://github.com/vnmabus/dcor"
+rtd_version = os.environ.get("READTHEDOCS_VERSION")
+rtd_version_type = os.environ.get("READTHEDOCS_VERSION_TYPE")
+release_version = dcor.__version__
+documentation_title = f"{project} Documentation"
+short_description = "Distance correlation and energy statistics in Python."
+
+switcher_version = rtd_version
+if switcher_version == "latest":
+    switcher_version = "dev"
+elif rtd_version_type not in {"branch", "tag"} or rtd_version == "stable":
+    switcher_version = release_version
+
+rtd_branch = os.environ.get(" READTHEDOCS_GIT_IDENTIFIER", "develop")
+language = "en"
+
 try:
-    release = pkg_resources.get_distribution('dcor').version
-except pkg_resources.DistributionNotFound:
+    release = importlib.metadata.version("dcor")
+except importlib.metadata.PackageNotFoundError:
     print(
-        'To build the documentation, The distribution information of dcor\n'
-        'Has to be available.  Either install the package into your\n'
-        'development environment or run "setup.py develop" to setup the\n'
-        'metadata.  A virtualenv is recommended!\n',
+        f"To build the documentation, The distribution information of\n"
+        f"{project} has to be available.  Either install the package\n"
+        f"into your development environment or run 'setup.py develop'\n"
+        f"to setup the metadata.  A virtualenv is recommended!\n",
     )
     sys.exit(1)
-del pkg_resources
 
-version = '.'.join(release.split('.')[:2])
+version = ".".join(release.split(".")[:2])
 
 # -- General configuration ------------------------------------------------
 
@@ -57,109 +71,38 @@ version = '.'.join(release.split('.')[:2])
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "jupyter_sphinx",
     "myst_parser",
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.todo',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.mathjax',
-    'sphinxcontrib.bibtex',
-    'sphinx_gallery.gen_gallery',
-    'sphinx.ext.intersphinx',
-    'jupyter_sphinx',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
+    "sphinxcontrib.bibtex",
+    "sphinx_gallery.gen_gallery",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
-
-rtd_version = os.environ.get("READTHEDOCS_VERSION")
-rtd_version_type = os.environ.get("READTHEDOCS_VERSION_TYPE")
-
-switcher_version = rtd_version
-if switcher_version == "latest":
-    switcher_version = "dev"
-elif rtd_version_type not in ["branch", "tag"]:
-    switcher_version = dcor.__version__
-
-rtd_branch = os.environ.get(" READTHEDOCS_GIT_IDENTIFIER", "develop")
-
-sphinx_gallery_conf = {
-    'examples_dirs': '../examples',
-    'gallery_dirs': 'auto_examples',
-    'reference_url': {
-        # The module you locally document uses None
-        'dcor': None,
-    },
-    'backreferences_dir': 'backreferences',
-    'doc_module': 'dcor',
-    'binder': {
-        'org': 'VNMabus',
-        'repo': 'dcor',
-        'branch': rtd_branch,
-        'binderhub_url': 'https://mybinder.org',
-        'dependencies': ['../binder/runtime.txt', '../binder/requirements.txt'],
-        'notebooks_dir': '../examples',
-    },
-}
-
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/{.major}'.format(
-        sys.version_info),
-        None,
-    ),
-    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
-    'sklearn': ('https://scikit-learn.org/stable', None),
-    'matplotlib': ('https://matplotlib.org/', None),
-    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-}
+templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
-#
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The master toctree document.
-master_doc = 'index'
-
-# General information about the project.
-project = 'dcor'
-copyright = '2017, Carlos Ramos Carreño'
-author = 'Carlos Ramos Carreño'
-
-# The version info for the project you're documenting, acts as replacement for
-# |version| and |release|, also used in various other places throughout the
-# built documents.
-#
-# The short X.Y version.
-# version = ''
-# The full version, including alpha/beta/rc tags.
-# release = ''
-
-# The language for content autogenerated by Sphinx. Refer to documentation
-# for a list of supported languages.
-#
-# This is also used if you do content translation via gettext catalogs.
-# Usually you set "language" from the command line for these cases.
-language = 'en'
+master_doc = "index"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True
 
 add_module_names = False
-
-autosummary_generate = True
-
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -172,7 +115,7 @@ html_theme = "pydata_sphinx_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {
+html_theme_options: Mapping[str, object] = {
     "use_edit_page_button": True,
     "github_url": "https://github.com/vnmabus/dcor",
     "switcher": {
@@ -199,17 +142,6 @@ html_theme_options = {
     ],
 }
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
-
-
-# -- Options for HTMLHelp output ------------------------------------------
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = 'dcordoc'
-
 html_context = {
     "github_user": "vnmabus",
     "github_repo": "dcor",
@@ -217,44 +149,41 @@ html_context = {
     "doc_path": "docs",
 }
 
+# Add any paths that contain custom static files (such as style sheets) here,
+# relative to this directory. They are copied after the builtin static files,
+# so a file named "default.css" will overwrite the builtin "default.css".
+html_static_path = ["_static"]
+
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-}
+latex_engine = "lualatex"
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'dcor.tex', 'dcor Documentation',
-     'Author', 'manual'),
+    (
+        master_doc,
+        f"{project}.tex",
+        documentation_title,
+        author,
+        "manual",
+    ),
 ]
-
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'dcor', 'dcor Documentation',
-     [author], 1)
+    (
+        master_doc,
+        project,
+        documentation_title,
+        [author],
+        1,
+    )
 ]
-
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -262,11 +191,16 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'dcor', 'dcor Documentation',
-     author, 'dcor', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        project,
+        documentation_title,
+        author,
+        project,
+        short_description,
+        "Miscellaneous",
+    ),
 ]
-
 
 # -- Options for Epub output ----------------------------------------------
 
@@ -276,21 +210,60 @@ epub_author = author
 epub_publisher = author
 epub_copyright = copyright
 
-# The unique identifier of the text. This can be a ISBN number
-# or the project homepage.
-#
-# epub_identifier = ''
-
-# A unique identification for the text.
-#
-# epub_uid = ''
-
 # A list of files that should not be packed into the epub file.
-epub_exclude_files = ['search.html']
+epub_exclude_files = ["search.html"]
 
-bibtex_bibfiles = ['refs.bib']
+# -- Options for "sphinx.ext.autodoc.typehints" --
 
 autodoc_typehints = "description"
+
+# -- Options for "sphinx.ext.autosummary" --
+
+autosummary_generate = True
+
+# -- Options for "sphinx.ext.intersphinx" --
+
+intersphinx_mapping = {
+    "python": (f"https://docs.python.org/{sys.version_info.major}", None),
+    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
+    "sklearn": ("https://scikit-learn.org/stable", None),
+    "matplotlib": ("https://matplotlib.org/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+}
+
+# -- Options for "sphinx.ext.todo" --
+
+todo_include_todos = True
+
+# -- Options for "sphinxcontrib.bibtex" --
+
+bibtex_bibfiles = ["refs.bib"]
+
+# -- Options for "sphinx_gallery.gen_gallery" --
+
+sphinx_gallery_conf: Mapping[str, object] = {
+    "examples_dirs": "../examples",
+    "gallery_dirs": "auto_examples",
+    "reference_url": {
+        # The module you locally document uses None
+        "dcor": None,
+    },
+    "backreferences_dir": "backreferences",
+    "doc_module": "dcor",
+    "binder": {
+        "org": "VNMabus",
+        "repo": "dcor",
+        "branch": rtd_branch,
+        "binderhub_url": "https://mybinder.org",
+        "dependencies": [
+            "../binder/runtime.txt",
+            "../binder/requirements.txt",
+        ],
+        "notebooks_dir": "../examples",
+    },
+}
+
 
 # Binder integration
 # Taken from
@@ -298,7 +271,7 @@ autodoc_typehints = "description"
 original_gen_binder_rst = sphinx_gallery.interactive_example.gen_binder_rst
 
 
-def patched_gen_binder_rst(*args, **kwargs):
+def patched_gen_binder_rst(*args: object, **kwargs: object) -> object:
     return original_gen_binder_rst(*args, **kwargs).replace(
         "../examples/auto_",
         "",
