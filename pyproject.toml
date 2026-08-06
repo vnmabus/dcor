@@ -59,7 +59,7 @@ docs = [
 ]
 test = [
   "array-api-strict",
-  "numpy<2", # NumPy 2 changes array repr, affecting doctests.
+  "numpy", 
   "pytest",
   "pytest-cov",
   "pytest-subtests",
