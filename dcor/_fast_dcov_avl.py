@@ -14,7 +14,6 @@ from typing import (
     TypeVar,
     overload,
 )
-import os
 
 import numba
 import numpy as np
@@ -30,14 +29,13 @@ from ._dcor_internals_numba import (
     NumbaVectorReadOnlyNonContiguous,
     _generate_distance_covariance_sqr_from_terms_impl,
 )
-from ._utils import CompileMode, _transform_to_1d
+from ._utils import CompileMode, _transform_to_1d, FS_CACHE
 
 if TYPE_CHECKING:
     NumpyArrayType = np.typing.NDArray[np.number[Any]]
 else:
     NumpyArrayType = np.ndarray
 
-FS_CACHE = False if os.environ.get("DCOR_DISABLE_FS_CACHE") else True
 
 Array = TypeVar("Array", bound=NumpyArrayType)
 

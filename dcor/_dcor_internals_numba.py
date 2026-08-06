@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable
-import os
 
 import numba
 import numpy as np
@@ -9,11 +8,11 @@ from numba import boolean, float64, int64
 from numba.types import Array, Tuple
 
 from ._dcor_internals import _dcov_from_terms
+from ._utils import FS_CACHE
 
 if TYPE_CHECKING:
     import numpy.typing
 
-FS_CACHE = False if os.environ.get("DCOR_DISABLE_FS_CACHE") else True
 
 NumbaVector = Array(dtype=float64, ndim=1, layout="C")
 NumbaVectorReadOnly = Array(dtype=float64, ndim=1, layout="C", readonly=True)
