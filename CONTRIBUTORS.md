@@ -1,5 +1,5 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-11-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-12-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 ## Contributors ✨
 
@@ -23,6 +23,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Palash123-4"><img src="https://avatars.githubusercontent.com/u/74013966?v=4?s=100" width="100px;" alt="Aakash Chowdhury"/><br /><sub><b>Aakash Chowdhury</b></sub></a><br /><a href="#ideas-Palash123-4" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/zihaozhu93"><img src="https://avatars.githubusercontent.com/u/20263795?v=4?s=100" width="100px;" alt="zihaozhu93"/><br /><sub><b>zihaozhu93</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/issues?q=author%3Azihaozhu93" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://jamesparrott.dev"><img src="https://avatars.githubusercontent.com/u/80779630?v=4?s=100" width="100px;" alt="James Parrott"/><br /><sub><b>James Parrott</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/commits?author=JamesParrott" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/the-pawel-wojcik"><img src="https://avatars.githubusercontent.com/u/42147018?v=4?s=100" width="100px;" alt="Pawel Wojcik"/><br /><sub><b>Pawel Wojcik</b></sub></a><br /><a href="https://github.com/vnmabus/dcor/commits?author=the-pawel-wojcik" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
