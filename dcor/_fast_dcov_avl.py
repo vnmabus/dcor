@@ -29,7 +29,7 @@ from ._dcor_internals_numba import (
     NumbaVectorReadOnlyNonContiguous,
     _generate_distance_covariance_sqr_from_terms_impl,
 )
-from ._utils import CompileMode, _transform_to_1d
+from ._utils import CompileMode, _transform_to_1d, FS_CACHE
 
 if TYPE_CHECKING:
     NumpyArrayType = np.typing.NDArray[np.number[Any]]
@@ -141,7 +141,7 @@ _dyad_update_compiled = numba.njit(
         NumbaVector,
         NumbaIntVectorReadOnly,
     ),
-    cache=True,
+    cache=FS_CACHE,
 )(
     _dyad_update_compiled_version,
 )
@@ -193,7 +193,7 @@ _partial_sum_2d_compiled = numba.njit(
         NumbaIntVectorReadOnly,
         NumbaVector,
     ),
-    cache=True,
+    cache=FS_CACHE,
 )(
     _generate_partial_sum_2d(compiled=True),
 )
@@ -303,7 +303,7 @@ _get_impl_args_compiled = numba.njit(
         NumbaIntVectorReadOnly,
         NumbaMatrix,
     ))(NumbaVectorReadOnlyNonContiguous, NumbaVectorReadOnlyNonContiguous),
-    cache=True,
+    cache=FS_CACHE,
 )(_get_impl_args)
 
 
@@ -429,7 +429,7 @@ _distance_covariance_sqr_terms_avl_impl_compiled = numba.njit(
         numba.optional(float64),
         numba.optional(float64),
     ))(NumbaVectorReadOnlyNonContiguous, NumbaVectorReadOnlyNonContiguous, boolean),
-    cache=True,
+    cache=FS_CACHE,
 )(
     _generate_distance_covariance_sqr_terms_avl_impl(compiled=True),
 )
@@ -446,7 +446,7 @@ _distance_covariance_sqr_avl_impl_compiled = numba.njit(
         NumbaVectorReadOnlyNonContiguous,
         boolean,
     ),
-    cache=True,
+    cache=FS_CACHE,
 )(
     _generate_distance_covariance_sqr_from_terms_impl(
         compiled=True,
@@ -582,7 +582,7 @@ def _generate_rowwise_internal(
         )],
         '(n),(n),()->()',
         nopython=True,
-        cache=True,
+        cache=FS_CACHE,
         target=target,
     )(_rowwise_distance_covariance_sqr_avl_generic_internal)
 

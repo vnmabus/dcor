@@ -8,6 +8,7 @@ from numba import boolean, float64, int64
 from numba.types import Array, Tuple
 
 from ._dcor_internals import _dcov_from_terms
+from ._utils import FS_CACHE
 
 if TYPE_CHECKING:
     import numpy.typing
@@ -36,7 +37,7 @@ _dcov_from_terms_compiled = numba.njit(
         int64,
         boolean,
     ),
-    cache=True,
+    cache=FS_CACHE,
 )(_dcov_from_terms)
 
 

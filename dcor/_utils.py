@@ -5,6 +5,7 @@ from __future__ import annotations
 import enum
 import warnings
 from typing import TYPE_CHECKING, Any, Iterable, TypeVar, Union
+import os
 
 import numpy as np
 from array_api_compat import (
@@ -25,6 +26,8 @@ RandomLike = Union[
     int,
     None,
 ]
+
+FS_CACHE = False if os.environ.get("DCOR_DISABLE_FS_CACHE") else True
 
 
 class CompileMode(enum.Enum):
