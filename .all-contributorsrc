@@ -124,6 +124,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "the-pawel-wojcik",
+      "name": "Pawel Wojcik",
+      "avatar_url": "https://avatars.githubusercontent.com/u/42147018?v=4",
+      "profile": "https://github.com/the-pawel-wojcik",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
