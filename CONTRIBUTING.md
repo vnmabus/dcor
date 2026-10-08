@@ -25,3 +25,9 @@ Advanced users can also propose the addition of new pages and examples. In case 
 You can improve this package by adding new functionality, such as new E-statistics and related tests. You can also try to solve pending bugs or accepted feature requests. In case that the contribution requires substantial effort, please discuss that first to ensure that it will be accepted and to assign that to you and prevent duplicated efforts.
 
 In any case, make sure that you own the rights to the software and are ok with releasing it under a MIT license.
+
+## On the use of Generative AI
+
+You may use generative AI to understand, search, debug or obtain suggestions about the project. However, please **do not attempt to include any generative AI output directly in the submission**. AI output lacks copyright, and thus it cannot be covered by the license of this project. Moreover, it is rude to make other people review something that you did not bother to write, and wastes resources that could be dedicated to reviewing PRs of people who did care enough to write by themselves. As a corollary, pull requests created automatically by generative AI will be closed without discussion.
+
+You should disclose any use of generative AI in the pull request description.
