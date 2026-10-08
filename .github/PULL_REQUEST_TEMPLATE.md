@@ -23,8 +23,12 @@ Example: Fixes #42. See also #123.
 ## Additional information
 
 
+## Disclosure of generative AI usage
+
+
 ## Checklist before requesting a review
 
+- [ ] My submission does not contain generative AI output
 - [ ] I have performed a self-review of my code
 - [ ] The code conforms to the style used in this package
 - [ ] The code is fully documented and typed (type-checked with [Mypy](https://mypy-lang.org/))
